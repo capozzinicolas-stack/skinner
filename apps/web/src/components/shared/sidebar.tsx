@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 
@@ -22,11 +23,19 @@ export function Sidebar({
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 flex flex-col h-screen sticky top-0">
-      <div className="p-6 border-b border-gray-100">
-        <h1 className="text-lg font-bold text-brand-900">{title}</h1>
+    <aside className="w-64 bg-white border-r border-sable/20 flex flex-col h-screen sticky top-0">
+      <div className="p-6 border-b border-sable/20">
+        <Image
+          src="/brand/logo-primary.png"
+          alt="Skinners"
+          width={140}
+          height={35}
+          className="mb-1"
+        />
         {subtitle && (
-          <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>
+          <p className="text-[10px] text-pierre tracking-skinners uppercase font-light mt-2">
+            {subtitle}
+          </p>
         )}
       </div>
 
@@ -37,25 +46,25 @@ export function Sidebar({
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+              className={`flex items-center gap-3 px-3 py-2.5 text-sm font-light transition-colors ${
                 isActive
-                  ? "bg-brand-50 text-brand-700 font-medium"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  ? "bg-ivoire text-carbone"
+                  : "text-pierre hover:bg-blanc-casse hover:text-carbone"
               }`}
             >
-              <span className="text-lg">{item.icon}</span>
+              <span className="text-base">{item.icon}</span>
               {item.label}
             </Link>
           );
         })}
       </nav>
 
-      <div className="p-4 border-t border-gray-100">
+      <div className="p-4 border-t border-sable/20">
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
-          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 w-full transition-colors"
+          className="flex items-center gap-3 px-3 py-2.5 text-sm font-light text-pierre hover:text-carbone w-full transition-colors"
         >
-          <span className="text-lg">&#x2190;</span>
+          <span className="text-base">&#x2190;</span>
           Sair
         </button>
       </div>

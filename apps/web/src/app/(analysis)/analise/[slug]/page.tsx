@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { trpc } from "@/lib/trpc/client";
 import { Questionnaire, type QuestionnaireAnswers } from "@/components/analysis/questionnaire";
 import { PhotoCapture } from "@/components/analysis/photo-capture";
@@ -32,8 +33,7 @@ export default function AnalysisPage({
     },
   });
 
-  const brandColor = tenant.data?.primaryColor ?? "#0ea5e9";
-  const tenantName = tenant.data?.name ?? "Skinner";
+  const tenantName = tenant.data?.name ?? "Skinners";
 
   function handleQuestionnaireDone(data: QuestionnaireAnswers) {
     setAnswers(data);
@@ -50,98 +50,92 @@ export default function AnalysisPage({
     });
   }
 
-  // Tenant not found
   if (tenant.isLoading) {
     return (
-      <main className="flex min-h-screen items-center justify-center">
-        <p className="text-gray-400">Carregando...</p>
+      <main className="flex min-h-screen items-center justify-center bg-blanc-casse">
+        <p className="text-pierre font-light">Carregando...</p>
       </main>
     );
   }
   if (!tenant.data) {
     return (
-      <main className="flex min-h-screen items-center justify-center">
+      <main className="flex min-h-screen items-center justify-center bg-blanc-casse">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900">Não encontrado</h1>
-          <p className="text-gray-500 mt-2">Este link de análise não é válido.</p>
+          <h1 className="font-serif text-2xl text-carbone">Nao encontrado</h1>
+          <p className="text-pierre mt-2 font-light">Este link de analise nao e valido.</p>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-white flex flex-col">
-      {/* Top bar with tenant branding */}
-      <header className="py-4 px-6 border-b flex items-center justify-center">
+    <main className="min-h-screen bg-blanc-casse flex flex-col">
+      {/* Top bar */}
+      <header className="py-4 px-6 border-b border-sable/20 flex items-center justify-center bg-white">
         {tenant.data.logoUrl ? (
           <img src={tenant.data.logoUrl} alt={tenantName} className="h-8 object-contain" />
         ) : (
-          <span className="text-lg font-bold" style={{ color: brandColor }}>
-            {tenantName}
-          </span>
+          <Image src="/brand/logo-primary.png" alt="Skinners" width={140} height={35} />
         )}
       </header>
 
       <div className="flex-1 flex items-center justify-center py-8">
         {/* Welcome */}
         {step === "welcome" && (
-          <div className="w-full max-w-lg mx-auto px-4 text-center space-y-6">
-            <h1 className="text-3xl font-bold text-gray-900">
-              Análise de Pele
-            </h1>
-            <p className="text-gray-500 max-w-md mx-auto">
-              Descubra o tipo da sua pele e receba recomendações personalizadas
+          <div className="w-full max-w-lg mx-auto px-4 text-center space-y-8">
+            <div>
+              <h1 className="font-serif text-3xl text-carbone italic">
+                Analise de Pele
+              </h1>
+              <div className="w-16 h-px bg-sable mx-auto mt-4" />
+            </div>
+            <p className="text-pierre max-w-sm mx-auto text-sm font-light leading-relaxed">
+              Descubra o tipo da sua pele e receba recomendacoes personalizadas
               de tratamento em menos de 3 minutos.
             </p>
             <div className="flex flex-col gap-3 items-center">
               <button
                 onClick={() => setStep("consent")}
-                className="px-8 py-3 text-white rounded-xl font-medium text-lg transition-colors"
-                style={{ backgroundColor: brandColor }}
+                className="px-10 py-3 bg-carbone text-blanc-casse text-sm font-light tracking-wide hover:bg-terre transition-colors"
               >
-                Iniciar Análise
+                Iniciar Analise
               </button>
-              <p className="text-xs text-gray-400">Gratuito e sem cadastro</p>
+              <p className="text-xs text-pierre font-light">Gratuito e sem cadastro</p>
             </div>
           </div>
         )}
 
-        {/* Consent (LGPD) */}
+        {/* Consent */}
         {step === "consent" && (
           <div className="w-full max-w-lg mx-auto px-4 space-y-6">
-            <h2 className="text-xl font-semibold text-gray-900">
-              Consentimento
-            </h2>
-            <div className="p-4 bg-gray-50 rounded-xl text-sm text-gray-600 space-y-3">
+            <h2 className="font-serif text-xl text-carbone">Consentimento</h2>
+            <div className="p-6 bg-ivoire border border-sable/20 text-sm text-terre space-y-3 font-light">
               <p>
-                Para realizar a análise, precisaremos de uma foto do seu rosto.
-                Essa foto será processada por inteligência artificial para
-                identificar características da sua pele.
+                Para realizar a analise, precisaremos de uma foto do seu rosto.
+                Essa foto sera processada por inteligencia artificial para
+                identificar caracteristicas da sua pele.
               </p>
-              <p>
-                <strong>Seus dados são protegidos:</strong>
-              </p>
-              <ul className="space-y-1 ml-4">
-                <li>- A foto é processada e descartada imediatamente</li>
-                <li>- Não armazenamos imagens faciais</li>
-                <li>- A análise é anônima por padrão</li>
-                <li>- Você pode fornecer e-mail opcionalmente para receber o relatório</li>
+              <p className="font-normal text-carbone">Seus dados sao protegidos:</p>
+              <ul className="space-y-1 ml-4 text-pierre">
+                <li>A foto e processada e descartada imediatamente</li>
+                <li>Nao armazenamos imagens faciais</li>
+                <li>A analise e anonima por padrao</li>
+                <li>Voce pode fornecer e-mail opcionalmente para receber o relatorio</li>
               </ul>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-pierre mt-4">
                 Em conformidade com a LGPD (Lei 13.709/2018).
               </p>
             </div>
             <div className="flex gap-3">
               <button
                 onClick={() => setStep("welcome")}
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-xl text-sm font-medium text-gray-700"
+                className="flex-1 px-4 py-3 border border-sable/40 text-sm font-light text-terre hover:bg-ivoire transition-colors"
               >
                 Voltar
               </button>
               <button
                 onClick={() => setStep("questionnaire")}
-                className="flex-1 px-4 py-3 text-white rounded-xl text-sm font-medium"
-                style={{ backgroundColor: brandColor }}
+                className="flex-1 px-4 py-3 bg-carbone text-blanc-casse text-sm font-light tracking-wide hover:bg-terre transition-colors"
               >
                 Concordo e continuar
               </button>
@@ -149,39 +143,32 @@ export default function AnalysisPage({
           </div>
         )}
 
-        {/* Questionnaire */}
         {step === "questionnaire" && (
           <Questionnaire onComplete={handleQuestionnaireDone} />
         )}
 
-        {/* Photo */}
         {step === "photo" && (
           <PhotoCapture onCapture={handlePhotoCaptured} />
         )}
 
-        {/* Loading */}
         {step === "loading" && <LoadingScreen />}
 
-        {/* Results */}
         {step === "result" && result && (
           <ResultsScreen
             result={result}
             tenantName={tenantName}
             disclaimer={tenant.data.disclaimer ?? undefined}
-            primaryColor={brandColor}
+            primaryColor="#1C1917"
           />
         )}
 
-        {/* Error */}
         {step === "error" && (
           <div className="w-full max-w-lg mx-auto px-4 text-center space-y-4">
-            <h2 className="text-xl font-semibold text-red-700">
-              Erro na análise
-            </h2>
-            <p className="text-sm text-gray-500">{errorMsg}</p>
+            <h2 className="font-serif text-xl text-terre">Erro na analise</h2>
+            <p className="text-sm text-pierre font-light">{errorMsg}</p>
             <button
               onClick={() => setStep("photo")}
-              className="px-6 py-2 bg-brand-600 text-white rounded-xl text-sm font-medium"
+              className="px-6 py-2 bg-carbone text-blanc-casse text-sm font-light tracking-wide hover:bg-terre transition-colors"
             >
               Tentar novamente
             </button>

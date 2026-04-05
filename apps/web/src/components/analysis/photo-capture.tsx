@@ -26,7 +26,7 @@ export function PhotoCapture({
       }
       setMode("camera");
     } catch {
-      setError("Não foi possível acessar a câmera. Tente fazer upload de uma foto.");
+      setError("Nao foi possivel acessar a camera. Tente fazer upload de uma foto.");
     }
   }, []);
 
@@ -57,7 +57,7 @@ export function PhotoCapture({
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      setError("Imagem muito grande. Máximo 10MB.");
+      setError("Imagem muito grande. Maximo 10MB.");
       return;
     }
     setError("");
@@ -81,26 +81,24 @@ export function PhotoCapture({
 
   return (
     <div className="w-full max-w-lg mx-auto px-4">
-      <h2 className="text-xl font-semibold text-gray-900 mb-2 text-center">
+      <h2 className="font-serif text-xl text-carbone mb-2 text-center">
         Fotografe seu rosto
       </h2>
-      <p className="text-sm text-gray-500 text-center mb-6">
-        Para uma análise precisa, tire uma foto com boa iluminação, sem maquiagem e de frente.
+      <p className="text-sm text-pierre text-center mb-6 font-light">
+        Para uma analise precisa, tire uma foto com boa iluminacao, sem maquiagem e de frente.
       </p>
 
       {error && (
-        <div className="mb-4 p-3 text-sm text-red-700 bg-red-50 rounded-lg border border-red-200">
+        <div className="mb-4 p-3 text-sm text-terre bg-ivoire border border-sable/30 font-light">
           {error}
         </div>
       )}
 
-      {/* Choose mode */}
       {mode === "choose" && (
         <div className="space-y-4">
-          {/* Guide overlay */}
-          <div className="relative w-64 h-80 mx-auto bg-gray-100 rounded-2xl flex items-center justify-center">
-            <div className="w-48 h-60 border-2 border-dashed border-brand-400 rounded-[50%] flex items-center justify-center">
-              <p className="text-sm text-brand-500 text-center px-4">
+          <div className="relative w-64 h-80 mx-auto bg-ivoire flex items-center justify-center">
+            <div className="w-48 h-60 border border-dashed border-sable flex items-center justify-center">
+              <p className="text-sm text-pierre text-center px-4 font-light">
                 Posicione seu rosto aqui
               </p>
             </div>
@@ -109,13 +107,13 @@ export function PhotoCapture({
           <div className="grid grid-cols-2 gap-3 mt-6">
             <button
               onClick={startCamera}
-              className="px-4 py-3 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors"
+              className="px-4 py-3 bg-carbone text-blanc-casse text-sm font-light tracking-wide hover:bg-terre transition-colors"
             >
               Tirar foto
             </button>
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="px-4 py-3 border border-gray-300 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
+              className="px-4 py-3 border border-sable/40 text-terre text-sm font-light hover:bg-ivoire transition-colors"
             >
               Fazer upload
             </button>
@@ -129,46 +127,45 @@ export function PhotoCapture({
             className="hidden"
           />
 
-          {/* Tips */}
           <div className="mt-6 space-y-2">
-            <p className="text-xs font-medium text-gray-500 uppercase">Dicas para melhor resultado</p>
-            <ul className="text-xs text-gray-400 space-y-1">
-              <li>- Boa iluminação natural, sem sombras fortes</li>
-              <li>- Sem maquiagem ou filtros</li>
-              <li>- Rosto de frente, olhando para a câmera</li>
-              <li>- Cabelo preso para mostrar a testa</li>
+            <p className="text-xs text-pierre uppercase tracking-wider font-light">
+              Dicas para melhor resultado
+            </p>
+            <ul className="text-xs text-pierre/70 space-y-1 font-light">
+              <li>Boa iluminacao natural, sem sombras fortes</li>
+              <li>Sem maquiagem ou filtros</li>
+              <li>Rosto de frente, olhando para a camera</li>
+              <li>Cabelo preso para mostrar a testa</li>
             </ul>
           </div>
         </div>
       )}
 
-      {/* Camera */}
       {mode === "camera" && (
         <div className="space-y-4">
-          <div className="relative rounded-2xl overflow-hidden bg-black">
+          <div className="relative overflow-hidden bg-black">
             <video
               ref={videoRef}
               autoPlay
               playsInline
               muted
-              className="w-full aspect-[3/4] object-cover mirror"
+              className="w-full aspect-[3/4] object-cover"
               style={{ transform: "scaleX(-1)" }}
             />
-            {/* Face oval guide */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-48 h-60 border-2 border-white/50 rounded-[50%]" />
+              <div className="w-48 h-60 border border-white/40 rounded-[50%]" />
             </div>
           </div>
           <div className="flex gap-3">
             <button
               onClick={() => { stopCamera(); setMode("choose"); }}
-              className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50"
+              className="flex-1 px-4 py-3 border border-sable/40 text-terre text-sm font-light hover:bg-ivoire"
             >
               Cancelar
             </button>
             <button
               onClick={takePhoto}
-              className="flex-1 px-4 py-3 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700"
+              className="flex-1 px-4 py-3 bg-carbone text-blanc-casse text-sm font-light tracking-wide hover:bg-terre"
             >
               Capturar
             </button>
@@ -176,26 +173,21 @@ export function PhotoCapture({
         </div>
       )}
 
-      {/* Preview */}
       {mode === "preview" && preview && (
         <div className="space-y-4">
-          <div className="rounded-2xl overflow-hidden">
-            <img
-              src={preview}
-              alt="Preview"
-              className="w-full aspect-[3/4] object-cover"
-            />
+          <div className="overflow-hidden">
+            <img src={preview} alt="Preview" className="w-full aspect-[3/4] object-cover" />
           </div>
           <div className="flex gap-3">
             <button
               onClick={retry}
-              className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50"
+              className="flex-1 px-4 py-3 border border-sable/40 text-terre text-sm font-light hover:bg-ivoire"
             >
               Tirar outra
             </button>
             <button
               onClick={confirm}
-              className="flex-1 px-4 py-3 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700"
+              className="flex-1 px-4 py-3 bg-carbone text-blanc-casse text-sm font-light tracking-wide hover:bg-terre"
             >
               Usar esta foto
             </button>

@@ -9,23 +9,29 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Skinner brand colors (placeholder - update with real brand)
+        // Skinners brand palette
+        "blanc-casse": "#F7F3EE",
+        carbone: "#1C1917",
+        pierre: "#7C7269",
+        sable: "#C8BAA9",
+        ivoire: "#EDE6DB",
+        terre: "#3D342C",
+        // Semantic aliases
         brand: {
-          50: "#f0f9ff",
-          100: "#e0f2fe",
-          200: "#bae6fd",
-          300: "#7dd3fc",
-          400: "#38bdf8",
-          500: "#0ea5e9",
-          600: "#0284c7",
-          700: "#0369a1",
-          800: "#075985",
-          900: "#0c4a6e",
-          950: "#082f49",
+          bg: "#F7F3EE",
+          text: "#1C1917",
+          secondary: "#7C7269",
+          accent: "#C8BAA9",
+          card: "#EDE6DB",
+          dark: "#3D342C",
         },
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
+        serif: ["Lora", "Georgia", "serif"],
+        sans: ["Poppins", "system-ui", "sans-serif"],
+      },
+      letterSpacing: {
+        skinners: "0.25em",
       },
     },
   },

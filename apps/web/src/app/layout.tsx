@@ -1,14 +1,25 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Poppins, Lora } from "next/font/google";
 import { Providers } from "@/lib/providers";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600"],
+  variable: "--font-poppins",
+});
+
+const lora = Lora({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  style: ["normal", "italic"],
+  variable: "--font-lora",
+});
 
 export const metadata: Metadata = {
-  title: "Skinner — Skin Intelligence Platform",
+  title: "Skinners — Skin Intelligence",
   description:
-    "Plataforma de inteligência dermatológica com IA para análise facial e recomendação personalizada de tratamentos.",
+    "Plataforma de inteligencia dermatologica com IA para analise facial e recomendacao personalizada de tratamentos.",
 };
 
 export default function RootLayout({
@@ -17,8 +28,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR">
-      <body className={inter.className}>
+    <html lang="pt-BR" className={`${poppins.variable} ${lora.variable}`}>
+      <body className="font-sans bg-blanc-casse text-carbone antialiased">
         <Providers>{children}</Providers>
       </body>
     </html>

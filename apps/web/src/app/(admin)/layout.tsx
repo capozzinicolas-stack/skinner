@@ -12,8 +12,8 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar items={adminNav} title="Skinner" subtitle="Admin" />
+    <div className="flex min-h-screen bg-blanc-casse">
+      <Sidebar items={adminNav} title="Skinners" subtitle="Admin" />
       <main className="flex-1 overflow-auto">{children}</main>
     </div>
   );

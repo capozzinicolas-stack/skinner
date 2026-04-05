@@ -3,6 +3,7 @@
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, Suspense } from "react";
+import Image from "next/image";
 
 function LoginForm() {
   const router = useRouter();
@@ -28,11 +29,10 @@ function LoginForm() {
     setLoading(false);
 
     if (result?.error) {
-      setError("E-mail ou senha inválidos.");
+      setError("E-mail ou senha invalidos.");
       return;
     }
 
-    // Fetch session to determine redirect
     const res = await fetch("/api/auth/session");
     const session = await res.json();
     const role = session?.user?.role;
@@ -45,22 +45,31 @@ function LoginForm() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-50">
-      <div className="w-full max-w-sm space-y-6 p-8 bg-white rounded-xl shadow-sm border">
+    <main className="flex min-h-screen items-center justify-center bg-blanc-casse">
+      <div className="w-full max-w-sm space-y-8 p-10 bg-white border border-sable/30">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-brand-900">Skinner</h1>
-          <p className="text-sm text-gray-500 mt-1">Acesse sua conta</p>
+          <Image
+            src="/brand/logomark.png"
+            alt="Skinners"
+            width={48}
+            height={48}
+            className="mx-auto mb-4"
+          />
+          <h1 className="font-serif text-xl text-carbone">Skinners</h1>
+          <p className="text-xs text-pierre tracking-skinners uppercase mt-1 font-light">
+            Skin Intelligence
+          </p>
         </div>
 
         {(error || urlError) && (
-          <div className="p-3 text-sm text-red-700 bg-red-50 rounded-lg border border-red-200">
-            {error || (urlError === "unauthorized" ? "Acesso não autorizado." : "Erro ao fazer login.")}
+          <div className="p-3 text-sm text-terre bg-ivoire border border-sable/30">
+            {error || (urlError === "unauthorized" ? "Acesso nao autorizado." : "Erro ao fazer login.")}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-1">
+            <label htmlFor="email" className="block text-xs font-light text-pierre uppercase tracking-wider mb-2">
               E-mail
             </label>
             <input
@@ -70,11 +79,11 @@ function LoginForm() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="seu@email.com"
               required
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full px-4 py-3 border border-sable/40 bg-blanc-casse text-sm text-carbone font-light focus:outline-none focus:border-terre transition-colors"
             />
           </div>
           <div>
-            <label htmlFor="password" className="block text-sm font-medium mb-1">
+            <label htmlFor="password" className="block text-xs font-light text-pierre uppercase tracking-wider mb-2">
               Senha
             </label>
             <input
@@ -84,21 +93,17 @@ function LoginForm() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full px-4 py-3 border border-sable/40 bg-blanc-casse text-sm text-carbone font-light focus:outline-none focus:border-terre transition-colors"
             />
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2 bg-brand-600 text-white rounded-lg font-medium hover:bg-brand-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3 bg-carbone text-blanc-casse text-sm font-light tracking-wide hover:bg-terre transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? "Entrando..." : "Entrar"}
           </button>
         </form>
-
-        <p className="text-xs text-gray-400 text-center">
-          Skinner Skin Intelligence Platform
-        </p>
       </div>
     </main>
   );
