@@ -3,6 +3,7 @@ import { Sidebar } from "@/components/shared/sidebar";
 const adminNav = [
   { label: "Dashboard", href: "/admin", icon: "\u2302" },
   { label: "Tenants", href: "/admin/tenants", icon: "\u2630" },
+  { label: "Dermatologia", href: "/admin/dermatologia", icon: "\u2695" },
 ];
 
 export default function AdminLayout({

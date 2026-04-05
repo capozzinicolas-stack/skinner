@@ -2,6 +2,7 @@ import { Sidebar } from "@/components/shared/sidebar";
 
 const dashboardNav = [
   { label: "Dashboard", href: "/dashboard", icon: "\u2302" },
+  { label: "Catálogo", href: "/dashboard/catalogo", icon: "\u2630" },
   { label: "Marca", href: "/dashboard/marca", icon: "\u2605" },
   { label: "Canais", href: "/dashboard/canais", icon: "\u260E" },
   { label: "Usuários", href: "/dashboard/usuarios", icon: "\u263A" },
