@@ -7,6 +7,7 @@ const dashboardNav = [
   { label: "Marca", href: "/dashboard/marca", icon: "\u2605" },
   { label: "Canais", href: "/dashboard/canais", icon: "\u260E" },
   { label: "Usuarios", href: "/dashboard/usuarios", icon: "\u263A" },
+  { label: "Faturamento", href: "/dashboard/faturamento", icon: "\u2234" },
 ];
 
 export default function DashboardLayout({
