@@ -7,5 +7,6 @@ dist/
 .env.*.local
 *.db
 *.db-journal
+packages/db/generated/
 .DS_Store
 skinner_prd_v1.docx
