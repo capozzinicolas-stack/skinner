@@ -1,6 +1,8 @@
 import { initTRPC, TRPCError } from "@trpc/server";
+import { getServerSession } from "next-auth";
 import superjson from "superjson";
 import { db } from "@skinner/db";
+import { authOptions } from "@/lib/auth";
 
 export type Context = {
   db: typeof db;
@@ -10,8 +12,19 @@ export type Context = {
 };
 
 export const createContext = async (): Promise<Context> => {
-  // TODO: Extract user/tenant from session in Sprint 1
-  return { db };
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user) {
+    return { db };
+  }
+
+  const user = session.user as any;
+  return {
+    db,
+    userId: user.id,
+    tenantId: user.tenantId ?? undefined,
+    role: user.role,
+  };
 };
 
 const t = initTRPC.context<Context>().create({
@@ -21,17 +34,15 @@ const t = initTRPC.context<Context>().create({
 export const router = t.router;
 export const publicProcedure = t.procedure;
 
-// Middleware: requires authenticated user
 const isAuthed = t.middleware(({ ctx, next }) => {
   if (!ctx.userId) {
     throw new TRPCError({ code: "UNAUTHORIZED" });
   }
   return next({
-    ctx: { ...ctx, userId: ctx.userId },
+    ctx: { ...ctx, userId: ctx.userId, role: ctx.role },
   });
 });
 
-// Middleware: requires tenant context
 const hasTenant = t.middleware(({ ctx, next }) => {
   if (!ctx.tenantId) {
     throw new TRPCError({ code: "FORBIDDEN", message: "No tenant context" });
@@ -41,7 +52,6 @@ const hasTenant = t.middleware(({ ctx, next }) => {
   });
 });
 
-// Middleware: requires Skinner admin
 const isAdmin = t.middleware(({ ctx, next }) => {
   if (ctx.role !== "skinner_admin") {
     throw new TRPCError({ code: "FORBIDDEN", message: "Admin only" });
