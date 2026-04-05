@@ -249,6 +249,18 @@ export function ResultsScreen({
         </div>
       )}
 
+      {/* Download PDF */}
+      <div className="mb-8 text-center">
+        <a
+          href={`/api/report/${result.analysisId}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-block px-8 py-3 border border-sable/40 text-terre text-sm font-light tracking-wide hover:bg-ivoire transition-colors"
+        >
+          Baixar relatorio em PDF
+        </a>
+      </div>
+
       {/* Disclaimer */}
       {disclaimer && (
         <p className="text-xs text-pierre text-center font-light italic">{disclaimer}</p>

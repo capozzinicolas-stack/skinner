@@ -123,6 +123,7 @@ export const analysisRouter = router({
       });
 
       return {
+        analysisId: analysis.id,
         analysis: analysisOutput,
         recommendations,
         latencyMs,

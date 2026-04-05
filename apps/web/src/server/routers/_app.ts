@@ -6,6 +6,7 @@ import { dashboardRouter } from "./dashboard";
 import { productRouter } from "./product";
 import { dermatologyRouter } from "./dermatology";
 import { analysisRouter } from "./analysis";
+import { reportRouter } from "./report";
 
 export const appRouter = router({
   health: healthRouter,
@@ -15,6 +16,7 @@ export const appRouter = router({
   product: productRouter,
   dermatology: dermatologyRouter,
   analysis: analysisRouter,
+  report: reportRouter,
 });
 
 export type AppRouter = typeof appRouter;

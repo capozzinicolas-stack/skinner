@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@react-pdf/renderer": "^4.3.3",
     "@skinner/db": "workspace:*",
     "@skinner/ui": "workspace:*",
     "@tanstack/react-query": "^5.96.2",
