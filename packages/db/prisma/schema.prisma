@@ -1,0 +1,344 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// TENANTS (Clientes B2B)
+// ============================================
+
+model Tenant {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  status    String   @default("active") // active, paused, deleted
+  plan      String   @default("starter") // starter, growth, enterprise
+
+  // Branding
+  logoUrl       String?
+  primaryColor  String   @default("#0ea5e9")
+  secondaryColor String  @default("#075985")
+  brandVoice    String?
+  disclaimer    String?
+
+  // Limits
+  analysisLimit    Int @default(200)
+  analysisUsed     Int @default(0)
+  excessCostPerAnalysis Float @default(3.50)
+  commissionRate   Float @default(0.03) // 3%
+
+  // Channels
+  linkEnabled   Boolean @default(true)
+  qrEnabled     Boolean @default(true)
+  widgetEnabled Boolean @default(false)
+  tabletEnabled Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users          User[]
+  products       Product[]
+  analyses       Analysis[]
+  tenantConfig   TenantConfig?
+  subscriptions  Subscription[]
+  usageEvents    UsageEvent[]
+
+  @@map("tenants")
+}
+
+model TenantConfig {
+  id       String @id @default(cuid())
+  tenantId String @unique
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Analysis config
+  maxQuestions       Int     @default(7)
+  restrictedConditions String? // JSON array of conditions to exclude
+  customPromptSuffix String? // Extra instructions for Claude
+
+  // Delivery config
+  emailEnabled     Boolean @default(true)
+  whatsappEnabled  Boolean @default(false)
+  whatsappNumber   String?
+  pdfRetentionDays Int     @default(90)
+
+  // Integration config
+  hubspotApiKey    String?
+  salesforceApiKey String?
+  shopifyDomain    String?
+  webhookUrl       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("tenant_configs")
+}
+
+// ============================================
+// USERS (Admin Skinner + Usuarios B2B)
+// ============================================
+
+model User {
+  id       String @id @default(cuid())
+  email    String @unique
+  name     String
+  password String // hashed
+  role     String @default("b2b_viewer") // skinner_admin, b2b_admin, b2b_analyst, b2b_viewer
+
+  tenantId String?
+  tenant   Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+// ============================================
+// PRODUCTS (Catalogo del Tenant)
+// ============================================
+
+model Product {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  sku          String
+  name         String
+  description  String?
+  imageUrl     String?
+  price        Float?
+  ecommerceLink String?
+
+  // Ingredients & classification
+  activeIngredients String? // JSON array
+  concernTags       String  // JSON array: ["acne", "hyperpigmentation"]
+  skinTypeTags      String  // JSON array: ["oily", "combination"]
+  objectiveTags     String  // JSON array: ["anti-aging", "radiance"]
+  severityLevel     Int     @default(1) // 1=mild, 2=moderate, 3=severe
+  stepRoutine       String? // cleanser, toner, serum, moisturizer, SPF, treatment
+  useTime           String  @default("both") // am, pm, both
+  contraindications String? // JSON array
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  recommendations Recommendation[]
+
+  @@unique([tenantId, sku])
+  @@map("products")
+}
+
+// ============================================
+// ANALYSES (Registro de cada analisis)
+// ============================================
+
+model Analysis {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Client info (optional, anonymous by default)
+  clientEmail String?
+  clientName  String?
+  clientAge   String? // age range
+
+  // Questionnaire answers
+  questionnaireData String // JSON
+
+  // Photo (not stored by default for LGPD)
+  photoProcessed Boolean @default(true) // true = photo was processed and discarded
+
+  // Analysis results
+  status    String @default("pending") // pending, processing, completed, failed
+  skinType  String? // oily, dry, combination, normal, sensitive
+  conditions String? // JSON array of detected conditions
+  severityScores String? // JSON: {"acne": 2, "aging": 1}
+  barrierStatus  String? // healthy, compromised, needs_attention
+  fitzpatrick    String? // I-VI
+  primaryObjective String?
+
+  // Raw Claude response (for debugging)
+  rawResponse String?
+
+  // Timing
+  latencyMs  Int?
+  startedAt  DateTime?
+  completedAt DateTime?
+  createdAt  DateTime @default(now())
+
+  results         AnalysisResult?
+  recommendations Recommendation[]
+  report          Report?
+
+  @@map("analyses")
+}
+
+model AnalysisResult {
+  id         String   @id @default(cuid())
+  analysisId String   @unique
+  analysis   Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  // Structured output from SAE
+  summary          String // Main diagnosis text
+  actionPlan       String // JSON: phases with recommendations
+  timelineExpected String? // JSON: expectations at 4/8/12 weeks
+  alertSigns       String? // JSON: when to see a dermatologist
+
+  createdAt DateTime @default(now())
+
+  @@map("analysis_results")
+}
+
+// ============================================
+// RECOMMENDATIONS
+// ============================================
+
+model Recommendation {
+  id         String   @id @default(cuid())
+  analysisId String
+  analysis   Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  rank           Int // Order of recommendation
+  matchScore     Float // 0-1 adherence score
+  reason         String // Why this product was recommended
+  howToUse       String? // Usage instructions
+
+  // Tracking
+  trackingRef    String @unique @default(cuid()) // skr_ref parameter
+  clickedAt      DateTime?
+
+  createdAt DateTime @default(now())
+
+  conversions Conversion[]
+
+  @@map("recommendations")
+}
+
+// ============================================
+// REPORTS (PDF)
+// ============================================
+
+model Report {
+  id         String   @id @default(cuid())
+  analysisId String   @unique
+  analysis   Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  pdfUrl    String?
+  channel   String   @default("download") // download, email, whatsapp
+  sentAt    DateTime?
+  sentTo    String? // email or phone
+
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@map("reports")
+}
+
+// ============================================
+// BILLING
+// ============================================
+
+model Subscription {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  stripeSubscriptionId String?  @unique
+  stripeCustomerId     String?
+  plan                 String   @default("starter")
+  status               String   @default("active") // active, past_due, canceled
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("subscriptions")
+}
+
+model UsageEvent {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  type      String // analysis, excess_analysis, commission
+  quantity  Int      @default(1)
+  unitPrice Float?
+  total     Float?
+  metadata  String? // JSON
+
+  createdAt DateTime @default(now())
+
+  @@map("usage_events")
+}
+
+// ============================================
+// CONVERSIONS (Tracking de comisiones)
+// ============================================
+
+model Conversion {
+  id               String         @id @default(cuid())
+  recommendationId String
+  recommendation   Recommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+
+  type      String // click, purchase
+  saleValue Float?
+  commission Float?
+
+  createdAt DateTime @default(now())
+
+  @@map("conversions")
+}
+
+// ============================================
+// DERMATOLOGICAL KNOWLEDGE BASE
+// ============================================
+
+model SkinCondition {
+  id          String @id @default(cuid())
+  name        String @unique // acne, hyperpigmentation, aging, etc.
+  displayName String
+  description String
+  category    String // inflammatory, pigmentation, aging, barrier, sensitivity
+
+  // Treatment info
+  commonIngredients String? // JSON array of effective ingredients
+  avoidIngredients  String? // JSON array of ingredients to avoid
+  baseRoutine       String? // JSON: default routine recommendation
+  alertSigns        String? // JSON: when to see a doctor
+
+  severity1Desc String? // Mild description
+  severity2Desc String? // Moderate description
+  severity3Desc String? // Severe description
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("skin_conditions")
+}
+
+model Ingredient {
+  id          String @id @default(cuid())
+  name        String @unique
+  displayName String
+  description String?
+  category    String? // retinoid, aha, bha, peptide, antioxidant, etc.
+
+  // Effectiveness
+  treatsConditions  String? // JSON array of condition names
+  skinTypes         String? // JSON array of compatible skin types
+  contraindications String? // JSON array
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("ingredients")
+}
