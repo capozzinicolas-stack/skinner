@@ -289,7 +289,7 @@ export function SkinReport({ data }: { data: ReportData }) {
       {/* Cover page */}
       <Page size="A4" style={s.coverPage}>
         <Text style={s.coverTitle}>Analise de Pele</Text>
-        <Text style={s.coverSubtitle}>Skinners</Text>
+        <Text style={s.coverSubtitle}>Skinner — Skin Tech</Text>
         <View style={s.coverLine} />
         {data.clientName && <Text style={s.coverInfo}>{data.clientName}</Text>}
         <Text style={s.coverInfo}>{data.date}</Text>
@@ -341,7 +341,7 @@ export function SkinReport({ data }: { data: ReportData }) {
         ))}
 
         <View style={s.footer}>
-          <Text style={s.footerText}>Skinners — Skin Intelligence</Text>
+          <Text style={s.footerText}>Skinner — Skin Tech</Text>
           <Text style={s.footerText}>Confidencial</Text>
         </View>
       </Page>
@@ -389,7 +389,7 @@ export function SkinReport({ data }: { data: ReportData }) {
         )}
 
         <View style={s.footer}>
-          <Text style={s.footerText}>Skinners — Skin Intelligence</Text>
+          <Text style={s.footerText}>Skinner — Skin Tech</Text>
           <Text style={s.footerText}>Confidencial</Text>
         </View>
       </Page>
@@ -430,7 +430,7 @@ export function SkinReport({ data }: { data: ReportData }) {
           )}
 
           <View style={s.footer}>
-            <Text style={s.footerText}>Skinners — Skin Intelligence</Text>
+            <Text style={s.footerText}>Skinner — Skin Tech</Text>
             <Text style={s.footerText}>Confidencial</Text>
           </View>
         </Page>

@@ -13,7 +13,7 @@ export default function HomePage() {
           priority
         />
         <p className="text-pierre text-sm tracking-skinners uppercase font-light">
-          Skin Intelligence Platform
+          Skin Tech
         </p>
         <p className="text-pierre max-w-md mx-auto text-sm leading-relaxed font-light">
           Inteligencia dermatologica com IA para analise facial

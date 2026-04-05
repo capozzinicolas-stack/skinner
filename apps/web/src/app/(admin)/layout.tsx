@@ -13,7 +13,7 @@ export default function AdminLayout({
 }) {
   return (
     <div className="flex min-h-screen bg-blanc-casse">
-      <Sidebar items={adminNav} title="Skinners" subtitle="Admin" />
+      <Sidebar items={adminNav} title="Skinner" subtitle="Admin" />
       <main className="flex-1 overflow-auto">{children}</main>
     </div>
   );

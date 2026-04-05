@@ -55,9 +55,9 @@ function LoginForm() {
             height={48}
             className="mx-auto mb-4"
           />
-          <h1 className="font-serif text-xl text-carbone">Skinners</h1>
+          <h1 className="font-serif text-xl text-carbone">Skinner</h1>
           <p className="text-xs text-pierre tracking-skinners uppercase mt-1 font-light">
-            Skin Intelligence
+            Skin Tech
           </p>
         </div>
 

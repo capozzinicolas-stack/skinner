@@ -18,7 +18,7 @@ export default function AdminDashboard() {
     <div className="p-8">
       <h1 className="font-serif text-2xl text-carbone">Dashboard</h1>
       <p className="text-pierre text-sm font-light mt-1">
-        Visao geral da plataforma Skinners.
+        Visao geral da plataforma Skinner.
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8">

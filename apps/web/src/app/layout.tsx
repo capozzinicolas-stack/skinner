@@ -17,7 +17,7 @@ const lora = Lora({
 });
 
 export const metadata: Metadata = {
-  title: "Skinners — Skin Intelligence",
+  title: "Skinner — Skin Tech",
   description:
     "Plataforma de inteligencia dermatologica com IA para analise facial e recomendacao personalizada de tratamentos.",
 };

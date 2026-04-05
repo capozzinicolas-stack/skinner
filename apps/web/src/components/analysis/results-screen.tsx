@@ -266,7 +266,7 @@ export function ResultsScreen({
         <p className="text-xs text-pierre text-center font-light italic">{disclaimer}</p>
       )}
       <p className="text-[10px] text-sable text-center mt-3 uppercase tracking-skinners font-light">
-        Powered by Skinners
+        Powered by Skinner
       </p>
     </div>
   );

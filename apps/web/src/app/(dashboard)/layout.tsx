@@ -16,7 +16,7 @@ export default function DashboardLayout({
 }) {
   return (
     <div className="flex min-h-screen bg-blanc-casse">
-      <Sidebar items={dashboardNav} title="Skinners" subtitle="Portal B2B" />
+      <Sidebar items={dashboardNav} title="Skinner" subtitle="Portal B2B" />
       <main className="flex-1 overflow-auto">{children}</main>
     </div>
   );

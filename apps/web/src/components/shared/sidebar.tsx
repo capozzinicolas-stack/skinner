@@ -27,7 +27,7 @@ export function Sidebar({
       <div className="p-6 border-b border-sable/20">
         <Image
           src="/brand/logo-primary.png"
-          alt="Skinners"
+          alt="Skinner"
           width={140}
           height={35}
           className="mb-1"

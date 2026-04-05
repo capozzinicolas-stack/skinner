@@ -33,7 +33,7 @@ export default function AnalysisPage({
     },
   });
 
-  const tenantName = tenant.data?.name ?? "Skinners";
+  const tenantName = tenant.data?.name ?? "Skinner";
 
   function handleQuestionnaireDone(data: QuestionnaireAnswers) {
     setAnswers(data);
@@ -75,7 +75,7 @@ export default function AnalysisPage({
         {tenant.data.logoUrl ? (
           <img src={tenant.data.logoUrl} alt={tenantName} className="h-8 object-contain" />
         ) : (
-          <Image src="/brand/logo-primary.png" alt="Skinners" width={140} height={35} />
+          <Image src="/brand/logo-primary.png" alt="Skinner" width={180} height={45} />
         )}
       </header>
 
