@@ -32,8 +32,18 @@ export default withAuth(
           pathname.startsWith("/login") ||
           pathname.startsWith("/analise") ||
           pathname.startsWith("/api/auth") ||
+          pathname.startsWith("/api/trpc/health") ||
+          pathname.startsWith("/api/leads") ||
+          pathname.startsWith("/api/pixel") ||
           pathname.startsWith("/demo") ||
-          pathname.startsWith("/api/trpc/health")
+          pathname.startsWith("/como-funciona") ||
+          pathname.startsWith("/planos") ||
+          pathname.startsWith("/laboratorios") ||
+          pathname.startsWith("/clinicas") ||
+          pathname.startsWith("/farmacias") ||
+          pathname.startsWith("/contato") ||
+          pathname.startsWith("/privacidade") ||
+          pathname.startsWith("/termos")
         ) {
           return true;
         }
@@ -45,6 +55,6 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|api/auth).*)",
+    "/((?!_next/static|_next/image|favicon.ico|brand/|api/auth).*)",
   ],
 };
