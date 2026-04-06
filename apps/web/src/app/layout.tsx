@@ -17,9 +17,20 @@ const lora = Lora({
 });
 
 export const metadata: Metadata = {
-  title: "Skinner — Skin Tech",
+  title: {
+    default: "Skinner — Skin Tech",
+    template: "%s | Skinner",
+  },
   description:
     "Plataforma de inteligencia dermatologica com IA para analise facial e recomendacao personalizada de tratamentos.",
+  openGraph: {
+    type: "website",
+    locale: "pt_BR",
+    siteName: "Skinner",
+    title: "Skinner — Skin Tech",
+    description:
+      "Inteligencia dermatologica com IA. Analise facial instantanea e recomendacao personalizada para clinicas, laboratorios e farmacias.",
+  },
 };
 
 export default function RootLayout({

@@ -343,3 +343,21 @@ model Ingredient {
 
   @@map("ingredients")
 }
+
+// ============================================
+// LEADS (Marketing site)
+// ============================================
+
+model Lead {
+  id       String @id @default(cuid())
+  name     String
+  email    String
+  company  String?
+  segment  String? // laboratorio, clinica, farmacia, spa, outro
+  message  String?
+  source   String @default("website") // website, demo, landing
+
+  createdAt DateTime @default(now())
+
+  @@map("leads")
+}
