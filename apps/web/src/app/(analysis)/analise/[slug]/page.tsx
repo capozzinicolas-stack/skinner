@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { trpc } from "@/lib/trpc/client";
 import { Questionnaire, type QuestionnaireAnswers } from "@/components/analysis/questionnaire";
 import { PhotoCapture } from "@/components/analysis/photo-capture";
@@ -75,7 +74,7 @@ export default function AnalysisPage({
         {tenant.data.logoUrl ? (
           <img src={tenant.data.logoUrl} alt={tenantName} className="h-8 object-contain" />
         ) : (
-          <Image src="/brand/logo-primary.png" alt="Skinner" width={180} height={45} />
+          <img src="/brand/logo-primary.png" alt="Skinner" className="h-10 object-contain" />
         )}
       </header>
 

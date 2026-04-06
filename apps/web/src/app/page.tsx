@@ -1,6 +1,4 @@
-import Image from "next/image";
 import Link from "next/link";
-import { PLANS } from "@/lib/billing/plans";
 
 const steps = [
   { number: "01", title: "Questionario", desc: "7 perguntas rapidas sobre seu tipo de pele, preocupacoes e objetivos." },
@@ -21,7 +19,7 @@ export default function HomePage() {
       {/* Hero */}
       <section className="py-24 px-8">
         <div className="max-w-3xl mx-auto text-center">
-          <Image src="/brand/logo-primary.png" alt="Skinner" width={240} height={60} className="mx-auto mb-8" priority />
+          <img src="/brand/logo-primary.png" alt="Skinner" className="h-24 mx-auto mb-8 object-contain" />
           <h1 className="font-serif text-4xl md:text-5xl text-carbone italic leading-tight">
             A pele e dados.<br />Nos lemos.
           </h1>

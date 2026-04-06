@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 
 const navLinks = [
@@ -18,7 +17,7 @@ export default function MarketingLayout({
       {/* Nav */}
       <header className="py-5 px-8 flex items-center justify-between border-b border-sable/20">
         <Link href="/">
-          <Image src="/brand/logo-primary.png" alt="Skinner" width={140} height={35} />
+          <img src="/brand/logo-primary.png" alt="Skinner" className="h-10 object-contain" />
         </Link>
         <nav className="hidden md:flex items-center gap-8">
           {navLinks.map((link) => (
@@ -45,7 +44,7 @@ export default function MarketingLayout({
       <footer className="border-t border-sable/20 py-12 px-8">
         <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
-            <Image src="/brand/logo-primary.png" alt="Skinner" width={120} height={30} />
+            <img src="/brand/logo-primary.png" alt="Skinner" className="h-8 object-contain" />
             <p className="text-xs text-pierre font-light mt-3 leading-relaxed">
               Inteligencia dermatologica com IA para analise facial e recomendacao personalizada.
             </p>

@@ -3,8 +3,6 @@
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, Suspense } from "react";
-import Image from "next/image";
-
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -48,13 +46,7 @@ function LoginForm() {
     <main className="flex min-h-screen items-center justify-center bg-blanc-casse">
       <div className="w-full max-w-sm space-y-8 p-10 bg-white border border-sable/30">
         <div className="text-center">
-          <Image
-            src="/brand/logomark.png"
-            alt="Skinners"
-            width={48}
-            height={48}
-            className="mx-auto mb-4"
-          />
+          <img src="/brand/logo-primary.png" alt="Skinner" className="h-12 mx-auto mb-4 object-contain" />
           <h1 className="font-serif text-xl text-carbone">Skinner</h1>
           <p className="text-xs text-pierre tracking-skinners uppercase mt-1 font-light">
             Skin Tech

@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 
@@ -25,13 +24,7 @@ export function Sidebar({
   return (
     <aside className="w-64 bg-white border-r border-sable/20 flex flex-col h-screen sticky top-0">
       <div className="p-6 border-b border-sable/20">
-        <Image
-          src="/brand/logo-primary.png"
-          alt="Skinner"
-          width={140}
-          height={35}
-          className="mb-1"
-        />
+        <img src="/brand/logo-primary.png" alt="Skinner" className="h-10 object-contain mb-1" />
         {subtitle && (
           <p className="text-[10px] text-pierre tracking-skinners uppercase font-light mt-2">
             {subtitle}
