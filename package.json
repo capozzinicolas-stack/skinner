@@ -2,7 +2,7 @@
   "name": "skinner",
   "private": true,
   "scripts": {
-    "postinstall": "prisma generate --schema=packages/db/prisma/schema.prisma",
+    "postinstall": "prisma generate --schema=packages/db/prisma/schema.prisma || true",
     "dev": "turbo dev",
     "build": "turbo build",
     "lint": "turbo lint",
