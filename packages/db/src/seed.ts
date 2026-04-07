@@ -375,6 +375,10 @@ async function main() {
   }
   console.log(`✅ Ingredients: ${ingredients.length} created`);
 
+  // Run advanced dermatology seed
+  const { seedDermatology } = await import("./seed-dermatology");
+  await seedDermatology(prisma);
+
   console.log("\n🎉 Seed complete!");
   console.log("   Admin login: admin@skinner.com.br / admin123");
   console.log("   B2B login:   clinica@demo.com / demo123");
