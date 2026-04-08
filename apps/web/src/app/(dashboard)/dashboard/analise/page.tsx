@@ -1333,9 +1333,11 @@ export default function AnaliseConfigPage() {
           </div>
         </div>
 
-        {/* ── RIGHT COLUMN: live preview (40%, sticky) ─────────────── */}
-        <div className="flex-[2] flex-shrink-0 sticky top-8 pt-8 hidden lg:block">
-          <LivePreview form={form} />
+        {/* ── RIGHT COLUMN: live preview (fixed position) ─────────────── */}
+        <div className="hidden lg:block" style={{ width: "320px", flexShrink: 0 }}>
+          <div className="fixed" style={{ top: "2rem", width: "320px" }}>
+            <LivePreview form={form} />
+          </div>
         </div>
       </div>
     </div>
