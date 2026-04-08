@@ -3,18 +3,28 @@
 import { useState } from "react";
 import type { ZoneAnnotation, FaceZone, ZoneStatus } from "@/lib/sae/types";
 
-// Fixed percentage positions per facial zone.
-// Note: left/right are from the viewer's perspective, so left_cheek appears on the right
-// side of the image (since the camera captures a mirrored view of the subject).
+// Positions calibrated for a centered selfie (face occupies ~50-60% of frame center).
+// Percentages are relative to the full image. The face center is roughly at 50% horizontal
+// and 35% vertical (people tend to appear upper-center in selfies).
 const ZONE_POSITIONS: Record<FaceZone, { top: string; left: string }> = {
-  forehead:    { top: "15%", left: "50%" },
-  under_eyes:  { top: "38%", left: "50%" },
-  nose:        { top: "45%", left: "50%" },
+  forehead:    { top: "22%", left: "50%" },
+  under_eyes:  { top: "36%", left: "50%" },
+  nose:        { top: "42%", left: "50%" },
   // Mirror-corrected: subject's left cheek appears on viewer's right
-  left_cheek:  { top: "50%", left: "75%" },
-  right_cheek: { top: "50%", left: "25%" },
-  chin:        { top: "78%", left: "50%" },
-  jawline:     { top: "70%", left: "30%" },
+  left_cheek:  { top: "42%", left: "62%" },
+  right_cheek: { top: "42%", left: "38%" },
+  chin:        { top: "56%", left: "50%" },
+  jawline:     { top: "50%", left: "36%" },
+};
+
+const ZONE_LABELS: Record<FaceZone, string> = {
+  forehead: "Testa",
+  under_eyes: "Area periorbital",
+  nose: "Nariz",
+  left_cheek: "Bochecha esquerda",
+  right_cheek: "Bochecha direita",
+  chin: "Queixo",
+  jawline: "Mandibula",
 };
 
 const STATUS_COLORS: Record<ZoneStatus, string> = {
@@ -47,7 +57,7 @@ export function AnnotatedPhoto({
   return (
     <div className="w-full">
       {/* Photo container */}
-      <div className="relative w-full" style={{ aspectRatio: "3/4" }}>
+      <div className="relative w-full overflow-hidden" style={{ aspectRatio: "3/4" }}>
         {/* Base photo */}
         <img
           src={photoBase64}
@@ -56,10 +66,10 @@ export function AnnotatedPhoto({
           style={{ display: "block" }}
         />
 
-        {/* Subtle dark overlay to improve marker visibility */}
+        {/* Subtle dark overlay */}
         <div
           className="absolute inset-0"
-          style={{ background: "rgba(28, 25, 23, 0.18)" }}
+          style={{ background: "rgba(28, 25, 23, 0.15)" }}
         />
 
         {/* Zone markers */}
@@ -72,31 +82,49 @@ export function AnnotatedPhoto({
           return (
             <button
               key={annotation.zone}
-              onClick={() => handleMarkerClick(annotation.zone)}
-              aria-label={`Zona ${annotation.zone}: ${annotation.title}`}
+              onClick={(e) => { e.stopPropagation(); handleMarkerClick(annotation.zone); }}
+              aria-label={`${ZONE_LABELS[annotation.zone]}: ${annotation.title}`}
+              className="absolute"
               style={{
-                position: "absolute",
                 top: pos.top,
                 left: pos.left,
                 transform: "translate(-50%, -50%)",
-                width: "22px",
-                height: "22px",
-                borderRadius: "50%",
-                backgroundColor: color,
-                border: isActive ? "2px solid #F7F3EE" : "2px solid rgba(247,243,238,0.6)",
-                boxShadow: isActive
-                  ? `0 0 0 3px ${color}55, 0 2px 8px rgba(0,0,0,0.35)`
-                  : "0 1px 4px rgba(0,0,0,0.30)",
-                cursor: "pointer",
-                transition: "transform 0.15s ease, box-shadow 0.15s ease",
                 zIndex: isActive ? 20 : 10,
                 outline: "none",
               }}
-            />
+            >
+              {/* Pulse ring for active marker */}
+              {isActive && (
+                <span
+                  className="absolute inset-0 animate-ping"
+                  style={{
+                    borderRadius: "50%",
+                    backgroundColor: `${color}40`,
+                    width: "28px",
+                    height: "28px",
+                    margin: "-3px",
+                  }}
+                />
+              )}
+              <span
+                style={{
+                  display: "block",
+                  width: "18px",
+                  height: "18px",
+                  borderRadius: "50%",
+                  backgroundColor: color,
+                  border: `2px solid ${isActive ? "#F7F3EE" : "rgba(247,243,238,0.7)"}`,
+                  boxShadow: isActive
+                    ? `0 0 0 3px ${color}44, 0 2px 10px rgba(0,0,0,0.4)`
+                    : "0 1px 6px rgba(0,0,0,0.35)",
+                  transition: "all 0.15s ease",
+                }}
+              />
+            </button>
           );
         })}
 
-        {/* Dismiss overlay when clicking outside markers */}
+        {/* Dismiss overlay */}
         {activeZone && (
           <div
             className="absolute inset-0"
@@ -107,75 +135,79 @@ export function AnnotatedPhoto({
         )}
       </div>
 
-      {/* Tooltip panel — rendered below the photo, not absolutely positioned */}
-      <div
-        style={{
-          minHeight: "90px",
-          transition: "opacity 0.2s ease",
-          opacity: activeAnnotation ? 1 : 0,
-          pointerEvents: activeAnnotation ? "auto" : "none",
-        }}
-      >
-        {activeAnnotation && (
-          <div
-            className="p-4 border border-sable/30"
-            style={{ backgroundColor: "#1C1917" }}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span
-                    style={{
-                      display: "inline-block",
-                      width: "8px",
-                      height: "8px",
-                      borderRadius: "50%",
-                      backgroundColor: STATUS_COLORS[activeAnnotation.status],
-                      flexShrink: 0,
-                    }}
-                  />
-                  <span
-                    className="text-[10px] uppercase tracking-wider font-light"
-                    style={{ color: STATUS_COLORS[activeAnnotation.status] }}
-                  >
-                    {STATUS_LABELS[activeAnnotation.status]}
-                  </span>
-                </div>
-                <p className="text-sm font-light text-blanc-casse leading-snug">
-                  {activeAnnotation.title}
-                </p>
-                <p className="text-xs font-light mt-1 leading-relaxed" style={{ color: "#C8BAA9" }}>
-                  {activeAnnotation.observation}
-                </p>
-                {activeAnnotation.related_conditions.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {activeAnnotation.related_conditions.map((cond) => (
-                      <span
-                        key={cond}
-                        className="text-[10px] uppercase tracking-wider font-light px-2 py-0.5 border border-sable/20"
-                        style={{ color: "#7C7269" }}
-                      >
-                        {cond}
-                      </span>
-                    ))}
-                  </div>
-                )}
+      {/* Detail panel below photo */}
+      {activeAnnotation && (
+        <div
+          className="p-5 border border-sable/30 mt-px"
+          style={{ backgroundColor: "#1C1917" }}
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              {/* Zone name + status */}
+              <div className="flex items-center gap-2 mb-2">
+                <span
+                  style={{
+                    display: "inline-block",
+                    width: "8px",
+                    height: "8px",
+                    borderRadius: "50%",
+                    backgroundColor: STATUS_COLORS[activeAnnotation.status],
+                  }}
+                />
+                <span className="text-[10px] uppercase tracking-wider font-light" style={{ color: "#7C7269" }}>
+                  {ZONE_LABELS[activeAnnotation.zone]}
+                </span>
+                <span className="text-[10px]" style={{ color: "#7C7269" }}>·</span>
+                <span
+                  className="text-[10px] uppercase tracking-wider font-light"
+                  style={{ color: STATUS_COLORS[activeAnnotation.status] }}
+                >
+                  {STATUS_LABELS[activeAnnotation.status]}
+                </span>
               </div>
-              <button
-                onClick={() => setActiveZone(null)}
-                className="flex-shrink-0 text-pierre hover:text-blanc-casse transition-colors"
-                aria-label="Fechar"
-                style={{ lineHeight: 1, paddingTop: "2px" }}
-              >
-                <span className="text-xs font-light">×</span>
-              </button>
+              {/* Title */}
+              <p className="text-sm text-blanc-casse leading-snug">
+                {activeAnnotation.title}
+              </p>
+              {/* Detailed observation */}
+              <p className="text-xs font-light mt-2 leading-relaxed" style={{ color: "#C8BAA9" }}>
+                {activeAnnotation.observation}
+              </p>
+              {/* Related conditions */}
+              {activeAnnotation.related_conditions.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-3">
+                  {activeAnnotation.related_conditions.map((cond) => (
+                    <span
+                      key={cond}
+                      className="text-[10px] uppercase tracking-wider font-light px-2 py-0.5 border border-sable/20"
+                      style={{ color: "#7C7269" }}
+                    >
+                      {cond}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
+            <button
+              onClick={() => setActiveZone(null)}
+              className="flex-shrink-0 text-pierre hover:text-blanc-casse transition-colors"
+              aria-label="Fechar"
+            >
+              <span className="text-sm font-light">×</span>
+            </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Instruction text when no marker selected */}
+      {!activeAnnotation && (
+        <p className="text-xs text-pierre font-light mt-3 text-center">
+          Toque nos marcadores para ver detalhes de cada zona
+        </p>
+      )}
 
       {/* Legend */}
-      <div className="flex items-center gap-4 mt-3 px-1">
+      <div className="flex items-center justify-center gap-5 mt-3">
         {(["good", "attention", "concern"] as ZoneStatus[]).map((status) => (
           <div key={status} className="flex items-center gap-1.5">
             <span
@@ -185,7 +217,6 @@ export function AnnotatedPhoto({
                 height: "8px",
                 borderRadius: "50%",
                 backgroundColor: STATUS_COLORS[status],
-                flexShrink: 0,
               }}
             />
             <span className="text-[10px] text-pierre uppercase tracking-wider font-light">
