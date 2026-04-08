@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { trpc } from "@/lib/trpc/client";
+import { ImageUpload } from "@/components/shared/image-upload";
 
 // Static fallbacks — used only when tagOptions returns no data from DB
 const fallbackConcernOptions = [
@@ -140,6 +141,9 @@ function ProductForm() {
     contraindications: "",
   });
 
+  // Controls whether the manual URL text input is shown alongside the uploader
+  const [showUrlInput, setShowUrlInput] = useState(false);
+
   useEffect(() => {
     if (existingProduct.data) {
       const p = existingProduct.data;
@@ -162,6 +166,11 @@ function ProductForm() {
         useTime: (p.useTime as "am" | "pm" | "both") ?? "both",
         contraindications: safeParseArray(p.contraindications).join(", "),
       });
+      // If an existing product has an external URL (not a local upload path),
+      // default to showing the manual URL input in edit mode.
+      if (p.imageUrl && !p.imageUrl.startsWith("/uploads/")) {
+        setShowUrlInput(true);
+      }
     }
   }, [existingProduct.data]);
 
@@ -318,24 +327,45 @@ function ProductForm() {
               className={inputClass}
             />
           </div>
-          <div>
-            <label className={labelClass}>URL da Imagem</label>
-            <input
-              value={form.imageUrl}
-              onChange={(e) => setForm((f) => ({ ...f, imageUrl: e.target.value }))}
-              placeholder="https://..."
-              className={inputClass}
-            />
+
+          {/* Image — occupies 2 columns on md+ */}
+          <div className="md:col-span-2">
+            <div className="flex items-center justify-between mb-1">
+              <label className={labelClass}>Imagem do Produto</label>
+              <button
+                type="button"
+                onClick={() => setShowUrlInput((v) => !v)}
+                className="text-[10px] text-pierre uppercase tracking-wider font-light hover:text-carbone transition-colors"
+              >
+                {showUrlInput ? "Usar upload" : "Ou inserir URL"}
+              </button>
+            </div>
+
+            {showUrlInput ? (
+              <input
+                value={form.imageUrl}
+                onChange={(e) => setForm((f) => ({ ...f, imageUrl: e.target.value }))}
+                placeholder="https://..."
+                className={inputClass}
+              />
+            ) : (
+              <ImageUpload
+                value={form.imageUrl}
+                onChange={(url) => setForm((f) => ({ ...f, imageUrl: url }))}
+                disabled={isLoading}
+              />
+            )}
           </div>
-          <div>
-            <label className={labelClass}>Link e-commerce</label>
-            <input
-              value={form.ecommerceLink}
-              onChange={(e) => setForm((f) => ({ ...f, ecommerceLink: e.target.value }))}
-              placeholder="https://loja.com/produto"
-              className={inputClass}
-            />
-          </div>
+        </div>
+
+        <div>
+          <label className={labelClass}>Link e-commerce</label>
+          <input
+            value={form.ecommerceLink}
+            onChange={(e) => setForm((f) => ({ ...f, ecommerceLink: e.target.value }))}
+            placeholder="https://loja.com/produto"
+            className={inputClass}
+          />
         </div>
 
         {/* Tags — from DB or fallback */}
