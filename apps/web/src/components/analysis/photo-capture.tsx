@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 
 export function PhotoCapture({
   onCapture,
@@ -10,39 +10,61 @@ export function PhotoCapture({
   const [mode, setMode] = useState<"choose" | "camera" | "preview">("choose");
   const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [cameraReady, setCameraReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Attach stream to video element once camera mode is active and video is in DOM
+  useEffect(() => {
+    if (mode === "camera" && streamRef.current && videoRef.current) {
+      const video = videoRef.current;
+      video.srcObject = streamRef.current;
+      video.onloadedmetadata = () => {
+        video.play().then(() => setCameraReady(true)).catch(() => {
+          setError("Nao foi possivel iniciar a camera.");
+          setMode("choose");
+        });
+      };
+    }
+  }, [mode]);
+
   const startCamera = useCallback(async () => {
     setError("");
+    setCameraReady(false);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 960 } },
+        video: {
+          facingMode: "user",
+          width: { ideal: 1280 },
+          height: { ideal: 960 },
+        },
       });
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
+      // Switch to camera mode - the useEffect above will attach the stream
       setMode("camera");
     } catch {
-      setError("Nao foi possivel acessar a camera. Tente fazer upload de uma foto.");
+      setError(
+        "Nao foi possivel acessar a camera. Verifique as permissoes do navegador ou tente fazer upload de uma foto."
+      );
     }
   }, []);
 
   function stopCamera() {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
+    setCameraReady(false);
   }
 
   function takePhoto() {
-    if (!videoRef.current) return;
+    if (!videoRef.current || !cameraReady) return;
+    const video = videoRef.current;
     const canvas = document.createElement("canvas");
-    canvas.width = videoRef.current.videoWidth;
-    canvas.height = videoRef.current.videoHeight;
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    ctx.drawImage(videoRef.current, 0, 0);
+    ctx.drawImage(video, 0, 0);
     const base64 = canvas.toDataURL("image/jpeg", 0.85);
     stopCamera();
     setPreview(base64);
@@ -85,7 +107,8 @@ export function PhotoCapture({
         Fotografe seu rosto
       </h2>
       <p className="text-sm text-pierre text-center mb-6 font-light">
-        Para uma analise precisa, tire uma foto com boa iluminacao, sem maquiagem e de frente.
+        Para uma analise precisa, tire uma foto com boa iluminacao, sem
+        maquiagem e de frente.
       </p>
 
       {error && (
@@ -122,7 +145,6 @@ export function PhotoCapture({
             ref={fileInputRef}
             type="file"
             accept="image/*"
-            capture="user"
             onChange={handleFileUpload}
             className="hidden"
           />
@@ -152,22 +174,35 @@ export function PhotoCapture({
               className="w-full aspect-[3/4] object-cover"
               style={{ transform: "scaleX(-1)" }}
             />
+            {/* Face oval guide */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="w-48 h-60 border border-white/40 rounded-[50%]" />
             </div>
+            {/* Loading indicator while camera initializes */}
+            {!cameraReady && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/80">
+                <p className="text-sm text-white/60 font-light">
+                  Iniciando camera...
+                </p>
+              </div>
+            )}
           </div>
           <div className="flex gap-3">
             <button
-              onClick={() => { stopCamera(); setMode("choose"); }}
+              onClick={() => {
+                stopCamera();
+                setMode("choose");
+              }}
               className="flex-1 px-4 py-3 border border-sable/40 text-terre text-sm font-light hover:bg-ivoire"
             >
               Cancelar
             </button>
             <button
               onClick={takePhoto}
-              className="flex-1 px-4 py-3 bg-carbone text-blanc-casse text-sm font-light tracking-wide hover:bg-terre"
+              disabled={!cameraReady}
+              className="flex-1 px-4 py-3 bg-carbone text-blanc-casse text-sm font-light tracking-wide hover:bg-terre disabled:opacity-40"
             >
-              Capturar
+              {cameraReady ? "Capturar" : "Aguarde..."}
             </button>
           </div>
         </div>
@@ -176,7 +211,11 @@ export function PhotoCapture({
       {mode === "preview" && preview && (
         <div className="space-y-4">
           <div className="overflow-hidden">
-            <img src={preview} alt="Preview" className="w-full aspect-[3/4] object-cover" />
+            <img
+              src={preview}
+              alt="Preview"
+              className="w-full aspect-[3/4] object-cover"
+            />
           </div>
           <div className="flex gap-3">
             <button
