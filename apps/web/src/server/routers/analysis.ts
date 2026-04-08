@@ -2,6 +2,7 @@ import { z } from "zod/v4";
 import { TRPCError } from "@trpc/server";
 import { router, publicProcedure } from "../trpc";
 import { mockAnalyze } from "@/lib/sae/mock-analyzer";
+import { claudeAnalyze } from "@/lib/sae/claude-analyzer";
 import { matchProducts } from "@/lib/sae/matcher";
 import type { AnalysisInput, FullAnalysisResult } from "@/lib/sae/types";
 
@@ -51,8 +52,18 @@ export const analysisRouter = router({
         questionnaire: input.questionnaire,
       };
 
-      // Use mock for now, switch to Claude when API key is set
-      const analysisOutput = await mockAnalyze(analysisInput);
+      // Use Claude API if key is available, otherwise fall back to mock
+      let analysisOutput;
+      if (process.env.ANTHROPIC_API_KEY) {
+        try {
+          analysisOutput = await claudeAnalyze(analysisInput);
+        } catch (error) {
+          console.error("Claude API error, falling back to mock:", error);
+          analysisOutput = await mockAnalyze(analysisInput);
+        }
+      } else {
+        analysisOutput = await mockAnalyze(analysisInput);
+      }
 
       // 4. Match products
       const recommendations = await matchProducts(tenant.id, analysisOutput);
