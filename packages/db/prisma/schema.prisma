@@ -74,6 +74,10 @@ model TenantConfig {
   shopifyDomain    String?
   webhookUrl       String?
 
+  // Kit config
+  kitEnabled    Boolean @default(true)
+  kitDiscount   Float?  // optional percentage discount for kit purchases
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -174,6 +178,9 @@ model Analysis {
 
   // Raw Claude response (for debugging)
   rawResponse String?
+
+  // Kit link (unique slug for public kit page)
+  kitLink    String?  @unique
 
   // Timing
   latencyMs  Int?

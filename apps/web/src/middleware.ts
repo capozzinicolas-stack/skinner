@@ -31,6 +31,7 @@ export default withAuth(
           pathname === "/" ||
           pathname.startsWith("/login") ||
           pathname.startsWith("/analise") ||
+          pathname.startsWith("/kit") ||
           pathname.startsWith("/api/auth") ||
           pathname.startsWith("/api/trpc/health") ||
           pathname.startsWith("/api/leads") ||

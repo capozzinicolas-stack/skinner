@@ -54,6 +54,7 @@ export type MatchedProduct = {
 
 export type FullAnalysisResult = {
   analysisId: string;
+  kitLink: string;
   analysis: AnalysisOutput;
   recommendations: MatchedProduct[];
   latencyMs: number;

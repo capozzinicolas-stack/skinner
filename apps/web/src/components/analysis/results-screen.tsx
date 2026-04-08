@@ -208,11 +208,24 @@ export function ResultsScreen({
   const [showPlan, setShowPlan] = useState(false);
   const [email, setEmail] = useState("");
   const [emailSent, setEmailSent] = useState(false);
+  const [kitCopied, setKitCopied] = useState(false);
 
   // Split recommendations into products and services
   const extendedRecs = recommendations as MatchedProductExtended[];
   const productRecs = extendedRecs.filter((r) => !r.type || r.type === "product");
   const serviceRecs = extendedRecs.filter((r) => r.type === "service");
+
+  const kitUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/kit/${result.kitLink}`
+      : `/kit/${result.kitLink}`;
+
+  function handleCopyKit() {
+    navigator.clipboard.writeText(kitUrl).then(() => {
+      setKitCopied(true);
+      setTimeout(() => setKitCopied(false), 2500);
+    });
+  }
 
   return (
     <div className="w-full max-w-lg mx-auto px-4 pb-12">
@@ -323,6 +336,37 @@ export function ResultsScreen({
             {serviceRecs.map((rec, idx) => (
               <ServiceCard key={rec.productId} rec={rec} idx={idx} />
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Kit CTA */}
+      {result.kitLink && (
+        <div className="mb-8 p-5 bg-white border border-sable/20">
+          <p className="text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
+            Kit de Tratamento
+          </p>
+          <h4 className="font-serif text-base text-carbone mb-2">
+            Todos os seus produtos em um link
+          </h4>
+          <p className="text-xs text-pierre font-light mb-4 leading-relaxed">
+            Compartilhe seu kit personalizado ou acesse-o a qualquer momento.
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={handleCopyKit}
+              className="flex-1 px-4 py-2.5 bg-carbone text-blanc-casse text-xs font-light tracking-wide hover:bg-terre transition-colors"
+            >
+              {kitCopied ? "Link copiado" : "Compartilhar Kit"}
+            </button>
+            <a
+              href={kitUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 text-center px-4 py-2.5 border border-sable/40 text-terre text-xs font-light tracking-wide hover:bg-ivoire transition-colors"
+            >
+              Ver Kit Completo
+            </a>
           </div>
         </div>
       )}

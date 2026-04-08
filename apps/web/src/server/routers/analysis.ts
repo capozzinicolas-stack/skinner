@@ -119,13 +119,20 @@ export const analysisRouter = router({
         });
       }
 
-      // 7. Increment usage
+      // 7. Generate kit link and persist
+      const kitLink = analysis.id.slice(0, 12);
+      await ctx.db.analysis.update({
+        where: { id: analysis.id },
+        data: { kitLink },
+      });
+
+      // 8. Increment usage
       await ctx.db.tenant.update({
         where: { id: tenant.id },
         data: { analysisUsed: { increment: 1 } },
       });
 
-      // 8. Log usage event
+      // 9. Log usage event
       await ctx.db.usageEvent.create({
         data: {
           tenantId: tenant.id,
@@ -135,6 +142,7 @@ export const analysisRouter = router({
 
       return {
         analysisId: analysis.id,
+        kitLink,
         analysis: analysisOutput,
         recommendations,
         latencyMs,
