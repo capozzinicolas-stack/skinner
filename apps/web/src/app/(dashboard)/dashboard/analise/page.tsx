@@ -1335,7 +1335,7 @@ export default function AnaliseConfigPage() {
 
         {/* ── RIGHT COLUMN: live preview (fixed position) ─────────────── */}
         <div className="hidden lg:block" style={{ width: "320px", flexShrink: 0 }}>
-          <div className="fixed" style={{ top: "2rem", width: "320px" }}>
+          <div className="fixed" style={{ top: "10rem", width: "320px" }}>
             <LivePreview form={form} />
           </div>
         </div>
