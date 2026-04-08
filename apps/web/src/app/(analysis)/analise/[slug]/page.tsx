@@ -88,6 +88,13 @@ export default function AnalysisPage({
         serviceCtaText: cfg.serviceCtaText ?? null,
         maxProductRecs: cfg.maxProductRecs ?? null,
         maxServiceRecs: cfg.maxServiceRecs ?? null,
+        // Storefront Lite
+        storefrontEnabled: cfg.storefrontEnabled ?? false,
+        storefrontCtaMode: cfg.storefrontCtaMode ?? "external",
+        whatsappNumber: cfg.whatsappNumber ?? null,
+        whatsappMessage: cfg.whatsappMessage ?? null,
+        mercadoPagoEnabled: cfg.mercadoPagoEnabled ?? false,
+        mercadoPagoEmail: cfg.mercadoPagoEmail ?? null,
       }
     : undefined;
 

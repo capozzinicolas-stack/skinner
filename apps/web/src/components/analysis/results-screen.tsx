@@ -47,6 +47,9 @@ const sessionFrequencyLabels: Record<string, string> = {
   mensal: "Mensal",
 };
 
+const DEFAULT_WHATSAPP_MESSAGE =
+  "Ola, gostaria de adquirir o produto {produto} (R$ {preco}) recomendado pela analise Skinner.";
+
 // Config shape passed from B2C analysis page
 export type ResultsConfig = {
   resultsShowBarrier?: boolean;
@@ -67,6 +70,13 @@ export type ResultsConfig = {
   serviceCtaText?: string | null;
   maxProductRecs?: number | null;
   maxServiceRecs?: number | null;
+  // Storefront Lite
+  storefrontEnabled?: boolean;
+  storefrontCtaMode?: string | null;
+  whatsappNumber?: string | null;
+  whatsappMessage?: string | null;
+  mercadoPagoEnabled?: boolean;
+  mercadoPagoEmail?: string | null;
 };
 
 // Extended MatchedProduct to include optional service fields
@@ -78,19 +88,64 @@ type MatchedProductExtended = MatchedProduct & {
   durationMinutes?: number | null;
 };
 
+function buildWhatsAppUrl(
+  number: string,
+  template: string,
+  productName: string,
+  price?: number | null,
+  kitName?: string,
+  clientName?: string
+): string {
+  const priceStr = price != null ? price.toFixed(2) : "";
+  const message = template
+    .replace("{produto}", productName)
+    .replace("{preco}", priceStr)
+    .replace("{kit}", kitName ?? "")
+    .replace("{cliente}", clientName ?? "");
+  const cleaned = number.replace(/\D/g, "");
+  return `https://wa.me/${cleaned}?text=${encodeURIComponent(message)}`;
+}
+
 function ProductCard({
   rec,
   idx,
   showMatchScore,
   showPrice,
   ctaText,
+  storefrontCtaMode,
+  storefrontEnabled,
+  whatsappNumber,
+  whatsappMessage,
+  mercadoPagoEnabled,
+  mercadoPagoEmail,
 }: {
   rec: MatchedProductExtended;
   idx: number;
   showMatchScore: boolean;
   showPrice: boolean;
   ctaText: string;
+  storefrontCtaMode: string;
+  storefrontEnabled: boolean;
+  whatsappNumber?: string | null;
+  whatsappMessage?: string | null;
+  mercadoPagoEnabled: boolean;
+  mercadoPagoEmail?: string | null;
 }) {
+  const showWhatsApp =
+    storefrontEnabled &&
+    (storefrontCtaMode === "whatsapp" || storefrontCtaMode === "both") &&
+    !!whatsappNumber;
+
+  const showMercadoPago =
+    storefrontEnabled &&
+    mercadoPagoEnabled &&
+    (storefrontCtaMode === "mercadopago" || storefrontCtaMode === "both") &&
+    !!mercadoPagoEmail;
+
+  const showExternal = storefrontCtaMode === "external" && !!rec.ecommerceLink;
+
+  const template = whatsappMessage || DEFAULT_WHATSAPP_MESSAGE;
+
   return (
     <div className="p-5 bg-white border border-sable/20">
       <div className="flex gap-4">
@@ -129,16 +184,36 @@ function ProductCard({
               </span>
             </div>
           )}
-          {rec.ecommerceLink && (
-            <a
-              href={`${rec.ecommerceLink}?skr_ref=${rec.productId}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block mt-3 px-4 py-2 bg-carbone text-blanc-casse text-xs font-light tracking-wide hover:bg-terre transition-colors"
-            >
-              {ctaText}
-            </a>
-          )}
+          <div className="flex flex-wrap gap-2 mt-3">
+            {showExternal && (
+              <a
+                href={`${rec.ecommerceLink}?skr_ref=${rec.productId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block px-4 py-2 bg-carbone text-blanc-casse text-xs font-light tracking-wide hover:bg-terre transition-colors"
+              >
+                {ctaText}
+              </a>
+            )}
+            {showWhatsApp && (
+              <a
+                href={buildWhatsAppUrl(whatsappNumber!, template, rec.name, rec.price)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block px-4 py-2 bg-carbone text-blanc-casse text-xs font-light tracking-wide hover:bg-terre transition-colors"
+              >
+                Comprar via WhatsApp
+              </a>
+            )}
+            {showMercadoPago && (
+              <a
+                href={`mailto:${mercadoPagoEmail}?subject=Pagamento ${encodeURIComponent(rec.name)}`}
+                className="inline-block px-4 py-2 border border-sable/40 text-terre text-xs font-light tracking-wide hover:bg-ivoire transition-colors"
+              >
+                Pagar
+              </a>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -151,13 +226,40 @@ function ServiceCard({
   showMatchScore,
   showPrice,
   ctaText,
+  storefrontCtaMode,
+  storefrontEnabled,
+  whatsappNumber,
+  whatsappMessage,
+  mercadoPagoEnabled,
+  mercadoPagoEmail,
 }: {
   rec: MatchedProductExtended;
   idx: number;
   showMatchScore: boolean;
   showPrice: boolean;
   ctaText: string;
+  storefrontCtaMode: string;
+  storefrontEnabled: boolean;
+  whatsappNumber?: string | null;
+  whatsappMessage?: string | null;
+  mercadoPagoEnabled: boolean;
+  mercadoPagoEmail?: string | null;
 }) {
+  const showWhatsApp =
+    storefrontEnabled &&
+    (storefrontCtaMode === "whatsapp" || storefrontCtaMode === "both") &&
+    !!whatsappNumber;
+
+  const showMercadoPago =
+    storefrontEnabled &&
+    mercadoPagoEnabled &&
+    (storefrontCtaMode === "mercadopago" || storefrontCtaMode === "both") &&
+    !!mercadoPagoEmail;
+
+  const showExternal = storefrontCtaMode === "external" && !!rec.bookingLink;
+
+  const template = whatsappMessage || DEFAULT_WHATSAPP_MESSAGE;
+
   return (
     <div className="p-5 bg-white border border-sable/20">
       <div className="flex gap-4">
@@ -176,7 +278,7 @@ function ServiceCard({
               <div className="flex flex-wrap gap-2 mt-1">
                 {rec.sessionCount && (
                   <span className="text-[10px] text-pierre uppercase tracking-wider font-light">
-                    {rec.sessionCount} {rec.sessionCount === 1 ? "sessão" : "sessões"}
+                    {rec.sessionCount} {rec.sessionCount === 1 ? "sessao" : "sessoes"}
                   </span>
                 )}
                 {rec.sessionCount && (rec.sessionFrequency || rec.durationMinutes) && (
@@ -215,16 +317,36 @@ function ServiceCard({
               </span>
             </div>
           )}
-          {rec.bookingLink && (
-            <a
-              href={`${rec.bookingLink}?skr_ref=${rec.productId}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block mt-3 px-4 py-2 bg-carbone text-blanc-casse text-xs font-light tracking-wide hover:bg-terre transition-colors"
-            >
-              {ctaText}
-            </a>
-          )}
+          <div className="flex flex-wrap gap-2 mt-3">
+            {showExternal && (
+              <a
+                href={`${rec.bookingLink}?skr_ref=${rec.productId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block px-4 py-2 bg-carbone text-blanc-casse text-xs font-light tracking-wide hover:bg-terre transition-colors"
+              >
+                {ctaText}
+              </a>
+            )}
+            {showWhatsApp && (
+              <a
+                href={buildWhatsAppUrl(whatsappNumber!, template, rec.name, rec.price)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block px-4 py-2 bg-carbone text-blanc-casse text-xs font-light tracking-wide hover:bg-terre transition-colors"
+              >
+                Agendar via WhatsApp
+              </a>
+            )}
+            {showMercadoPago && (
+              <a
+                href={`mailto:${mercadoPagoEmail}?subject=Pagamento ${encodeURIComponent(rec.name)}`}
+                className="inline-block px-4 py-2 border border-sable/40 text-terre text-xs font-light tracking-wide hover:bg-ivoire transition-colors"
+              >
+                Pagar
+              </a>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -268,6 +390,14 @@ export function ResultsScreen({
   const serviceCtaText = config?.serviceCtaText || "Agendar";
   const maxProducts = config?.maxProductRecs ?? null;
   const maxServices = config?.maxServiceRecs ?? null;
+
+  // Storefront config
+  const storefrontEnabled = config?.storefrontEnabled ?? false;
+  const storefrontCtaMode = config?.storefrontCtaMode ?? "external";
+  const whatsappNumber = config?.whatsappNumber ?? null;
+  const whatsappMessage = config?.whatsappMessage ?? null;
+  const mercadoPagoEnabled = config?.mercadoPagoEnabled ?? false;
+  const mercadoPagoEmail = config?.mercadoPagoEmail ?? null;
 
   // Split recommendations into products and services
   const extendedRecs = recommendations as MatchedProductExtended[];
@@ -405,6 +535,12 @@ export function ResultsScreen({
                 showMatchScore={showMatchScore}
                 showPrice={showPrices}
                 ctaText={productCtaText}
+                storefrontCtaMode={storefrontCtaMode}
+                storefrontEnabled={storefrontEnabled}
+                whatsappNumber={whatsappNumber}
+                whatsappMessage={whatsappMessage}
+                mercadoPagoEnabled={mercadoPagoEnabled}
+                mercadoPagoEmail={mercadoPagoEmail}
               />
             ))}
           </div>
@@ -426,6 +562,12 @@ export function ResultsScreen({
                 showMatchScore={showMatchScore}
                 showPrice={showPrices}
                 ctaText={serviceCtaText}
+                storefrontCtaMode={storefrontCtaMode}
+                storefrontEnabled={storefrontEnabled}
+                whatsappNumber={whatsappNumber}
+                whatsappMessage={whatsappMessage}
+                mercadoPagoEnabled={mercadoPagoEnabled}
+                mercadoPagoEmail={mercadoPagoEmail}
               />
             ))}
           </div>

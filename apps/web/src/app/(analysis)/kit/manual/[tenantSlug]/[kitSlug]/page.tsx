@@ -19,6 +19,25 @@ const sessionFrequencyLabels: Record<string, string> = {
   mensal: "Mensal",
 };
 
+const DEFAULT_WHATSAPP_MESSAGE =
+  "Ola, gostaria de adquirir o produto {produto} (R$ {preco}) recomendado pela analise Skinner.";
+
+function buildWhatsAppUrl(
+  number: string,
+  template: string,
+  productName: string,
+  price?: number | null
+): string {
+  const priceStr = price != null ? price.toFixed(2) : "";
+  const message = template
+    .replace("{produto}", productName)
+    .replace("{preco}", priceStr)
+    .replace("{kit}", "")
+    .replace("{cliente}", "");
+  const cleaned = number.replace(/\D/g, "");
+  return `https://wa.me/${cleaned}?text=${encodeURIComponent(message)}`;
+}
+
 export default async function ManualKitPage({
   params,
 }: {
@@ -34,6 +53,16 @@ export default async function ManualKitPage({
       primaryColor: true,
       secondaryColor: true,
       disclaimer: true,
+      tenantConfig: {
+        select: {
+          storefrontEnabled: true,
+          storefrontCtaMode: true,
+          whatsappNumber: true,
+          whatsappMessage: true,
+          mercadoPagoEnabled: true,
+          mercadoPagoEmail: true,
+        },
+      },
     },
   });
 
@@ -73,6 +102,15 @@ export default async function ManualKitPage({
     kit.discount != null && productTotal > 0
       ? productTotal * (1 - kit.discount / 100)
       : null;
+
+  // Storefront config
+  const storefrontConfig = tenant.tenantConfig;
+  const storefrontEnabled = storefrontConfig?.storefrontEnabled ?? false;
+  const storefrontCtaMode = storefrontConfig?.storefrontCtaMode ?? "external";
+  const whatsappNumber = storefrontConfig?.whatsappNumber ?? null;
+  const whatsappMessage = storefrontConfig?.whatsappMessage ?? DEFAULT_WHATSAPP_MESSAGE;
+  const mercadoPagoEnabled = storefrontConfig?.mercadoPagoEnabled ?? false;
+  const mercadoPagoEmail = storefrontConfig?.mercadoPagoEmail ?? null;
 
   return (
     <main className="min-h-screen bg-blanc-casse">
@@ -116,68 +154,107 @@ export default async function ManualKitPage({
               Produtos
             </h2>
             <div className="space-y-3">
-              {productItems.map((item, idx) => (
-                <div
-                  key={item.id}
-                  className="p-5 bg-white border border-sable/20"
-                >
-                  <div className="flex gap-4">
-                    {item.product.imageUrl ? (
-                      <img
-                        src={item.product.imageUrl}
-                        alt={item.product.name}
-                        className="w-16 h-16 object-cover flex-shrink-0"
-                      />
-                    ) : (
-                      <div className="w-16 h-16 bg-ivoire flex items-center justify-center flex-shrink-0">
-                        <span className="text-xs text-pierre font-light">
-                          #{idx + 1}
-                        </span>
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h3 className="text-sm text-carbone">
-                            {item.product.name}
-                          </h3>
-                          {item.product.stepRoutine && (
-                            <span className="text-[10px] text-pierre uppercase tracking-wider font-light">
-                              {stepLabels[item.product.stepRoutine] ??
-                                item.product.stepRoutine}
+              {productItems.map((item, idx) => {
+                const showExternal =
+                  storefrontCtaMode === "external" && !!item.product.ecommerceLink;
+                const showWhatsApp =
+                  storefrontEnabled &&
+                  (storefrontCtaMode === "whatsapp" || storefrontCtaMode === "both") &&
+                  !!whatsappNumber;
+                const showMercadoPago =
+                  storefrontEnabled &&
+                  mercadoPagoEnabled &&
+                  (storefrontCtaMode === "mercadopago" || storefrontCtaMode === "both") &&
+                  !!mercadoPagoEmail;
+
+                return (
+                  <div
+                    key={item.id}
+                    className="p-5 bg-white border border-sable/20"
+                  >
+                    <div className="flex gap-4">
+                      {item.product.imageUrl ? (
+                        <img
+                          src={item.product.imageUrl}
+                          alt={item.product.name}
+                          className="w-16 h-16 object-cover flex-shrink-0"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 bg-ivoire flex items-center justify-center flex-shrink-0">
+                          <span className="text-xs text-pierre font-light">
+                            #{idx + 1}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h3 className="text-sm text-carbone">
+                              {item.product.name}
+                            </h3>
+                            {item.product.stepRoutine && (
+                              <span className="text-[10px] text-pierre uppercase tracking-wider font-light">
+                                {stepLabels[item.product.stepRoutine] ??
+                                  item.product.stepRoutine}
+                              </span>
+                            )}
+                          </div>
+                          {item.product.price != null && (
+                            <span className="text-sm text-carbone flex-shrink-0">
+                              R$ {item.product.price.toFixed(2)}
                             </span>
                           )}
                         </div>
-                        {item.product.price != null && (
-                          <span className="text-sm text-carbone flex-shrink-0">
-                            R$ {item.product.price.toFixed(2)}
-                          </span>
+                        {item.product.description && (
+                          <p className="text-xs text-pierre font-light mt-1">
+                            {item.product.description}
+                          </p>
                         )}
+                        {item.note && (
+                          <p className="text-xs text-pierre/60 font-light mt-1 italic">
+                            {item.note}
+                          </p>
+                        )}
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {showExternal && (
+                            <a
+                              href={item.product.ecommerceLink!}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-block px-4 py-2 bg-carbone text-blanc-casse text-xs font-light tracking-wide hover:bg-terre transition-colors"
+                            >
+                              Comprar
+                            </a>
+                          )}
+                          {showWhatsApp && (
+                            <a
+                              href={buildWhatsAppUrl(
+                                whatsappNumber!,
+                                whatsappMessage,
+                                item.product.name,
+                                item.product.price
+                              )}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-block px-4 py-2 bg-carbone text-blanc-casse text-xs font-light tracking-wide hover:bg-terre transition-colors"
+                            >
+                              Comprar via WhatsApp
+                            </a>
+                          )}
+                          {showMercadoPago && (
+                            <a
+                              href={`mailto:${mercadoPagoEmail}?subject=Pagamento ${encodeURIComponent(item.product.name)}`}
+                              className="inline-block px-4 py-2 border border-sable/40 text-terre text-xs font-light tracking-wide hover:bg-ivoire transition-colors"
+                            >
+                              Pagar
+                            </a>
+                          )}
+                        </div>
                       </div>
-                      {item.product.description && (
-                        <p className="text-xs text-pierre font-light mt-1">
-                          {item.product.description}
-                        </p>
-                      )}
-                      {item.note && (
-                        <p className="text-xs text-pierre/60 font-light mt-1 italic">
-                          {item.note}
-                        </p>
-                      )}
-                      {item.product.ecommerceLink && (
-                        <a
-                          href={item.product.ecommerceLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-block mt-3 px-4 py-2 bg-carbone text-blanc-casse text-xs font-light tracking-wide hover:bg-terre transition-colors"
-                        >
-                          Comprar
-                        </a>
-                      )}
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -189,97 +266,136 @@ export default async function ManualKitPage({
               Tratamentos
             </h2>
             <div className="space-y-3">
-              {serviceItems.map((item, idx) => (
-                <div
-                  key={item.id}
-                  className="p-5 bg-white border border-sable/20"
-                >
-                  <div className="flex gap-4">
-                    {item.product.imageUrl ? (
-                      <img
-                        src={item.product.imageUrl}
-                        alt={item.product.name}
-                        className="w-16 h-16 object-cover flex-shrink-0"
-                      />
-                    ) : (
-                      <div className="w-16 h-16 bg-ivoire flex items-center justify-center flex-shrink-0">
-                        <span className="text-xs text-pierre font-light">
-                          #{idx + 1}
-                        </span>
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h3 className="text-sm text-carbone">
-                            {item.product.name}
-                          </h3>
-                          <div className="flex flex-wrap gap-2 mt-1">
-                            {item.product.sessionCount != null && (
-                              <span className="text-[10px] text-pierre uppercase tracking-wider font-light">
-                                {item.product.sessionCount}{" "}
-                                {item.product.sessionCount === 1
-                                  ? "sessao"
-                                  : "sessoes"}
-                              </span>
-                            )}
-                            {item.product.sessionCount != null &&
-                              (item.product.sessionFrequency ||
-                                item.product.durationMinutes) && (
-                                <span className="text-[10px] text-pierre/40 font-light">
-                                  ·
-                                </span>
-                              )}
-                            {item.product.sessionFrequency && (
-                              <span className="text-[10px] text-pierre uppercase tracking-wider font-light">
-                                {sessionFrequencyLabels[
-                                  item.product.sessionFrequency
-                                ] ?? item.product.sessionFrequency}
-                              </span>
-                            )}
-                            {item.product.sessionFrequency &&
-                              item.product.durationMinutes && (
-                                <span className="text-[10px] text-pierre/40 font-light">
-                                  ·
-                                </span>
-                              )}
-                            {item.product.durationMinutes != null && (
-                              <span className="text-[10px] text-pierre uppercase tracking-wider font-light">
-                                {item.product.durationMinutes} min
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        {item.product.price != null && (
-                          <span className="text-sm text-carbone flex-shrink-0">
-                            R$ {item.product.price.toFixed(2)}
+              {serviceItems.map((item, idx) => {
+                const showExternal =
+                  storefrontCtaMode === "external" && !!item.product.bookingLink;
+                const showWhatsApp =
+                  storefrontEnabled &&
+                  (storefrontCtaMode === "whatsapp" || storefrontCtaMode === "both") &&
+                  !!whatsappNumber;
+                const showMercadoPago =
+                  storefrontEnabled &&
+                  mercadoPagoEnabled &&
+                  (storefrontCtaMode === "mercadopago" || storefrontCtaMode === "both") &&
+                  !!mercadoPagoEmail;
+
+                return (
+                  <div
+                    key={item.id}
+                    className="p-5 bg-white border border-sable/20"
+                  >
+                    <div className="flex gap-4">
+                      {item.product.imageUrl ? (
+                        <img
+                          src={item.product.imageUrl}
+                          alt={item.product.name}
+                          className="w-16 h-16 object-cover flex-shrink-0"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 bg-ivoire flex items-center justify-center flex-shrink-0">
+                          <span className="text-xs text-pierre font-light">
+                            #{idx + 1}
                           </span>
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h3 className="text-sm text-carbone">
+                              {item.product.name}
+                            </h3>
+                            <div className="flex flex-wrap gap-2 mt-1">
+                              {item.product.sessionCount != null && (
+                                <span className="text-[10px] text-pierre uppercase tracking-wider font-light">
+                                  {item.product.sessionCount}{" "}
+                                  {item.product.sessionCount === 1
+                                    ? "sessao"
+                                    : "sessoes"}
+                                </span>
+                              )}
+                              {item.product.sessionCount != null &&
+                                (item.product.sessionFrequency ||
+                                  item.product.durationMinutes) && (
+                                  <span className="text-[10px] text-pierre/40 font-light">
+                                    ·
+                                  </span>
+                                )}
+                              {item.product.sessionFrequency && (
+                                <span className="text-[10px] text-pierre uppercase tracking-wider font-light">
+                                  {sessionFrequencyLabels[
+                                    item.product.sessionFrequency
+                                  ] ?? item.product.sessionFrequency}
+                                </span>
+                              )}
+                              {item.product.sessionFrequency &&
+                                item.product.durationMinutes && (
+                                  <span className="text-[10px] text-pierre/40 font-light">
+                                    ·
+                                  </span>
+                                )}
+                              {item.product.durationMinutes != null && (
+                                <span className="text-[10px] text-pierre uppercase tracking-wider font-light">
+                                  {item.product.durationMinutes} min
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          {item.product.price != null && (
+                            <span className="text-sm text-carbone flex-shrink-0">
+                              R$ {item.product.price.toFixed(2)}
+                            </span>
+                          )}
+                        </div>
+                        {item.product.description && (
+                          <p className="text-xs text-pierre font-light mt-1">
+                            {item.product.description}
+                          </p>
                         )}
+                        {item.note && (
+                          <p className="text-xs text-pierre/60 font-light mt-1 italic">
+                            {item.note}
+                          </p>
+                        )}
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {showExternal && (
+                            <a
+                              href={item.product.bookingLink!}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-block px-4 py-2 bg-carbone text-blanc-casse text-xs font-light tracking-wide hover:bg-terre transition-colors"
+                            >
+                              Agendar
+                            </a>
+                          )}
+                          {showWhatsApp && (
+                            <a
+                              href={buildWhatsAppUrl(
+                                whatsappNumber!,
+                                whatsappMessage,
+                                item.product.name,
+                                item.product.price
+                              )}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-block px-4 py-2 bg-carbone text-blanc-casse text-xs font-light tracking-wide hover:bg-terre transition-colors"
+                            >
+                              Agendar via WhatsApp
+                            </a>
+                          )}
+                          {showMercadoPago && (
+                            <a
+                              href={`mailto:${mercadoPagoEmail}?subject=Pagamento ${encodeURIComponent(item.product.name)}`}
+                              className="inline-block px-4 py-2 border border-sable/40 text-terre text-xs font-light tracking-wide hover:bg-ivoire transition-colors"
+                            >
+                              Pagar
+                            </a>
+                          )}
+                        </div>
                       </div>
-                      {item.product.description && (
-                        <p className="text-xs text-pierre font-light mt-1">
-                          {item.product.description}
-                        </p>
-                      )}
-                      {item.note && (
-                        <p className="text-xs text-pierre/60 font-light mt-1 italic">
-                          {item.note}
-                        </p>
-                      )}
-                      {item.product.bookingLink && (
-                        <a
-                          href={item.product.bookingLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-block mt-3 px-4 py-2 bg-carbone text-blanc-casse text-xs font-light tracking-wide hover:bg-terre transition-colors"
-                        >
-                          Agendar
-                        </a>
-                      )}
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

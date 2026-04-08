@@ -8,6 +8,7 @@ const dashboardNav = [
   { label: "Analise", href: "/dashboard/analise", icon: "◎" },
   { label: "Marca", href: "/dashboard/marca", icon: "★" },
   { label: "Canais", href: "/dashboard/canais", icon: "☎" },
+  { label: "Integracoes", href: "/dashboard/integracao", icon: "◧" },
   { label: "Usuarios", href: "/dashboard/usuarios", icon: "☺" },
   { label: "Faturamento", href: "/dashboard/faturamento", icon: "∴" },
 ];

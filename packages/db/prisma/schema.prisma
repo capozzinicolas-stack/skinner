@@ -125,6 +125,13 @@ model TenantConfig {
   maxProductRecs              Int?
   maxServiceRecs              Int?
 
+  // Storefront Lite
+  storefrontEnabled       Boolean @default(false)
+  whatsappMessage         String?   // custom message template
+  mercadoPagoEnabled      Boolean @default(false)
+  mercadoPagoEmail        String?   // email for MercadoPago payment links
+  storefrontCtaMode       String  @default("external")  // "whatsapp" | "mercadopago" | "both" | "external"
+
   // Admin overrides (locks prevent tenant from changing)
   adminLockedFields    String?  // JSON array of field names that tenant cannot modify
   adminNotes           String?  // Internal notes about this tenant's config

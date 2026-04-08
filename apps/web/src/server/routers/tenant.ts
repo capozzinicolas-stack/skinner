@@ -72,6 +72,13 @@ export const tenantRouter = router({
               serviceCtaText: true,
               maxProductRecs: true,
               maxServiceRecs: true,
+              // Storefront Lite
+              storefrontEnabled: true,
+              storefrontCtaMode: true,
+              whatsappNumber: true,
+              whatsappMessage: true,
+              mercadoPagoEnabled: true,
+              mercadoPagoEmail: true,
             },
           },
         },
@@ -86,6 +93,29 @@ export const tenantRouter = router({
       const tenant = await ctx.db.tenant.findUnique({
         where: { slug: input.slug },
         select: { tenantConfig: true },
+      });
+      return tenant?.tenantConfig ?? null;
+    }),
+
+  // Public query: returns only storefront config for a given tenant slug.
+  // Used by the unauthenticated B2C kit/results pages to determine CTA mode.
+  getStorefrontConfig: publicProcedure
+    .input(z.object({ slug: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const tenant = await ctx.db.tenant.findUnique({
+        where: { slug: input.slug },
+        select: {
+          tenantConfig: {
+            select: {
+              storefrontEnabled: true,
+              storefrontCtaMode: true,
+              whatsappNumber: true,
+              whatsappMessage: true,
+              mercadoPagoEnabled: true,
+              mercadoPagoEmail: true,
+            },
+          },
+        },
       });
       return tenant?.tenantConfig ?? null;
     }),
@@ -176,6 +206,12 @@ export const tenantRouter = router({
         customPromptSuffix: z.string().optional(),
         kitEnabled: z.boolean().optional(),
         kitDiscount: z.number().min(0).max(100).nullable().optional(),
+        // Storefront Lite
+        storefrontEnabled: z.boolean().optional(),
+        storefrontCtaMode: z.enum(["whatsapp", "mercadopago", "both", "external"]).optional(),
+        whatsappMessage: z.string().nullable().optional(),
+        mercadoPagoEnabled: z.boolean().optional(),
+        mercadoPagoEmail: z.string().nullable().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
