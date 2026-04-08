@@ -1,61 +1,75 @@
-import { withAuth } from "next-auth/middleware";
-import { NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
+import { NextRequest, NextResponse } from "next/server";
 
-export default withAuth(
-  function middleware(req) {
-    const { pathname } = req.nextUrl;
-    const token = req.nextauth.token;
+// Routes that require NO authentication (public)
+const PUBLIC_PATHS = [
+  "/",
+  "/login",
+  "/analise",
+  "/kit",
+  "/demo",
+  "/como-funciona",
+  "/planos",
+  "/laboratorios",
+  "/clinicas",
+  "/farmacias",
+  "/contato",
+  "/privacidade",
+  "/termos",
+  "/api/auth",
+  "/api/trpc/health",
+  "/api/trpc/tenant.getBySlug",
+  "/api/trpc/tenant.getAnalysisConfig",
+  "/api/trpc/tenant.getStorefrontConfig",
+  "/api/trpc/analysis.run",
+  "/api/trpc/dermatology.listConditions",
+  "/api/trpc/dermatology.listIngredients",
+  "/api/leads",
+  "/api/pixel",
+  "/api/upload",
+  "/api/report",
+];
 
-    // Admin routes: only skinner_admin
-    if (pathname.startsWith("/admin")) {
-      if (token?.role !== "skinner_admin") {
-        return NextResponse.redirect(new URL("/login?error=unauthorized", req.url));
-      }
-    }
+function isPublicPath(pathname: string): boolean {
+  if (pathname === "/") return true;
+  return PUBLIC_PATHS.some((p) => p !== "/" && pathname.startsWith(p));
+}
 
-    // Dashboard routes: only B2B users with a tenant
-    if (pathname.startsWith("/dashboard")) {
-      if (!token?.tenantId) {
-        return NextResponse.redirect(new URL("/login?error=no-tenant", req.url));
-      }
-    }
+export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
 
+  // Allow all public paths without any auth check
+  if (isPublicPath(pathname)) {
     return NextResponse.next();
-  },
-  {
-    callbacks: {
-      authorized: ({ token, req }) => {
-        const { pathname } = req.nextUrl;
-        // Public routes: don't require auth
-        if (
-          pathname === "/" ||
-          pathname.startsWith("/login") ||
-          pathname.startsWith("/analise") ||
-          pathname.startsWith("/kit") ||
-          pathname.startsWith("/api/auth") ||
-          pathname.startsWith("/api/trpc/health") ||
-          pathname.startsWith("/api/leads") ||
-          pathname.startsWith("/api/pixel") ||
-          pathname.startsWith("/demo") ||
-          pathname.startsWith("/como-funciona") ||
-          pathname.startsWith("/planos") ||
-          pathname.startsWith("/laboratorios") ||
-          pathname.startsWith("/clinicas") ||
-          pathname.startsWith("/farmacias") ||
-          pathname.startsWith("/contato") ||
-          pathname.startsWith("/privacidade") ||
-          pathname.startsWith("/termos")
-        ) {
-          return true;
-        }
-        return !!token;
-      },
-    },
   }
-);
+
+  // For protected routes, check for valid JWT
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+
+  if (!token) {
+    const loginUrl = new URL("/login", req.url);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // Admin routes: only skinner_admin
+  if (pathname.startsWith("/admin")) {
+    if (token.role !== "skinner_admin") {
+      return NextResponse.redirect(new URL("/login?error=unauthorized", req.url));
+    }
+  }
+
+  // Dashboard routes: only B2B users with a tenant
+  if (pathname.startsWith("/dashboard")) {
+    if (!token.tenantId) {
+      return NextResponse.redirect(new URL("/login?error=no-tenant", req.url));
+    }
+  }
+
+  return NextResponse.next();
+}
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|brand/|api/auth).*)",
+    "/((?!_next/static|_next/image|favicon.ico|brand/|uploads/).*)",
   ],
 };
