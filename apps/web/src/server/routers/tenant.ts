@@ -125,6 +125,8 @@ export const tenantRouter = router({
         webhookUrl: z.string().url().optional(),
         restrictedConditions: z.string().optional(),
         customPromptSuffix: z.string().optional(),
+        kitEnabled: z.boolean().optional(),
+        kitDiscount: z.number().min(0).max(100).nullable().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {

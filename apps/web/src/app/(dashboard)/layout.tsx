@@ -1,13 +1,14 @@
 import { Sidebar } from "@/components/shared/sidebar";
 
 const dashboardNav = [
-  { label: "Dashboard", href: "/dashboard", icon: "\u2302" },
-  { label: "Catalogo", href: "/dashboard/catalogo", icon: "\u2630" },
-  { label: "Relatorios", href: "/dashboard/relatorios", icon: "\u2637" },
-  { label: "Marca", href: "/dashboard/marca", icon: "\u2605" },
-  { label: "Canais", href: "/dashboard/canais", icon: "\u260E" },
-  { label: "Usuarios", href: "/dashboard/usuarios", icon: "\u263A" },
-  { label: "Faturamento", href: "/dashboard/faturamento", icon: "\u2234" },
+  { label: "Dashboard", href: "/dashboard", icon: "⌂" },
+  { label: "Catalogo", href: "/dashboard/catalogo", icon: "☰" },
+  { label: "Relatorios", href: "/dashboard/relatorios", icon: "☷" },
+  { label: "Kits", href: "/dashboard/kits", icon: "◈" },
+  { label: "Marca", href: "/dashboard/marca", icon: "★" },
+  { label: "Canais", href: "/dashboard/canais", icon: "☎" },
+  { label: "Usuarios", href: "/dashboard/usuarios", icon: "☺" },
+  { label: "Faturamento", href: "/dashboard/faturamento", icon: "∴" },
 ];
 
 export default function DashboardLayout({

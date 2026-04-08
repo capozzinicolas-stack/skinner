@@ -48,6 +48,7 @@ model Tenant {
   tenantConfig   TenantConfig?
   subscriptions  Subscription[]
   usageEvents    UsageEvent[]
+  kits           Kit[]
 
   @@map("tenants")
 }
@@ -142,6 +143,7 @@ model Product {
   updatedAt DateTime @updatedAt
 
   recommendations Recommendation[]
+  kitItems        KitItem[]
 
   @@unique([tenantId, sku])
   @@map("products")
@@ -312,6 +314,47 @@ model Conversion {
   createdAt DateTime @default(now())
 
   @@map("conversions")
+}
+
+// ============================================
+// MANUAL KITS
+// ============================================
+
+model Kit {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  name        String    // "Kit Anti-Acne Verao"
+  slug        String    // unique per tenant for URL
+  description String?
+  isActive    Boolean   @default(true)
+  discount    Float?    // percentage discount for this kit
+
+  // Conditions that trigger this kit recommendation
+  targetConditions String?  // JSON array of condition names
+  targetSkinTypes  String?  // JSON array of skin types
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items KitItem[]
+
+  @@unique([tenantId, slug])
+  @@map("kits")
+}
+
+model KitItem {
+  id        String  @id @default(cuid())
+  kitId     String
+  kit       Kit     @relation(fields: [kitId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  rank Int     // display order
+  note String? // optional note like "Usar pela manha"
+
+  @@map("kit_items")
 }
 
 // ============================================
