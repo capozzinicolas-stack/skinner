@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import { loadModels } from "@/lib/face-detection";
 
 export function PhotoCapture({
   onCapture,
@@ -14,6 +15,13 @@ export function PhotoCapture({
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Pre-load face-api.js models in the background so they are warm by the time
+  // the user reaches the results screen. Errors are silently ignored — the
+  // annotated photo component will fall back to fixed zone positions.
+  useEffect(() => {
+    loadModels().catch(() => {});
+  }, []);
 
   // Attach stream to video element once camera mode is active and video is in DOM
   useEffect(() => {
@@ -64,6 +72,8 @@ export function PhotoCapture({
     canvas.height = video.videoHeight || 480;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+    // Draw without flipping — the live preview is mirrored via CSS (scaleX(-1))
+    // but we store the unmirrored frame so landmark coordinates are consistent.
     ctx.drawImage(video, 0, 0);
     const base64 = canvas.toDataURL("image/jpeg", 0.85);
     stopCamera();

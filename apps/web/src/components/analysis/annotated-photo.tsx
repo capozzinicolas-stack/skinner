@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { ZoneAnnotation, FaceZone, ZoneStatus } from "@/lib/sae/types";
+import { detectFaceZones, type FaceZonePositions } from "@/lib/face-detection";
 
-// Positions calibrated for a centered selfie (face occupies ~50-60% of frame center).
-// Percentages are relative to the full image. The face center is roughly at 50% horizontal
-// and 35% vertical (people tend to appear upper-center in selfies).
-const ZONE_POSITIONS: Record<FaceZone, { top: string; left: string }> = {
+// Fixed fallback positions calibrated for a centered selfie.
+// Used when face detection is unavailable or returns no result.
+// Percentages are relative to the full image.
+const ZONE_POSITIONS_FALLBACK: Record<FaceZone, { top: string; left: string }> = {
   forehead:    { top: "22%", left: "50%" },
   under_eyes:  { top: "36%", left: "50%" },
   nose:        { top: "42%", left: "50%" },
@@ -18,13 +19,13 @@ const ZONE_POSITIONS: Record<FaceZone, { top: string; left: string }> = {
 };
 
 const ZONE_LABELS: Record<FaceZone, string> = {
-  forehead: "Testa",
-  under_eyes: "Area periorbital",
-  nose: "Nariz",
-  left_cheek: "Bochecha esquerda",
+  forehead:    "Testa",
+  under_eyes:  "Area periorbital",
+  nose:        "Nariz",
+  left_cheek:  "Bochecha esquerda",
   right_cheek: "Bochecha direita",
-  chin: "Queixo",
-  jawline: "Mandibula",
+  chin:        "Queixo",
+  jawline:     "Mandibula",
 };
 
 const STATUS_COLORS: Record<ZoneStatus, string> = {
@@ -39,6 +40,18 @@ const STATUS_LABELS: Record<ZoneStatus, string> = {
   concern:   "Cuidado",
 };
 
+// Resolve a zone's position — prefers detected landmarks, falls back to fixed.
+function resolvePosition(
+  zone: FaceZone,
+  detected: FaceZonePositions | null
+): { top: string; left: string } {
+  if (detected && detected[zone]) {
+    const p = detected[zone];
+    return { top: `${p.top.toFixed(2)}%`, left: `${p.left.toFixed(2)}%` };
+  }
+  return ZONE_POSITIONS_FALLBACK[zone];
+}
+
 export function AnnotatedPhoto({
   photoBase64,
   annotations,
@@ -47,6 +60,49 @@ export function AnnotatedPhoto({
   annotations: ZoneAnnotation[];
 }) {
   const [activeZone, setActiveZone] = useState<FaceZone | null>(null);
+
+  // Face detection state
+  const [detectedPositions, setDetectedPositions] = useState<FaceZonePositions | null>(null);
+  const [detecting, setDetecting] = useState(true);
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  // Run face detection once when the component mounts and the image is ready.
+  useEffect(() => {
+    let cancelled = false;
+
+    async function runDetection(img: HTMLImageElement) {
+      setDetecting(true);
+      try {
+        const positions = await detectFaceZones(img);
+        if (!cancelled) {
+          setDetectedPositions(positions); // null means fallback will be used
+        }
+      } catch {
+        // Detection error — silently fall back to fixed positions
+      } finally {
+        if (!cancelled) setDetecting(false);
+      }
+    }
+
+    const img = imgRef.current;
+    if (!img) {
+      setDetecting(false);
+      return;
+    }
+
+    if (img.complete && img.naturalWidth > 0) {
+      runDetection(img);
+    } else {
+      const onLoad = () => runDetection(img);
+      img.addEventListener("load", onLoad);
+      return () => {
+        cancelled = true;
+        img.removeEventListener("load", onLoad);
+      };
+    }
+
+    return () => { cancelled = true; };
+  }, [photoBase64]);
 
   function handleMarkerClick(zone: FaceZone) {
     setActiveZone((prev) => (prev === zone ? null : zone));
@@ -58,12 +114,14 @@ export function AnnotatedPhoto({
     <div className="w-full">
       {/* Photo container */}
       <div className="relative w-full overflow-hidden" style={{ aspectRatio: "3/4" }}>
-        {/* Base photo */}
+        {/* Base photo — also used by the landmark detector via imgRef */}
         <img
+          ref={imgRef}
           src={photoBase64}
           alt="Foto facial para analise"
           className="w-full h-full object-cover"
           style={{ display: "block" }}
+          crossOrigin="anonymous"
         />
 
         {/* Subtle dark overlay */}
@@ -72,10 +130,27 @@ export function AnnotatedPhoto({
           style={{ background: "rgba(28, 25, 23, 0.15)" }}
         />
 
-        {/* Zone markers */}
-        {annotations.map((annotation) => {
-          const pos = ZONE_POSITIONS[annotation.zone];
-          if (!pos) return null;
+        {/* "Mapeando rosto..." loading indicator */}
+        {detecting && (
+          <div
+            className="absolute bottom-3 left-0 right-0 flex justify-center"
+            style={{ zIndex: 15 }}
+          >
+            <span
+              className="text-[10px] uppercase tracking-wider font-light px-3 py-1"
+              style={{
+                backgroundColor: "rgba(28, 25, 23, 0.65)",
+                color: "#C8BAA9",
+              }}
+            >
+              Mapeando rosto...
+            </span>
+          </div>
+        )}
+
+        {/* Zone markers — rendered once detection is done (or immediately on fallback) */}
+        {!detecting && annotations.map((annotation) => {
+          const pos = resolvePosition(annotation.zone, detectedPositions);
           const color = STATUS_COLORS[annotation.status];
           const isActive = activeZone === annotation.zone;
 
