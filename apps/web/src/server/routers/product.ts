@@ -61,6 +61,12 @@ const productInput = z.object({
   stepRoutine: z.string().optional(),
   useTime: z.enum(["am", "pm", "both"]).default("both"),
   contraindications: z.string().optional(),
+  // Service fields
+  type: z.enum(["product", "service"]).default("product"),
+  bookingLink: z.string().optional(),
+  sessionCount: z.number().int().min(1).optional(),
+  sessionFrequency: z.enum(["semanal", "quinzenal", "mensal"]).optional(),
+  durationMinutes: z.number().int().min(1).optional(),
 });
 
 export const productRouter = router({
@@ -72,6 +78,7 @@ export const productRouter = router({
           concernTag: z.string().optional(),
           skinType: z.string().optional(),
           step: z.string().optional(),
+          type: z.enum(["product", "service"]).optional(),
           activeOnly: z.boolean().default(true),
           page: z.number().int().min(1).default(1),
           pageSize: z.number().int().min(1).max(100).default(20),
@@ -102,6 +109,9 @@ export const productRouter = router({
       }
       if (filters.step) {
         where.stepRoutine = filters.step;
+      }
+      if (filters.type) {
+        where.type = filters.type;
       }
 
       const [total, items] = await Promise.all([
@@ -308,6 +318,7 @@ export const productRouter = router({
           search: z.string().optional(),
           concernTag: z.string().optional(),
           step: z.string().optional(),
+          type: z.enum(["product", "service"]).optional(),
           activeOnly: z.boolean().default(true),
         })
         .optional()
@@ -331,6 +342,9 @@ export const productRouter = router({
       }
       if (filters.step) {
         where.stepRoutine = filters.step;
+      }
+      if (filters.type) {
+        where.type = filters.type;
       }
 
       return ctx.db.product.findMany({

@@ -126,6 +126,13 @@ model Product {
   useTime           String  @default("both") // am, pm, both
   contraindications String? // JSON array
 
+  // Type & service fields
+  type              String  @default("product") // "product" | "service"
+  bookingLink       String?  // booking/scheduling link for services
+  sessionCount      Int?     // recommended number of sessions
+  sessionFrequency  String?  // "semanal", "quinzenal", "mensal"
+  durationMinutes   Int?     // duration of each session in minutes
+
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

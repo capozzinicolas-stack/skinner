@@ -16,6 +16,12 @@ const stepLabels: Record<string, string> = {
   "eye-cream": "Área dos olhos",
 };
 
+const sessionFrequencyLabels: Record<string, string> = {
+  semanal: "Semanal",
+  quinzenal: "Quinzenal",
+  mensal: "Mensal",
+};
+
 function parseTags(json: string): string[] {
   try {
     return JSON.parse(json);
@@ -70,6 +76,11 @@ type Product = {
   useTime: string;
   contraindications: string | null;
   isActive: boolean;
+  type?: string | null;
+  bookingLink?: string | null;
+  sessionCount?: number | null;
+  sessionFrequency?: string | null;
+  durationMinutes?: number | null;
 };
 
 function ConfirmDialog({
@@ -84,11 +95,11 @@ function ConfirmDialog({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-carbone/40">
       <div className="bg-blanc-casse border border-sable/30 p-8 max-w-sm w-full mx-4">
-        <h3 className="font-serif text-lg text-carbone">Desativar produto</h3>
+        <h3 className="font-serif text-lg text-carbone">Desativar item</h3>
         <p className="text-sm text-pierre font-light mt-3">
           Tem certeza que deseja desativar{" "}
           <span className="text-carbone font-normal">{productName}</span>? O
-          produto não aparecerá em novas recomendações.
+          item não aparecerá em novas recomendações.
         </p>
         <div className="flex gap-3 mt-6">
           <button
@@ -116,6 +127,7 @@ export default function CatalogPage() {
   const [search, setSearch] = useState("");
   const [concernFilter, setConcernFilter] = useState("");
   const [stepFilter, setStepFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
   const [showInactive, setShowInactive] = useState(false);
 
   // Pagination
@@ -176,7 +188,18 @@ export default function CatalogPage() {
     },
   });
 
-  const products = listQuery.data?.items ?? [];
+  const allProducts = listQuery.data?.items ?? [];
+
+  // Client-side type filter (additive on top of server filters)
+  const products = typeFilter
+    ? allProducts.filter((p) => {
+        const pType = (p as Product).type ?? "product";
+        if (typeFilter === "produto") return pType === "product" || !pType;
+        if (typeFilter === "servico") return pType === "service";
+        return true;
+      })
+    : allProducts;
+
   const pageCount = listQuery.data?.pageCount ?? 1;
   const total = listQuery.data?.total ?? 0;
 
@@ -220,6 +243,10 @@ export default function CatalogPage() {
   }
   function handleStepChange(v: string) {
     setStepFilter(v);
+    setPage(1);
+  }
+  function handleTypeChange(v: string) {
+    setTypeFilter(v);
     setPage(1);
   }
   function handleShowInactiveChange(v: boolean) {
@@ -350,6 +377,15 @@ export default function CatalogPage() {
             </option>
           ))}
         </select>
+        <select
+          value={typeFilter}
+          onChange={(e) => handleTypeChange(e.target.value)}
+          className="px-3 py-2 border border-sable/40 text-sm text-carbone font-light focus:outline-none focus:border-pierre bg-blanc-casse"
+        >
+          <option value="">Todos os tipos</option>
+          <option value="produto">Produtos</option>
+          <option value="servico">Serviços</option>
+        </select>
         <label className="flex items-center gap-2 text-sm text-pierre font-light">
           <input
             type="checkbox"
@@ -364,7 +400,7 @@ export default function CatalogPage() {
       {selectedIds.size > 0 && (
         <div className="mt-4 flex items-center gap-3 p-3 border border-sable/30 bg-ivoire">
           <span className="text-sm text-pierre font-light">
-            {selectedIds.size} {selectedIds.size === 1 ? "produto selecionado" : "produtos selecionados"}
+            {selectedIds.size} {selectedIds.size === 1 ? "item selecionado" : "itens selecionados"}
           </span>
           <button
             onClick={() => bulkDeactivate.mutate({ ids: Array.from(selectedIds) })}
@@ -397,7 +433,7 @@ export default function CatalogPage() {
 
         {!listQuery.isLoading && products.length === 0 && (
           <div className="text-center py-12 border border-sable/20 bg-blanc-casse">
-            <p className="text-sm text-pierre font-light">Nenhum produto encontrado.</p>
+            <p className="text-sm text-pierre font-light">Nenhum item encontrado.</p>
             <Link
               href="/dashboard/catalogo/novo"
               className="text-sm text-terre font-light underline mt-2 inline-block"
@@ -421,13 +457,13 @@ export default function CatalogPage() {
                     />
                   </th>
                   <th className="text-left px-4 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
-                    Produto
+                    Item
                   </th>
                   <th className="text-left px-4 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
                     SKU
                   </th>
                   <th className="text-left px-4 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
-                    Etapa
+                    Tipo / Etapa
                   </th>
                   <th className="text-left px-4 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
                     Condições
@@ -444,100 +480,128 @@ export default function CatalogPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-sable/10">
-                {products.map((product) => (
-                  <tr
-                    key={product.id}
-                    className={`hover:bg-ivoire/60 transition-colors ${
-                      !product.isActive ? "opacity-40" : ""
-                    } ${selectedIds.has(product.id) ? "bg-ivoire" : ""}`}
-                  >
-                    <td className="px-4 py-3">
-                      <input
-                        type="checkbox"
-                        checked={selectedIds.has(product.id)}
-                        onChange={() => toggleSelect(product.id)}
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        {product.imageUrl ? (
-                          <img
-                            src={product.imageUrl}
-                            alt=""
-                            className="w-10 h-10 object-cover border border-sable/20"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 border border-sable/20 bg-ivoire flex items-center justify-center text-[10px] text-pierre tracking-wider uppercase">
-                            IMG
+                {products.map((product) => {
+                  const p = product as Product;
+                  const isService = p.type === "service";
+                  return (
+                    <tr
+                      key={p.id}
+                      className={`hover:bg-ivoire/60 transition-colors ${
+                        !p.isActive ? "opacity-40" : ""
+                      } ${selectedIds.has(p.id) ? "bg-ivoire" : ""}`}
+                    >
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(p.id)}
+                          onChange={() => toggleSelect(p.id)}
+                        />
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          {p.imageUrl ? (
+                            <img
+                              src={p.imageUrl}
+                              alt=""
+                              className="w-10 h-10 object-cover border border-sable/20"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 border border-sable/20 bg-ivoire flex items-center justify-center text-[10px] text-pierre tracking-wider uppercase">
+                              {isService ? "SVC" : "IMG"}
+                            </div>
+                          )}
+                          <div>
+                            <p className="text-sm text-carbone font-light">{p.name}</p>
+                            {p.description && (
+                              <p className="text-xs text-pierre font-light truncate max-w-xs">
+                                {p.description}
+                              </p>
+                            )}
                           </div>
-                        )}
-                        <div>
-                          <p className="text-sm text-carbone font-light">{product.name}</p>
-                          {product.description && (
-                            <p className="text-xs text-pierre font-light truncate max-w-xs">
-                              {product.description}
-                            </p>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-pierre font-light font-mono">
+                        {p.sku}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-col gap-1">
+                          <span
+                            className={`text-[10px] px-2 py-0.5 w-fit uppercase tracking-wider font-light border ${
+                              isService
+                                ? "border-terre/40 text-terre bg-ivoire"
+                                : "border-sable/30 text-pierre"
+                            }`}
+                          >
+                            {isService ? "Serviço" : "Produto"}
+                          </span>
+                          {isService ? (
+                            p.sessionCount || p.sessionFrequency ? (
+                              <span className="text-xs text-pierre font-light">
+                                {p.sessionCount ? `${p.sessionCount}x` : ""}
+                                {p.sessionCount && p.sessionFrequency ? " " : ""}
+                                {p.sessionFrequency ? sessionFrequencyLabels[p.sessionFrequency] ?? p.sessionFrequency : ""}
+                                {p.durationMinutes ? ` · ${p.durationMinutes}min` : ""}
+                              </span>
+                            ) : null
+                          ) : (
+                            p.stepRoutine ? (
+                              <span className="text-xs text-pierre font-light">
+                                {stepLabels[p.stepRoutine] ?? p.stepRoutine}
+                              </span>
+                            ) : null
                           )}
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-pierre font-light font-mono">
-                      {product.sku}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-pierre font-light">
-                      {product.stepRoutine
-                        ? stepLabels[product.stepRoutine] ?? product.stepRoutine
-                        : "—"}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-1">
-                        {parseTags(product.concernTags).map((tag) => (
-                          <span
-                            key={tag}
-                            className="text-[10px] px-2 py-0.5 border border-sable/30 text-pierre uppercase tracking-wider font-light"
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap gap-1">
+                          {parseTags(p.concernTags).map((tag) => (
+                            <span
+                              key={tag}
+                              className="text-[10px] px-2 py-0.5 border border-sable/30 text-pierre uppercase tracking-wider font-light"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-xs text-pierre font-light">
+                          {p.severityLevel === 1
+                            ? "Leve"
+                            : p.severityLevel === 2
+                            ? "Moderado"
+                            : "Intenso"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-pierre font-light">
+                        {p.price != null ? `R$ ${p.price.toFixed(2)}` : "—"}
+                      </td>
+                      <td className="px-4 py-3 text-right space-x-3">
+                        <Link
+                          href={`/dashboard/catalogo/novo?edit=${p.id}`}
+                          className="text-xs text-pierre font-light underline hover:text-terre"
+                        >
+                          Editar
+                        </Link>
+                        {p.isActive ? (
+                          <button
+                            onClick={() => requestDeactivate(p)}
+                            className="text-xs text-pierre font-light underline hover:text-terre"
                           >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="text-xs text-pierre font-light">
-                        {product.severityLevel === 1
-                          ? "Leve"
-                          : product.severityLevel === 2
-                          ? "Moderado"
-                          : "Intenso"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-pierre font-light">
-                      {product.price != null ? `R$ ${product.price.toFixed(2)}` : "—"}
-                    </td>
-                    <td className="px-4 py-3 text-right space-x-3">
-                      <Link
-                        href={`/dashboard/catalogo/novo?edit=${product.id}`}
-                        className="text-xs text-pierre font-light underline hover:text-terre"
-                      >
-                        Editar
-                      </Link>
-                      {product.isActive ? (
-                        <button
-                          onClick={() => requestDeactivate(product as Product)}
-                          className="text-xs text-pierre font-light underline hover:text-terre"
-                        >
-                          Desativar
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => restoreMutation.mutate({ id: product.id })}
-                          className="text-xs text-pierre font-light underline hover:text-terre"
-                        >
-                          Reativar
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                            Desativar
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => restoreMutation.mutate({ id: p.id })}
+                            className="text-xs text-pierre font-light underline hover:text-terre"
+                          >
+                            Reativar
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -547,7 +611,7 @@ export default function CatalogPage() {
         {pageCount > 1 && (
           <div className="mt-4 flex items-center justify-between">
             <p className="text-xs text-pierre font-light">
-              Página {page} de {pageCount} — {total} produtos
+              Página {page} de {pageCount} — {total} itens
             </p>
             <div className="flex gap-2">
               <button

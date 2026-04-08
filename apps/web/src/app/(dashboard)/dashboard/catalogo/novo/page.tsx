@@ -27,6 +27,12 @@ const stepOptions = [
   { value: "eye-cream", label: "Área dos olhos" },
 ];
 
+const sessionFrequencyOptions = [
+  { value: "semanal", label: "Semanal" },
+  { value: "quinzenal", label: "Quinzenal" },
+  { value: "mensal", label: "Mensal" },
+];
+
 // Prefix used to encode category/line/brand in the description field
 const META_PREFIX_RE = /^\[Category: (.*?) \| Line: (.*?) \| Brand: (.*?)\] ?/;
 const META_PREFIX_RE_OLD = /^\[Category: (.*?) \| Line: (.*?)\] ?/;
@@ -139,6 +145,7 @@ function ProductForm() {
   });
 
   const [form, setForm] = useState({
+    type: "product" as "product" | "service",
     sku: "",
     name: "",
     category: "",
@@ -148,6 +155,10 @@ function ProductForm() {
     imageUrl: "",
     price: "",
     ecommerceLink: "",
+    bookingLink: "",
+    sessionCount: "",
+    sessionFrequency: "" as "" | "semanal" | "quinzenal" | "mensal",
+    durationMinutes: "",
     activeIngredients: "",
     concernTags: [] as string[],
     skinTypeTags: [] as string[],
@@ -166,6 +177,7 @@ function ProductForm() {
       const p = existingProduct.data;
       const { category, productLine, brand, description } = decodeDescription(p.description);
       setForm({
+        type: ((p as { type?: string }).type === "service" ? "service" : "product") as "product" | "service",
         sku: p.sku,
         name: p.name,
         category,
@@ -175,6 +187,10 @@ function ProductForm() {
         imageUrl: p.imageUrl ?? "",
         price: p.price?.toString() ?? "",
         ecommerceLink: p.ecommerceLink ?? "",
+        bookingLink: ((p as { bookingLink?: string | null }).bookingLink) ?? "",
+        sessionCount: ((p as { sessionCount?: number | null }).sessionCount)?.toString() ?? "",
+        sessionFrequency: (((p as { sessionFrequency?: string | null }).sessionFrequency) ?? "") as "" | "semanal" | "quinzenal" | "mensal",
+        durationMinutes: ((p as { durationMinutes?: number | null }).durationMinutes)?.toString() ?? "",
         activeIngredients: safeParseArray(p.activeIngredients).join(", "),
         concernTags: safeParseArray(p.concernTags),
         skinTypeTags: safeParseArray(p.skinTypeTags),
@@ -208,6 +224,8 @@ function ProductForm() {
     );
   }
 
+  const isService = form.type === "service";
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const fullDescription =
@@ -219,14 +237,19 @@ function ProductForm() {
       description: fullDescription,
       imageUrl: form.imageUrl || undefined,
       price: form.price ? parseFloat(form.price) : undefined,
-      ecommerceLink: form.ecommerceLink || undefined,
+      ecommerceLink: !isService ? (form.ecommerceLink || undefined) : undefined,
+      type: form.type,
+      bookingLink: isService ? (form.bookingLink || undefined) : undefined,
+      sessionCount: isService && form.sessionCount ? parseInt(form.sessionCount) : undefined,
+      sessionFrequency: isService && form.sessionFrequency ? form.sessionFrequency : undefined,
+      durationMinutes: isService && form.durationMinutes ? parseInt(form.durationMinutes) : undefined,
       activeIngredients: textToJsonArray(form.activeIngredients),
       concernTags: JSON.stringify(form.concernTags),
       skinTypeTags: JSON.stringify(form.skinTypeTags),
       objectiveTags: JSON.stringify(form.objectiveTags),
       severityLevel: form.severityLevel,
-      stepRoutine: form.stepRoutine || undefined,
-      useTime: form.useTime,
+      stepRoutine: !isService ? (form.stepRoutine || undefined) : undefined,
+      useTime: !isService ? form.useTime : undefined,
       contraindications: textToJsonArray(form.contraindications),
     };
 
@@ -263,15 +286,47 @@ function ProductForm() {
   return (
     <div className="p-8 max-w-3xl">
       <h1 className="font-serif text-2xl text-carbone">
-        {editId ? "Editar Produto" : "Novo Produto"}
+        {editId
+          ? isService ? "Editar Serviço" : "Editar Produto"
+          : isService ? "Novo Serviço" : "Novo Produto"}
       </h1>
       <p className="text-sm text-pierre font-light mt-1">
         {editId
-          ? "Atualize as informações do produto."
-          : "Adicione um produto ao seu catálogo."}
+          ? isService ? "Atualize as informações do serviço." : "Atualize as informações do produto."
+          : isService ? "Adicione um serviço ou tratamento ao seu catálogo." : "Adicione um produto ao seu catálogo."}
       </p>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+
+        {/* Type selector */}
+        <div>
+          <label className={labelClass}>Tipo *</label>
+          <div className="flex gap-0 border border-sable/40 w-fit">
+            <button
+              type="button"
+              onClick={() => setForm((f) => ({ ...f, type: "product" }))}
+              className={`px-5 py-2 text-sm font-light tracking-wide transition-colors ${
+                form.type === "product"
+                  ? "bg-carbone text-blanc-casse"
+                  : "bg-blanc-casse text-pierre hover:bg-ivoire"
+              }`}
+            >
+              Produto
+            </button>
+            <button
+              type="button"
+              onClick={() => setForm((f) => ({ ...f, type: "service" }))}
+              className={`px-5 py-2 text-sm font-light tracking-wide transition-colors border-l border-sable/40 ${
+                form.type === "service"
+                  ? "bg-carbone text-blanc-casse"
+                  : "bg-blanc-casse text-pierre hover:bg-ivoire"
+              }`}
+            >
+              Serviço
+            </button>
+          </div>
+        </div>
+
         {/* Basic info */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -291,7 +346,7 @@ function ProductForm() {
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               required
-              placeholder="Gel de Limpeza Suave"
+              placeholder={isService ? "Peeling Químico Superficial" : "Gel de Limpeza Suave"}
               className={inputClass}
             />
           </div>
@@ -313,7 +368,7 @@ function ProductForm() {
             <input
               value={form.category}
               onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
-              placeholder="Ex: Limpeza Facial"
+              placeholder={isService ? "Ex: Procedimento Estético" : "Ex: Limpeza Facial"}
               className={inputClass}
             />
           </div>
@@ -334,7 +389,7 @@ function ProductForm() {
             value={form.description}
             onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
             rows={3}
-            placeholder="Descreva o produto..."
+            placeholder={isService ? "Descreva o serviço ou tratamento..." : "Descreva o produto..."}
             className={inputClass}
           />
         </div>
@@ -355,7 +410,7 @@ function ProductForm() {
           {/* Image — occupies 2 columns on md+ */}
           <div className="md:col-span-2">
             <div className="flex items-center justify-between mb-1">
-              <label className={labelClass}>Imagem do Produto</label>
+              <label className={labelClass}>Imagem {isService ? "do Serviço" : "do Produto"}</label>
               <button
                 type="button"
                 onClick={() => setShowUrlInput((v) => !v)}
@@ -382,15 +437,80 @@ function ProductForm() {
           </div>
         </div>
 
-        <div>
-          <label className={labelClass}>Link e-commerce</label>
-          <input
-            value={form.ecommerceLink}
-            onChange={(e) => setForm((f) => ({ ...f, ecommerceLink: e.target.value }))}
-            placeholder="https://loja.com/produto"
-            className={inputClass}
-          />
-        </div>
+        {/* Product-only fields */}
+        {!isService && (
+          <div>
+            <label className={labelClass}>Link e-commerce</label>
+            <input
+              value={form.ecommerceLink}
+              onChange={(e) => setForm((f) => ({ ...f, ecommerceLink: e.target.value }))}
+              placeholder="https://loja.com/produto"
+              className={inputClass}
+            />
+          </div>
+        )}
+
+        {/* Service-only fields */}
+        {isService && (
+          <div className="space-y-4 border-t border-sable/20 pt-6">
+            <p className="text-[10px] text-pierre uppercase tracking-wider font-light">Informações do Serviço</p>
+
+            <div>
+              <label className={labelClass}>Link de agendamento</label>
+              <input
+                value={form.bookingLink}
+                onChange={(e) => setForm((f) => ({ ...f, bookingLink: e.target.value }))}
+                placeholder="https://agenda.com/tratamento"
+                className={inputClass}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className={labelClass}>Número de sessões recomendadas</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={form.sessionCount}
+                  onChange={(e) => setForm((f) => ({ ...f, sessionCount: e.target.value }))}
+                  placeholder="6"
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Frequência das sessões</label>
+                <select
+                  value={form.sessionFrequency}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      sessionFrequency: e.target.value as "" | "semanal" | "quinzenal" | "mensal",
+                    }))
+                  }
+                  className={inputClass}
+                >
+                  <option value="">Selecione...</option>
+                  {sessionFrequencyOptions.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className={labelClass}>Duração por sessão (minutos)</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={form.durationMinutes}
+                  onChange={(e) => setForm((f) => ({ ...f, durationMinutes: e.target.value }))}
+                  placeholder="60"
+                  className={inputClass}
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Tags — from DB or fallback */}
         <TagSelector
@@ -414,23 +534,25 @@ function ProductForm() {
           onChange={(tags) => setForm((f) => ({ ...f, objectiveTags: tags }))}
         />
 
-        {/* Classification */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className={labelClass}>Etapa da rotina</label>
-            <select
-              value={form.stepRoutine}
-              onChange={(e) => setForm((f) => ({ ...f, stepRoutine: e.target.value }))}
-              className={inputClass}
-            >
-              <option value="">Selecione...</option>
-              {resolvedSteps.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-          </div>
+        {/* Classification — stepRoutine and useTime only for products */}
+        <div className={`grid gap-4 ${!isService ? "grid-cols-1 md:grid-cols-3" : "grid-cols-1 md:grid-cols-1"}`}>
+          {!isService && (
+            <div>
+              <label className={labelClass}>Etapa da rotina</label>
+              <select
+                value={form.stepRoutine}
+                onChange={(e) => setForm((f) => ({ ...f, stepRoutine: e.target.value }))}
+                className={inputClass}
+              >
+                <option value="">Selecione...</option>
+                {resolvedSteps.map((s) => (
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <div>
             <label className={labelClass}>Intensidade</label>
             <select
@@ -445,23 +567,25 @@ function ProductForm() {
               <option value={3}>Intenso (Tier 3)</option>
             </select>
           </div>
-          <div>
-            <label className={labelClass}>Uso</label>
-            <select
-              value={form.useTime}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  useTime: e.target.value as "am" | "pm" | "both",
-                }))
-              }
-              className={inputClass}
-            >
-              <option value="am">Manhã</option>
-              <option value="pm">Noite</option>
-              <option value="both">Ambos</option>
-            </select>
-          </div>
+          {!isService && (
+            <div>
+              <label className={labelClass}>Uso</label>
+              <select
+                value={form.useTime}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    useTime: e.target.value as "am" | "pm" | "both",
+                  }))
+                }
+                className={inputClass}
+              >
+                <option value="am">Manhã</option>
+                <option value="pm">Noite</option>
+                <option value="both">Ambos</option>
+              </select>
+            </div>
+          )}
         </div>
 
         <div>
@@ -496,7 +620,11 @@ function ProductForm() {
             disabled={isLoading}
             className="px-6 py-2 bg-carbone text-blanc-casse text-sm font-light tracking-wide disabled:opacity-50"
           >
-            {isLoading ? "Salvando..." : editId ? "Atualizar" : "Criar Produto"}
+            {isLoading
+              ? "Salvando..."
+              : editId
+              ? isService ? "Atualizar Serviço" : "Atualizar"
+              : isService ? "Criar Serviço" : "Criar Produto"}
           </button>
           <button
             type="button"

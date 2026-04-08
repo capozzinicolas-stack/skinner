@@ -45,6 +45,11 @@ export type MatchedProduct = {
   matchScore: number;
   reason: string;
   howToUse: string;
+  type: string;
+  bookingLink: string | null;
+  sessionCount: number | null;
+  sessionFrequency: string | null;
+  durationMinutes: number | null;
 };
 
 export type FullAnalysisResult = {

@@ -175,7 +175,70 @@ async function main() {
   }
   console.log(`✅ Products: ${products.length} created`);
 
-  // 5. Create base skin conditions
+  // 5. Create sample services
+  const services = [
+    {
+      sku: "SVC-001",
+      name: "Peeling de Ácido Glicólico",
+      description:
+        "Procedimento de renovação celular com ácido glicólico para tratar hiperpigmentação e sinais de envelhecimento. Melhora a textura e luminosidade da pele.",
+      type: "service",
+      concernTags: JSON.stringify(["hyperpigmentation", "aging"]),
+      skinTypeTags: JSON.stringify(["normal", "oily", "combination", "dry"]),
+      objectiveTags: JSON.stringify(["even-tone", "radiance", "anti-aging"]),
+      severityLevel: 2,
+      sessionCount: 4,
+      sessionFrequency: "quinzenal",
+      durationMinutes: 45,
+      bookingLink: "https://demo-clinic.com/agendar/peeling-glicol",
+    },
+    {
+      sku: "SVC-002",
+      name: "Microagulhamento",
+      description:
+        "Técnica de indução de colágeno por microagulhas para tratar sinais de envelhecimento e cicatrizes de acne. Estimula a regeneração natural da pele.",
+      type: "service",
+      concernTags: JSON.stringify(["aging", "acne"]),
+      skinTypeTags: JSON.stringify(["normal", "dry", "combination", "oily"]),
+      objectiveTags: JSON.stringify(["anti-aging", "firmness"]),
+      severityLevel: 2,
+      sessionCount: 3,
+      sessionFrequency: "mensal",
+      durationMinutes: 60,
+      bookingLink: "https://demo-clinic.com/agendar/microagulhamento",
+    },
+    {
+      sku: "SVC-003",
+      name: "LED Terapia",
+      description:
+        "Fototerapia com LED de diferentes comprimentos de onda para tratar acne e rosácea. Reduz inflamação, elimina bactérias e melhora a vascularização.",
+      type: "service",
+      concernTags: JSON.stringify(["acne", "rosacea"]),
+      skinTypeTags: JSON.stringify(["oily", "sensitive", "combination", "normal"]),
+      objectiveTags: JSON.stringify(["anti-acne", "sensitivity"]),
+      severityLevel: 1,
+      sessionCount: 8,
+      sessionFrequency: "semanal",
+      durationMinutes: 30,
+      bookingLink: "https://demo-clinic.com/agendar/led-terapia",
+    },
+  ];
+
+  for (const service of services) {
+    await prisma.product.upsert({
+      where: {
+        tenantId_sku: { tenantId: tenant.id, sku: service.sku },
+      },
+      update: {},
+      create: {
+        tenantId: tenant.id,
+        ...service,
+      },
+    });
+  }
+  console.log(`✅ Services: ${services.length} created`);
+
+  // 6. Create base skin conditions
   const conditions = [
     {
       name: "acne",
@@ -313,7 +376,7 @@ async function main() {
   }
   console.log(`✅ Skin conditions: ${conditions.length} created`);
 
-  // 6. Create base ingredients
+  // 7. Create base ingredients
   const ingredients = [
     {
       name: "retinol",

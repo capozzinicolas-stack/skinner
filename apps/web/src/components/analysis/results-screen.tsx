@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { FullAnalysisResult } from "@/lib/sae/types";
+import type { FullAnalysisResult, MatchedProduct } from "@/lib/sae/types";
 
 const skinTypeLabels: Record<string, string> = {
   oily: "Oleosa",
@@ -41,6 +41,158 @@ const stepLabels: Record<string, string> = {
   treatment: "Tratamento",
 };
 
+const sessionFrequencyLabels: Record<string, string> = {
+  semanal: "Semanal",
+  quinzenal: "Quinzenal",
+  mensal: "Mensal",
+};
+
+// Extended MatchedProduct to include optional service fields
+type MatchedProductExtended = MatchedProduct & {
+  type?: string | null;
+  bookingLink?: string | null;
+  sessionCount?: number | null;
+  sessionFrequency?: string | null;
+  durationMinutes?: number | null;
+};
+
+function ProductCard({
+  rec,
+  idx,
+}: {
+  rec: MatchedProductExtended;
+  idx: number;
+}) {
+  return (
+    <div className="p-5 bg-white border border-sable/20">
+      <div className="flex gap-4">
+        {rec.imageUrl ? (
+          <img src={rec.imageUrl} alt={rec.name} className="w-16 h-16 object-cover flex-shrink-0" />
+        ) : (
+          <div className="w-16 h-16 bg-ivoire flex items-center justify-center flex-shrink-0">
+            <span className="text-xs text-pierre font-light">#{idx + 1}</span>
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between">
+            <div>
+              <h4 className="text-sm text-carbone">{rec.name}</h4>
+              {rec.stepRoutine && (
+                <span className="text-[10px] text-pierre uppercase tracking-wider font-light">
+                  {stepLabels[rec.stepRoutine] ?? rec.stepRoutine}
+                </span>
+              )}
+            </div>
+            {rec.price && (
+              <span className="text-sm text-carbone flex-shrink-0">
+                R$ {rec.price.toFixed(2)}
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-pierre font-light mt-1">{rec.reason}</p>
+          <p className="text-xs text-pierre/60 font-light mt-1 italic">{rec.howToUse}</p>
+          <div className="flex items-center gap-2 mt-2">
+            <div className="flex-1 h-px bg-sable/30">
+              <div className="h-full bg-carbone" style={{ width: `${rec.matchScore * 100}%` }} />
+            </div>
+            <span className="text-[10px] text-pierre font-light">
+              {Math.round(rec.matchScore * 100)}%
+            </span>
+          </div>
+          {rec.ecommerceLink && (
+            <a
+              href={`${rec.ecommerceLink}?skr_ref=${rec.productId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block mt-3 px-4 py-2 bg-carbone text-blanc-casse text-xs font-light tracking-wide hover:bg-terre transition-colors"
+            >
+              Comprar
+            </a>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ServiceCard({
+  rec,
+  idx,
+}: {
+  rec: MatchedProductExtended;
+  idx: number;
+}) {
+  return (
+    <div className="p-5 bg-white border border-sable/20">
+      <div className="flex gap-4">
+        {rec.imageUrl ? (
+          <img src={rec.imageUrl} alt={rec.name} className="w-16 h-16 object-cover flex-shrink-0" />
+        ) : (
+          <div className="w-16 h-16 bg-ivoire flex items-center justify-center flex-shrink-0">
+            <span className="text-xs text-pierre font-light">#{idx + 1}</span>
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between">
+            <div>
+              <h4 className="text-sm text-carbone">{rec.name}</h4>
+              {/* Session info row */}
+              <div className="flex flex-wrap gap-2 mt-1">
+                {rec.sessionCount && (
+                  <span className="text-[10px] text-pierre uppercase tracking-wider font-light">
+                    {rec.sessionCount} {rec.sessionCount === 1 ? "sessão" : "sessões"}
+                  </span>
+                )}
+                {rec.sessionCount && (rec.sessionFrequency || rec.durationMinutes) && (
+                  <span className="text-[10px] text-pierre/40 font-light">·</span>
+                )}
+                {rec.sessionFrequency && (
+                  <span className="text-[10px] text-pierre uppercase tracking-wider font-light">
+                    {sessionFrequencyLabels[rec.sessionFrequency] ?? rec.sessionFrequency}
+                  </span>
+                )}
+                {rec.sessionFrequency && rec.durationMinutes && (
+                  <span className="text-[10px] text-pierre/40 font-light">·</span>
+                )}
+                {rec.durationMinutes && (
+                  <span className="text-[10px] text-pierre uppercase tracking-wider font-light">
+                    {rec.durationMinutes} min
+                  </span>
+                )}
+              </div>
+            </div>
+            {rec.price && (
+              <span className="text-sm text-carbone flex-shrink-0">
+                R$ {rec.price.toFixed(2)}
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-pierre font-light mt-1">{rec.reason}</p>
+          <p className="text-xs text-pierre/60 font-light mt-1 italic">{rec.howToUse}</p>
+          <div className="flex items-center gap-2 mt-2">
+            <div className="flex-1 h-px bg-sable/30">
+              <div className="h-full bg-carbone" style={{ width: `${rec.matchScore * 100}%` }} />
+            </div>
+            <span className="text-[10px] text-pierre font-light">
+              {Math.round(rec.matchScore * 100)}%
+            </span>
+          </div>
+          {rec.bookingLink && (
+            <a
+              href={`${rec.bookingLink}?skr_ref=${rec.productId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block mt-3 px-4 py-2 bg-carbone text-blanc-casse text-xs font-light tracking-wide hover:bg-terre transition-colors"
+            >
+              Agendar
+            </a>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function ResultsScreen({
   result,
   tenantName,
@@ -56,6 +208,11 @@ export function ResultsScreen({
   const [showPlan, setShowPlan] = useState(false);
   const [email, setEmail] = useState("");
   const [emailSent, setEmailSent] = useState(false);
+
+  // Split recommendations into products and services
+  const extendedRecs = recommendations as MatchedProductExtended[];
+  const productRecs = extendedRecs.filter((r) => !r.type || r.type === "product");
+  const serviceRecs = extendedRecs.filter((r) => r.type === "service");
 
   return (
     <div className="w-full max-w-lg mx-auto px-4 pb-12">
@@ -143,61 +300,28 @@ export function ResultsScreen({
       </div>
 
       {/* Recommended products */}
-      {recommendations.length > 0 && (
+      {productRecs.length > 0 && (
         <div className="mb-8">
           <h3 className="font-serif text-lg text-carbone mb-4">
             Produtos Recomendados
           </h3>
           <div className="space-y-3">
-            {recommendations.map((rec, idx) => (
-              <div key={rec.productId} className="p-5 bg-white border border-sable/20">
-                <div className="flex gap-4">
-                  {rec.imageUrl ? (
-                    <img src={rec.imageUrl} alt={rec.name} className="w-16 h-16 object-cover flex-shrink-0" />
-                  ) : (
-                    <div className="w-16 h-16 bg-ivoire flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs text-pierre font-light">#{idx + 1}</span>
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h4 className="text-sm text-carbone">{rec.name}</h4>
-                        {rec.stepRoutine && (
-                          <span className="text-[10px] text-pierre uppercase tracking-wider font-light">
-                            {stepLabels[rec.stepRoutine] ?? rec.stepRoutine}
-                          </span>
-                        )}
-                      </div>
-                      {rec.price && (
-                        <span className="text-sm text-carbone flex-shrink-0">
-                          R$ {rec.price.toFixed(2)}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-pierre font-light mt-1">{rec.reason}</p>
-                    <p className="text-xs text-pierre/60 font-light mt-1 italic">{rec.howToUse}</p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <div className="flex-1 h-px bg-sable/30">
-                        <div className="h-full bg-carbone" style={{ width: `${rec.matchScore * 100}%` }} />
-                      </div>
-                      <span className="text-[10px] text-pierre font-light">
-                        {Math.round(rec.matchScore * 100)}%
-                      </span>
-                    </div>
-                    {rec.ecommerceLink && (
-                      <a
-                        href={`${rec.ecommerceLink}?skr_ref=${rec.productId}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-block mt-3 px-4 py-2 bg-carbone text-blanc-casse text-xs font-light tracking-wide hover:bg-terre transition-colors"
-                      >
-                        Comprar
-                      </a>
-                    )}
-                  </div>
-                </div>
-              </div>
+            {productRecs.map((rec, idx) => (
+              <ProductCard key={rec.productId} rec={rec} idx={idx} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Recommended services/treatments */}
+      {serviceRecs.length > 0 && (
+        <div className="mb-8">
+          <h3 className="font-serif text-lg text-carbone mb-4">
+            Tratamentos Recomendados
+          </h3>
+          <div className="space-y-3">
+            {serviceRecs.map((rec, idx) => (
+              <ServiceCard key={rec.productId} rec={rec} idx={idx} />
             ))}
           </div>
         </div>
