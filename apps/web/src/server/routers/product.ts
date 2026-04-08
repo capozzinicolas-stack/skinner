@@ -73,11 +73,15 @@ export const productRouter = router({
           skinType: z.string().optional(),
           step: z.string().optional(),
           activeOnly: z.boolean().default(true),
+          page: z.number().int().min(1).default(1),
+          pageSize: z.number().int().min(1).max(100).default(20),
         })
         .optional()
     )
     .query(async ({ ctx, input }) => {
-      const filters = input ?? { activeOnly: true };
+      const filters = input ?? { activeOnly: true, page: 1, pageSize: 20 };
+      const page = filters.page ?? 1;
+      const pageSize = filters.pageSize ?? 20;
       const where: any = { tenantId: ctx.tenantId };
 
       if (("activeOnly" in filters) ? filters.activeOnly !== false : true) {
@@ -100,10 +104,23 @@ export const productRouter = router({
         where.stepRoutine = filters.step;
       }
 
-      return ctx.db.product.findMany({
-        where,
-        orderBy: { createdAt: "desc" },
-      });
+      const [total, items] = await Promise.all([
+        ctx.db.product.count({ where }),
+        ctx.db.product.findMany({
+          where,
+          orderBy: { createdAt: "desc" },
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+        }),
+      ]);
+
+      return {
+        items,
+        total,
+        page,
+        pageSize,
+        pageCount: Math.ceil(total / pageSize),
+      };
     }),
 
   getById: tenantProcedure
@@ -167,6 +184,43 @@ export const productRouter = router({
       });
     }),
 
+  bulkDeactivate: tenantProcedure
+    .input(z.object({ ids: z.array(z.string()).min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      // Verify all products belong to this tenant before updating
+      const existing = await ctx.db.product.findMany({
+        where: { id: { in: input.ids }, tenantId: ctx.tenantId },
+        select: { id: true },
+      });
+      const validIds = existing.map((p) => p.id);
+      if (validIds.length === 0) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      const result = await ctx.db.product.updateMany({
+        where: { id: { in: validIds }, tenantId: ctx.tenantId },
+        data: { isActive: false },
+      });
+      return { updated: result.count };
+    }),
+
+  bulkReactivate: tenantProcedure
+    .input(z.object({ ids: z.array(z.string()).min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const existing = await ctx.db.product.findMany({
+        where: { id: { in: input.ids }, tenantId: ctx.tenantId },
+        select: { id: true },
+      });
+      const validIds = existing.map((p) => p.id);
+      if (validIds.length === 0) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      const result = await ctx.db.product.updateMany({
+        where: { id: { in: validIds }, tenantId: ctx.tenantId },
+        data: { isActive: true },
+      });
+      return { updated: result.count };
+    }),
+
   bulkCreate: tenantProcedure
     .input(z.object({ products: z.array(productInput) }))
     .mutation(async ({ ctx, input }) => {
@@ -214,11 +268,74 @@ export const productRouter = router({
     return { total, active, inactive: total - active, tagCounts };
   }),
 
-  // Reference data for forms
-  tagOptions: tenantProcedure.query(() => ({
-    concerns: validConcernTags,
-    skinTypes: validSkinTypes,
-    objectives: validObjectives,
-    steps: validSteps,
-  })),
+  // Reference data for forms — queries DB first, falls back to hardcoded constants
+  tagOptions: tenantProcedure.query(async ({ ctx }) => {
+    const [dbConditions, dbIngredients] = await Promise.all([
+      ctx.db.skinCondition.findMany({
+        select: { name: true },
+        orderBy: { name: "asc" },
+      }),
+      ctx.db.ingredient.findMany({
+        select: { name: true },
+        orderBy: { name: "asc" },
+      }),
+    ]);
+
+    const concerns =
+      dbConditions.length > 0
+        ? dbConditions.map((c) => c.name)
+        : [...validConcernTags];
+
+    const ingredients =
+      dbIngredients.length > 0
+        ? dbIngredients.map((i) => i.name)
+        : [];
+
+    return {
+      concerns,
+      ingredients,
+      skinTypes: [...validSkinTypes],
+      objectives: [...validObjectives],
+      steps: [...validSteps],
+    };
+  }),
+
+  // Returns all active products for CSV export (no pagination)
+  exportList: tenantProcedure
+    .input(
+      z
+        .object({
+          search: z.string().optional(),
+          concernTag: z.string().optional(),
+          step: z.string().optional(),
+          activeOnly: z.boolean().default(true),
+        })
+        .optional()
+    )
+    .query(async ({ ctx, input }) => {
+      const filters = input ?? { activeOnly: true };
+      const where: any = { tenantId: ctx.tenantId };
+
+      if (("activeOnly" in filters) ? filters.activeOnly !== false : true) {
+        where.isActive = true;
+      }
+      if (filters.search) {
+        where.OR = [
+          { name: { contains: filters.search } },
+          { sku: { contains: filters.search } },
+          { description: { contains: filters.search } },
+        ];
+      }
+      if (filters.concernTag) {
+        where.concernTags = { contains: filters.concernTag };
+      }
+      if (filters.step) {
+        where.stepRoutine = filters.step;
+      }
+
+      return ctx.db.product.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+      });
+    }),
 });

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { trpc } from "@/lib/trpc/client";
 
 const planLabels: Record<string, string> = {
@@ -9,10 +10,10 @@ const planLabels: Record<string, string> = {
   enterprise: "Enterprise",
 };
 
-const statusLabels: Record<string, { label: string; color: string }> = {
-  active: { label: "Ativo", color: "bg-green-100 text-green-700" },
-  paused: { label: "Pausado", color: "bg-yellow-100 text-yellow-700" },
-  deleted: { label: "Deletado", color: "bg-red-100 text-red-700" },
+const statusConfig: Record<string, { label: string; classes: string }> = {
+  active: { label: "Ativo", classes: "bg-carbone/10 text-carbone" },
+  paused: { label: "Pausado", classes: "bg-sable/30 text-pierre" },
+  deleted: { label: "Deletado", classes: "bg-sable/20 text-pierre" },
 };
 
 export default function TenantsPage() {
@@ -48,14 +49,16 @@ export default function TenantsPage() {
 
   return (
     <div className="p-8">
-      <div className="flex items-center justify-between">
+      <div className="border-b border-sable/20 pb-6 mb-8 flex items-end justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Tenants</h1>
-          <p className="text-gray-500 mt-1">Gerencie clientes B2B.</p>
+          <h1 className="font-serif text-2xl text-carbone">Tenants</h1>
+          <p className="text-sm text-pierre font-light mt-1">
+            Gerencie clientes B2B da plataforma.
+          </p>
         </div>
         <button
           onClick={() => setShowCreate(!showCreate)}
-          className="px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 transition-colors"
+          className="px-4 py-2 bg-carbone text-blanc-casse text-sm font-light tracking-wide"
         >
           {showCreate ? "Cancelar" : "Novo Tenant"}
         </button>
@@ -71,37 +74,43 @@ export default function TenantsPage() {
               plan: form.plan as "starter" | "growth" | "enterprise",
             });
           }}
-          className="mt-6 p-6 bg-white rounded-xl border shadow-sm space-y-4"
+          className="mb-8 p-6 bg-white border border-sable/20 space-y-4"
         >
-          <h2 className="text-lg font-semibold">Criar Tenant</h2>
+          <h2 className="font-serif text-base text-carbone">Criar Tenant</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Nome</label>
+              <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
+                Nome
+              </label>
               <input
                 value={form.name}
                 onChange={(e) => handleSlugify(e.target.value)}
-                placeholder="Clínica Exemplo"
+                placeholder="Clinica Exemplo"
                 required
-                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="w-full px-3 py-2 border border-sable/30 bg-blanc-casse text-sm text-carbone font-light focus:outline-none focus:border-pierre"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Slug</label>
+              <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
+                Slug
+              </label>
               <input
                 value={form.slug}
                 onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))}
                 placeholder="clinica-exemplo"
                 required
                 pattern="^[a-z0-9-]+$"
-                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="w-full px-3 py-2 border border-sable/30 bg-blanc-casse text-sm text-carbone font-light focus:outline-none focus:border-pierre"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Plano</label>
+              <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
+                Plano
+              </label>
               <select
                 value={form.plan}
                 onChange={(e) => setForm((f) => ({ ...f, plan: e.target.value }))}
-                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="w-full px-3 py-2 border border-sable/30 bg-blanc-casse text-sm text-carbone font-light focus:outline-none focus:border-pierre"
               >
                 <option value="starter">Starter</option>
                 <option value="growth">Growth</option>
@@ -109,125 +118,136 @@ export default function TenantsPage() {
               </select>
             </div>
           </div>
-          <button
-            type="submit"
-            disabled={createMutation.isPending}
-            className="px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 disabled:opacity-50"
-          >
-            {createMutation.isPending ? "Criando..." : "Criar"}
-          </button>
-          {createMutation.error && (
-            <p className="text-sm text-red-600">{createMutation.error.message}</p>
-          )}
+          <div className="flex items-center gap-4">
+            <button
+              type="submit"
+              disabled={createMutation.isPending}
+              className="px-4 py-2 bg-carbone text-blanc-casse text-sm font-light tracking-wide disabled:opacity-50"
+            >
+              {createMutation.isPending ? "Criando..." : "Criar"}
+            </button>
+            {createMutation.error && (
+              <p className="text-sm text-pierre font-light">
+                {createMutation.error.message}
+              </p>
+            )}
+          </div>
         </form>
       )}
 
-      <div className="mt-8">
-        {tenants.isLoading && <p className="text-gray-500">Carregando...</p>}
+      {tenants.isLoading && (
+        <p className="text-sm text-pierre font-light">Carregando...</p>
+      )}
 
-        {tenants.data && tenants.data.length === 0 && (
-          <p className="text-gray-500">Nenhum tenant cadastrado.</p>
-        )}
+      {tenants.data && tenants.data.length === 0 && (
+        <p className="text-sm text-pierre font-light">
+          Nenhum tenant cadastrado.
+        </p>
+      )}
 
-        {tenants.data && tenants.data.length > 0 && (
-          <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b bg-gray-50">
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Nome
-                  </th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Slug
-                  </th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Plano
-                  </th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Status
-                  </th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Usuários
-                  </th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Produtos
-                  </th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Análises
-                  </th>
-                  <th className="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Ações
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {tenants.data.map((tenant) => {
-                  const status = statusLabels[tenant.status] ?? statusLabels.active;
-                  return (
-                    <tr key={tenant.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900">
+      {tenants.data && tenants.data.length > 0 && (
+        <div className="bg-white border border-sable/20 overflow-hidden">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-sable/20 bg-ivoire">
+                <th className="text-left px-6 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
+                  Nome
+                </th>
+                <th className="text-left px-6 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
+                  Slug
+                </th>
+                <th className="text-left px-6 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
+                  Plano
+                </th>
+                <th className="text-left px-6 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
+                  Status
+                </th>
+                <th className="text-left px-6 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
+                  Usuarios
+                </th>
+                <th className="text-left px-6 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
+                  Produtos
+                </th>
+                <th className="text-left px-6 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
+                  Analises
+                </th>
+                <th className="text-right px-6 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
+                  Acoes
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-sable/10">
+              {tenants.data.map((tenant) => {
+                const status = statusConfig[tenant.status] ?? statusConfig.active;
+                return (
+                  <tr key={tenant.id} className="hover:bg-ivoire/40">
+                    <td className="px-6 py-4">
+                      <Link
+                        href={`/admin/tenants/${tenant.id}`}
+                        className="text-sm text-carbone font-light hover:underline"
+                      >
                         {tenant.name}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {tenant.slug}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-xs font-medium px-2 py-1 rounded-full bg-brand-100 text-brand-700">
-                          {planLabels[tenant.plan] ?? tenant.plan}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`text-xs font-medium px-2 py-1 rounded-full ${status.color}`}
+                      </Link>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-pierre font-light">
+                      {tenant.slug}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-[10px] uppercase tracking-wider font-light text-pierre">
+                        {planLabels[tenant.plan] ?? tenant.plan}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`text-[10px] uppercase tracking-wider font-light px-2 py-1 ${status.classes}`}
+                      >
+                        {status.label}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-pierre font-light">
+                      {tenant._count.users}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-pierre font-light">
+                      {tenant._count.products}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-pierre font-light">
+                      {tenant._count.analyses}
+                    </td>
+                    <td className="px-6 py-4 text-right space-x-4">
+                      <Link
+                        href={`/admin/tenants/${tenant.id}`}
+                        className="text-xs text-pierre font-light hover:underline"
+                      >
+                        Detalhes
+                      </Link>
+                      {tenant.status === "active" && (
+                        <button
+                          onClick={() =>
+                            updateMutation.mutate({ id: tenant.id, status: "paused" })
+                          }
+                          className="text-xs text-pierre font-light hover:underline"
                         >
-                          {status.label}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {tenant._count.users}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {tenant._count.products}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {tenant._count.analyses}
-                      </td>
-                      <td className="px-6 py-4 text-right space-x-2">
-                        {tenant.status === "active" && (
-                          <button
-                            onClick={() =>
-                              updateMutation.mutate({
-                                id: tenant.id,
-                                status: "paused",
-                              })
-                            }
-                            className="text-xs text-yellow-600 hover:underline"
-                          >
-                            Pausar
-                          </button>
-                        )}
-                        {tenant.status === "paused" && (
-                          <button
-                            onClick={() =>
-                              updateMutation.mutate({
-                                id: tenant.id,
-                                status: "active",
-                              })
-                            }
-                            className="text-xs text-green-600 hover:underline"
-                          >
-                            Ativar
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+                          Pausar
+                        </button>
+                      )}
+                      {tenant.status === "paused" && (
+                        <button
+                          onClick={() =>
+                            updateMutation.mutate({ id: tenant.id, status: "active" })
+                          }
+                          className="text-xs text-carbone font-light hover:underline"
+                        >
+                          Ativar
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

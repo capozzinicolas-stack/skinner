@@ -1,9 +1,12 @@
 import { Sidebar } from "@/components/shared/sidebar";
 
 const adminNav = [
-  { label: "Dashboard", href: "/admin", icon: "\u2302" },
-  { label: "Tenants", href: "/admin/tenants", icon: "\u2630" },
-  { label: "Dermatologia", href: "/admin/dermatologia", icon: "\u2695" },
+  { label: "Dashboard", href: "/admin", icon: "⌂" },
+  { label: "Tenants", href: "/admin/tenants", icon: "☰" },
+  { label: "Usuarios", href: "/admin/usuarios", icon: "◻" },
+  { label: "Leads", href: "/admin/leads", icon: "◈" },
+  { label: "Analytics", href: "/admin/analytics", icon: "▦" },
+  { label: "Dermatologia", href: "/admin/dermatologia", icon: "⚕" },
 ];
 
 export default function AdminLayout({
