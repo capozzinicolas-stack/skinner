@@ -37,8 +37,56 @@ export const tenantRouter = router({
           secondaryColor: true,
           brandVoice: true,
           disclaimer: true,
+          tenantConfig: {
+            select: {
+              questionAllergiesEnabled: true,
+              questionSunscreenEnabled: true,
+              questionPregnantEnabled: true,
+              photoOnlyMode: true,
+              welcomeTitle: true,
+              welcomeDescription: true,
+              welcomeCtaText: true,
+              welcomeSubtext: true,
+              welcomeSubtextVisible: true,
+              consentExtraText: true,
+              consentButtonText: true,
+              photoTitle: true,
+              photoInstruction: true,
+              photoExtraText: true,
+              resultsShowBarrier: true,
+              resultsShowConditions: true,
+              resultsShowConditionsDesc: true,
+              resultsShowSeverityBars: true,
+              resultsShowActionPlan: true,
+              resultsShowTimeline: true,
+              resultsShowAlertSigns: true,
+              resultsShowProducts: true,
+              resultsShowServices: true,
+              resultsShowMatchScore: true,
+              resultsShowPdfButton: true,
+              resultsShowPrices: true,
+              resultsTopMessage: true,
+              resultsFooterText: true,
+              productCtaText: true,
+              serviceCtaText: true,
+              maxProductRecs: true,
+              maxServiceRecs: true,
+            },
+          },
         },
       });
+    }),
+
+  // Public query: returns the full TenantConfig for a given tenant slug.
+  // Used by the unauthenticated B2C analysis flow to drive UI behaviour.
+  getAnalysisConfig: publicProcedure
+    .input(z.object({ slug: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const tenant = await ctx.db.tenant.findUnique({
+        where: { slug: input.slug },
+        select: { tenantConfig: true },
+      });
+      return tenant?.tenantConfig ?? null;
     }),
 
   getMine: tenantProcedure.query(async ({ ctx }) => {
@@ -127,6 +175,58 @@ export const tenantRouter = router({
         customPromptSuffix: z.string().optional(),
         kitEnabled: z.boolean().optional(),
         kitDiscount: z.number().min(0).max(100).nullable().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      return ctx.db.tenantConfig.update({
+        where: { tenantId: ctx.tenantId },
+        data: input,
+      });
+    }),
+
+  // Authenticated mutation: update analysis display / UX configuration fields.
+  updateAnalysisConfig: tenantProcedure
+    .input(
+      z.object({
+        // Questionnaire toggles
+        questionAllergiesEnabled: z.boolean().optional(),
+        questionSunscreenEnabled: z.boolean().optional(),
+        questionPregnantEnabled: z.boolean().optional(),
+        photoOnlyMode: z.boolean().optional(),
+        // Welcome screen
+        welcomeTitle: z.string().nullable().optional(),
+        welcomeDescription: z.string().nullable().optional(),
+        welcomeCtaText: z.string().nullable().optional(),
+        welcomeSubtext: z.string().nullable().optional(),
+        welcomeSubtextVisible: z.boolean().optional(),
+        // Consent screen
+        consentExtraText: z.string().nullable().optional(),
+        consentButtonText: z.string().nullable().optional(),
+        // Photo screen
+        photoTitle: z.string().nullable().optional(),
+        photoInstruction: z.string().nullable().optional(),
+        photoExtraText: z.string().nullable().optional(),
+        // Results toggles
+        resultsShowBarrier: z.boolean().optional(),
+        resultsShowConditions: z.boolean().optional(),
+        resultsShowConditionsDesc: z.boolean().optional(),
+        resultsShowSeverityBars: z.boolean().optional(),
+        resultsShowActionPlan: z.boolean().optional(),
+        resultsShowTimeline: z.boolean().optional(),
+        resultsShowAlertSigns: z.boolean().optional(),
+        resultsShowProducts: z.boolean().optional(),
+        resultsShowServices: z.boolean().optional(),
+        resultsShowMatchScore: z.boolean().optional(),
+        resultsShowPdfButton: z.boolean().optional(),
+        resultsShowPrices: z.boolean().optional(),
+        // Results text
+        resultsTopMessage: z.string().nullable().optional(),
+        resultsFooterText: z.string().nullable().optional(),
+        productCtaText: z.string().nullable().optional(),
+        serviceCtaText: z.string().nullable().optional(),
+        // Limits
+        maxProductRecs: z.number().int().min(1).max(20).nullable().optional(),
+        maxServiceRecs: z.number().int().min(1).max(20).nullable().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {

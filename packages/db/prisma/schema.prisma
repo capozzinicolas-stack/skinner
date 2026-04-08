@@ -79,6 +79,52 @@ model TenantConfig {
   kitEnabled    Boolean @default(true)
   kitDiscount   Float?  // optional percentage discount for kit purchases
 
+  // Questionnaire visibility
+  questionAllergiesEnabled    Boolean @default(true)
+  questionSunscreenEnabled    Boolean @default(true)
+  questionPregnantEnabled     Boolean @default(true)
+  photoOnlyMode               Boolean @default(false)
+
+  // Welcome screen
+  welcomeTitle                String?
+  welcomeDescription          String?
+  welcomeCtaText              String?
+  welcomeSubtext              String?
+  welcomeSubtextVisible       Boolean @default(true)
+
+  // Consent screen
+  consentExtraText            String?
+  consentButtonText           String?
+
+  // Photo screen
+  photoTitle                  String?
+  photoInstruction            String?
+  photoExtraText              String?
+
+  // Results: section visibility
+  resultsShowBarrier          Boolean @default(true)
+  resultsShowConditions       Boolean @default(true)
+  resultsShowConditionsDesc   Boolean @default(true)
+  resultsShowSeverityBars     Boolean @default(true)
+  resultsShowActionPlan       Boolean @default(true)
+  resultsShowTimeline         Boolean @default(false)
+  resultsShowAlertSigns       Boolean @default(true)
+  resultsShowProducts         Boolean @default(true)
+  resultsShowServices         Boolean @default(true)
+  resultsShowMatchScore       Boolean @default(true)
+  resultsShowPdfButton        Boolean @default(true)
+  resultsShowPrices           Boolean @default(true)
+
+  // Results: content
+  resultsTopMessage           String?
+  resultsFooterText           String?
+  productCtaText              String?
+  serviceCtaText              String?
+
+  // Results: limits
+  maxProductRecs              Int?
+  maxServiceRecs              Int?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

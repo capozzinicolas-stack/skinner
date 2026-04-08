@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export type QuestionnaireAnswers = {
   skin_type: string;
@@ -12,6 +12,13 @@ export type QuestionnaireAnswers = {
   pregnant_or_nursing: string;
 };
 
+export type QuestionnaireConfig = {
+  questionAllergiesEnabled?: boolean;
+  questionSunscreenEnabled?: boolean;
+  questionPregnantEnabled?: boolean;
+  photoOnlyMode?: boolean;
+};
+
 type Question = {
   id: keyof QuestionnaireAnswers;
   text: string;
@@ -21,7 +28,7 @@ type Question = {
   maxSelect?: number;
 };
 
-const questions: Question[] = [
+const ALL_QUESTIONS: Question[] = [
   {
     id: "skin_type",
     text: "Como voce descreveria sua pele geralmente?",
@@ -112,11 +119,67 @@ const questions: Question[] = [
   },
 ];
 
-export function Questionnaire({
+// Default answers used when photoOnlyMode bypasses the questionnaire
+const DEFAULT_ANSWERS: QuestionnaireAnswers = {
+  skin_type: "normal",
+  concerns: [],
+  primary_objective: "hydration",
+  allergies: "",
+  age_range: "25-34",
+  sunscreen_frequency: "sometimes",
+  pregnant_or_nursing: "no",
+};
+
+// Safety bypass: if Questionnaire is rendered with photoOnlyMode, call onComplete
+// immediately with defaults (the B2C page normally avoids this step entirely, but
+// this ensures robustness if the component is used directly).
+function PhotoOnlyBypass({
   onComplete,
 }: {
   onComplete: (answers: QuestionnaireAnswers) => void;
 }) {
+  useEffect(() => {
+    onComplete(DEFAULT_ANSWERS);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <div className="w-full max-w-lg mx-auto px-4 text-center py-12">
+      <p className="text-pierre font-light text-sm">Preparando analise...</p>
+    </div>
+  );
+}
+
+export function Questionnaire({
+  onComplete,
+  config,
+}: {
+  onComplete: (answers: QuestionnaireAnswers) => void;
+  config?: QuestionnaireConfig;
+}) {
+  // photoOnlyMode: skip questionnaire entirely
+  if (config?.photoOnlyMode) {
+    return <PhotoOnlyBypass onComplete={onComplete} />;
+  }
+
+  return <QuestionnaireInner onComplete={onComplete} config={config} />;
+}
+
+function QuestionnaireInner({
+  onComplete,
+  config,
+}: {
+  onComplete: (answers: QuestionnaireAnswers) => void;
+  config?: QuestionnaireConfig;
+}) {
+  // Filter questions based on config toggles
+  const questions = ALL_QUESTIONS.filter((q) => {
+    if (q.id === "allergies" && config?.questionAllergiesEnabled === false) return false;
+    if (q.id === "sunscreen_frequency" && config?.questionSunscreenEnabled === false) return false;
+    if (q.id === "pregnant_or_nursing" && config?.questionPregnantEnabled === false) return false;
+    return true;
+  });
+
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState<Partial<QuestionnaireAnswers>>({});
 
@@ -147,7 +210,12 @@ export function Questionnaire({
 
   function handleNext() {
     if (isLast) {
-      onComplete(answers as QuestionnaireAnswers);
+      // Merge answers with defaults for any questions that were disabled/skipped
+      const merged: QuestionnaireAnswers = {
+        ...DEFAULT_ANSWERS,
+        ...(answers as QuestionnaireAnswers),
+      };
+      onComplete(merged);
     } else {
       setCurrentIdx((i) => i + 1);
     }
