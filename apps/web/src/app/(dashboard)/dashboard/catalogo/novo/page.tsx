@@ -27,32 +27,48 @@ const stepOptions = [
   { value: "eye-cream", label: "Área dos olhos" },
 ];
 
-// Prefix used to encode category/line in the description field
-const META_PREFIX_RE = /^\[Category: (.*?) \| Line: (.*?)\] ?/;
+// Prefix used to encode category/line/brand in the description field
+const META_PREFIX_RE = /^\[Category: (.*?) \| Line: (.*?) \| Brand: (.*?)\] ?/;
+const META_PREFIX_RE_OLD = /^\[Category: (.*?) \| Line: (.*?)\] ?/;
 
 function encodeDescription(
   category: string,
   productLine: string,
+  brand: string,
   description: string
 ): string {
-  const base = description.replace(META_PREFIX_RE, "");
-  if (!category && !productLine) return base;
-  return `[Category: ${category} | Line: ${productLine}] ${base}`;
+  const base = description.replace(META_PREFIX_RE, "").replace(META_PREFIX_RE_OLD, "");
+  if (!category && !productLine && !brand) return base;
+  return `[Category: ${category} | Line: ${productLine} | Brand: ${brand}] ${base}`;
 }
 
 function decodeDescription(raw: string | null | undefined): {
   category: string;
   productLine: string;
+  brand: string;
   description: string;
 } {
-  if (!raw) return { category: "", productLine: "", description: "" };
+  if (!raw) return { category: "", productLine: "", brand: "", description: "" };
   const match = raw.match(META_PREFIX_RE);
-  if (!match) return { category: "", productLine: "", description: raw };
-  return {
-    category: match[1] ?? "",
-    productLine: match[2] ?? "",
-    description: raw.replace(META_PREFIX_RE, ""),
-  };
+  if (match) {
+    return {
+      category: match[1] ?? "",
+      productLine: match[2] ?? "",
+      brand: match[3] ?? "",
+      description: raw.replace(META_PREFIX_RE, ""),
+    };
+  }
+  // Backwards compat with old format without brand
+  const oldMatch = raw.match(META_PREFIX_RE_OLD);
+  if (oldMatch) {
+    return {
+      category: oldMatch[1] ?? "",
+      productLine: oldMatch[2] ?? "",
+      brand: "",
+      description: raw.replace(META_PREFIX_RE_OLD, ""),
+    };
+  }
+  return { category: "", productLine: "", brand: "", description: raw };
 }
 
 function TagSelector({
@@ -127,6 +143,7 @@ function ProductForm() {
     name: "",
     category: "",
     productLine: "",
+    brand: "",
     description: "",
     imageUrl: "",
     price: "",
@@ -147,12 +164,13 @@ function ProductForm() {
   useEffect(() => {
     if (existingProduct.data) {
       const p = existingProduct.data;
-      const { category, productLine, description } = decodeDescription(p.description);
+      const { category, productLine, brand, description } = decodeDescription(p.description);
       setForm({
         sku: p.sku,
         name: p.name,
         category,
         productLine,
+        brand,
         description,
         imageUrl: p.imageUrl ?? "",
         price: p.price?.toString() ?? "",
@@ -193,7 +211,7 @@ function ProductForm() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const fullDescription =
-      encodeDescription(form.category, form.productLine, form.description) || undefined;
+      encodeDescription(form.category, form.productLine, form.brand, form.description) || undefined;
 
     const data = {
       sku: form.sku,
@@ -279,8 +297,17 @@ function ProductForm() {
           </div>
         </div>
 
-        {/* Category and product line */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Brand, category and product line */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className={labelClass}>Marca</label>
+            <input
+              value={form.brand}
+              onChange={(e) => setForm((f) => ({ ...f, brand: e.target.value }))}
+              placeholder="Ex: La Roche-Posay"
+              className={inputClass}
+            />
+          </div>
           <div>
             <label className={labelClass}>Categoria</label>
             <input
@@ -289,16 +316,13 @@ function ProductForm() {
               placeholder="Ex: Limpeza Facial"
               className={inputClass}
             />
-            <p className="text-[10px] text-pierre font-light mt-1 tracking-wide">
-              Campo provisório — será migrado para campo próprio.
-            </p>
           </div>
           <div>
             <label className={labelClass}>Linha do Produto</label>
             <input
               value={form.productLine}
               onChange={(e) => setForm((f) => ({ ...f, productLine: e.target.value }))}
-              placeholder="Ex: Linha Acne Control"
+              placeholder="Ex: Effaclar"
               className={inputClass}
             />
           </div>
