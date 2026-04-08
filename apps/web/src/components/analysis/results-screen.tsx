@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { FullAnalysisResult, MatchedProduct } from "@/lib/sae/types";
+import { AnnotatedPhoto } from "@/components/analysis/annotated-photo";
 
 const skinTypeLabels: Record<string, string> = {
   oily: "Oleosa",
@@ -64,6 +65,7 @@ export type ResultsConfig = {
   resultsShowMatchScore?: boolean;
   resultsShowPdfButton?: boolean;
   resultsShowPrices?: boolean;
+  resultsShowAnnotatedPhoto?: boolean;
   resultsTopMessage?: string | null;
   resultsFooterText?: string | null;
   productCtaText?: string | null;
@@ -358,12 +360,14 @@ export function ResultsScreen({
   tenantName,
   disclaimer,
   config,
+  photoBase64,
 }: {
   result: FullAnalysisResult;
   tenantName: string;
   disclaimer?: string;
   primaryColor: string;
   config?: ResultsConfig;
+  photoBase64?: string;
 }) {
   const { analysis, recommendations } = result;
   const barrier = barrierLabels[analysis.barrier_status] ?? barrierLabels.healthy;
@@ -384,6 +388,7 @@ export function ResultsScreen({
   const showMatchScore = config?.resultsShowMatchScore ?? true;
   const showPdfButton = config?.resultsShowPdfButton ?? true;
   const showPrices = config?.resultsShowPrices ?? true;
+  const showAnnotatedPhoto = config?.resultsShowAnnotatedPhoto ?? true;
   const topMessage = config?.resultsTopMessage ?? null;
   const footerText = config?.resultsFooterText ?? null;
   const productCtaText = config?.productCtaText || "Comprar";
@@ -418,6 +423,13 @@ export function ResultsScreen({
     });
   }
 
+  // Determine whether to render the annotated photo section
+  const hasAnnotations =
+    showAnnotatedPhoto &&
+    !!photoBase64 &&
+    Array.isArray(analysis.zone_annotations) &&
+    analysis.zone_annotations.length > 0;
+
   return (
     <div className="w-full max-w-lg mx-auto px-4 pb-12">
       {/* Custom top message */}
@@ -439,6 +451,19 @@ export function ResultsScreen({
         <div className="w-12 h-px bg-sable mx-auto mt-4 mb-4" />
         <p className="text-sm text-pierre font-light leading-relaxed">{analysis.summary}</p>
       </div>
+
+      {/* Mapa Facial — annotated photo overlay */}
+      {hasAnnotations && (
+        <div className="mb-8">
+          <p className="text-[10px] text-pierre uppercase tracking-wider font-light mb-3">
+            Mapa Facial
+          </p>
+          <AnnotatedPhoto
+            photoBase64={photoBase64!}
+            annotations={analysis.zone_annotations}
+          />
+        </div>
+      )}
 
       {/* Barrier status */}
       {showBarrier && (

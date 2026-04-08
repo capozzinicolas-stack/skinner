@@ -12,6 +12,25 @@ export type AnalysisInput = {
   };
 };
 
+export type FaceZone =
+  | "forehead"
+  | "left_cheek"
+  | "right_cheek"
+  | "nose"
+  | "chin"
+  | "under_eyes"
+  | "jawline";
+
+export type ZoneStatus = "good" | "attention" | "concern";
+
+export type ZoneAnnotation = {
+  zone: FaceZone;
+  status: ZoneStatus;
+  title: string;
+  observation: string;
+  related_conditions: string[];
+};
+
 export type AnalysisOutput = {
   skin_type: string;
   conditions: { name: string; severity: number; description: string }[];
@@ -30,6 +49,7 @@ export type AnalysisOutput = {
     weeks8: string;
     weeks12: string;
   };
+  zone_annotations: ZoneAnnotation[];
 };
 
 export type MatchedProduct = {
@@ -58,4 +78,5 @@ export type FullAnalysisResult = {
   analysis: AnalysisOutput;
   recommendations: MatchedProduct[];
   latencyMs: number;
+  photoBase64?: string;
 };

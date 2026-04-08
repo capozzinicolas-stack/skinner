@@ -1,4 +1,4 @@
-import type { AnalysisInput, AnalysisOutput } from "./types";
+import type { AnalysisInput, AnalysisOutput, ZoneAnnotation } from "./types";
 
 /**
  * Mock analyzer that simulates Claude API responses.
@@ -118,6 +118,97 @@ export async function mockAnalyze(input: AnalysisInput): Promise<AnalysisOutput>
     );
   }
 
+  // Build zone annotations based on questionnaire concerns
+  const hasAcne = concerns.includes("acne");
+  const hasOiliness = concerns.includes("oiliness") || q.skin_type === "oily";
+  const hasDarkCircles = concerns.includes("dark_circles");
+  const hasSensitivity = concerns.includes("sensitivity") || concerns.includes("rosacea");
+  const hasAging = concerns.includes("aging");
+  const hasPores = concerns.includes("pores");
+
+  const zone_annotations: ZoneAnnotation[] = [
+    // Forehead: attention for oiliness/acne, good otherwise
+    {
+      zone: "forehead",
+      status: hasOiliness || hasAcne ? "attention" : "good",
+      title: hasOiliness || hasAcne ? "Oleosidade moderada" : "Textura uniforme",
+      observation: hasOiliness || hasAcne
+        ? "Poros levemente dilatados e produção sebácea elevada na região frontal. Zona T ativa."
+        : "Região frontal com textura equilibrada e hidratação adequada.",
+      related_conditions: hasOiliness || hasAcne ? ["oiliness", "acne"].filter(c => concerns.includes(c) || (c === "oiliness" && q.skin_type === "oily")) : [],
+    },
+    // Nose: concern for acne/pores, attention for oiliness
+    {
+      zone: "nose",
+      status: hasAcne || hasPores ? "concern" : hasOiliness ? "attention" : "good",
+      title: hasAcne || hasPores ? "Poros obstruídos" : hasOiliness ? "Oleosidade central" : "Sem alterações",
+      observation: hasAcne || hasPores
+        ? "Cravos e poros obstruídos visíveis na asa nasal e ponta do nariz. Área de maior produção sebácea."
+        : hasOiliness
+        ? "Produção sebácea moderada na região nasal. Limpeza regular recomendada."
+        : "Região nasal sem alterações significativas.",
+      related_conditions: [hasAcne ? "acne" : null, hasPores ? "pores" : null].filter(Boolean) as string[],
+    },
+    // Under eyes: attention for dark circles or aging
+    {
+      zone: "under_eyes",
+      status: hasDarkCircles || hasAging ? "attention" : "good",
+      title: hasDarkCircles ? "Olheiras presentes" : hasAging ? "Linhas finas" : "Área periorbital saudável",
+      observation: hasDarkCircles
+        ? "Hiperpigmentação periorbital de origem mista (vascular e pigmentar). Pele fina e delicada."
+        : hasAging
+        ? "Linhas finas ao redor dos olhos. Perda de volume periorbital sutil."
+        : "Região periorbital sem alterações relevantes. Hidratação adequada.",
+      related_conditions: [hasDarkCircles ? "dark_circles" : null, hasAging ? "aging" : null].filter(Boolean) as string[],
+    },
+    // Left cheek: concern for sensitivity/rosacea, attention for hyperpigmentation
+    {
+      zone: "left_cheek",
+      status: hasSensitivity ? "concern" : concerns.includes("hyperpigmentation") ? "attention" : "good",
+      title: hasSensitivity ? "Eritema localizado" : concerns.includes("hyperpigmentation") ? "Manchas leves" : "Tonalidade equilibrada",
+      observation: hasSensitivity
+        ? "Vermelhidão persistente e vasos dilatados visíveis. Pele reativa ao toque e a variações de temperatura."
+        : concerns.includes("hyperpigmentation")
+        ? "Manchas pós-inflamatórias leves. Pigmentação irregular na região malar."
+        : "Bochecha esquerda com hidratação e tonalidade dentro do esperado.",
+      related_conditions: hasSensitivity ? ["sensitivity", "rosacea"].filter(c => concerns.includes(c)) : concerns.includes("hyperpigmentation") ? ["hyperpigmentation"] : [],
+    },
+    // Right cheek: mirror of left cheek with slight variation
+    {
+      zone: "right_cheek",
+      status: hasSensitivity ? "concern" : "good",
+      title: hasSensitivity ? "Eritema leve" : "Região equilibrada",
+      observation: hasSensitivity
+        ? "Leve eritema difuso. Pele com baixo limiar de irritação, sensível a ativos fortes."
+        : "Bochecha direita sem alterações significativas. Barreira cutânea íntegra.",
+      related_conditions: hasSensitivity ? ["sensitivity"].filter(c => concerns.includes(c)) : [],
+    },
+    // Chin: concern for acne, attention for oiliness
+    {
+      zone: "chin",
+      status: hasAcne ? "concern" : hasOiliness ? "attention" : "good",
+      title: hasAcne ? "Acne hormonal" : hasOiliness ? "Oleosidade elevada" : "Região estável",
+      observation: hasAcne
+        ? "Pápulas e comedões concentrados na região do queixo. Padrão sugestivo de acne hormonal."
+        : hasOiliness
+        ? "Excesso de sebo na região do mento. Poros levemente visíveis."
+        : "Região mentual sem lesões ativas ou alterações relevantes.",
+      related_conditions: hasAcne ? ["acne"] : [],
+    },
+    // Jawline: attention for aging/acne, good otherwise
+    {
+      zone: "jawline",
+      status: hasAging || hasAcne ? "attention" : "good",
+      title: hasAging ? "Perda de contorno" : hasAcne ? "Lesões no contorno" : "Contorno definido",
+      observation: hasAging
+        ? "Leve perda de definição mandibular. Diminuição da firmeza ao longo do contorno facial."
+        : hasAcne
+        ? "Lesões esparsas ao longo da linha mandibular. Associação com acne hormonal possível."
+        : "Linha mandibular bem definida sem alterações relevantes.",
+      related_conditions: hasAging ? ["aging"] : hasAcne ? ["acne"] : [],
+    },
+  ];
+
   return {
     skin_type: q.skin_type,
     conditions,
@@ -142,5 +233,6 @@ export async function mockAnalyze(input: AnalysisInput): Promise<AnalysisOutput>
       weeks12:
         "Resultados consolidados. Pele equilibrada e saudável. Manutenção com rotina otimizada.",
     },
+    zone_annotations,
   };
 }

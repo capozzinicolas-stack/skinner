@@ -19,6 +19,7 @@ export default function AnalysisPage({
   const [answers, setAnswers] = useState<QuestionnaireAnswers | null>(null);
   const [result, setResult] = useState<FullAnalysisResult | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
+  const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
 
   const tenant = trpc.tenant.getBySlug.useQuery({ slug: params.slug });
   const analysisConfig = trpc.tenant.getAnalysisConfig.useQuery(
@@ -82,6 +83,7 @@ export default function AnalysisPage({
         resultsShowMatchScore: cfg.resultsShowMatchScore ?? true,
         resultsShowPdfButton: cfg.resultsShowPdfButton ?? true,
         resultsShowPrices: cfg.resultsShowPrices ?? true,
+        resultsShowAnnotatedPhoto: cfg.resultsShowAnnotatedPhoto ?? true,
         resultsTopMessage: cfg.resultsTopMessage ?? null,
         resultsFooterText: cfg.resultsFooterText ?? null,
         productCtaText: cfg.productCtaText ?? null,
@@ -106,6 +108,7 @@ export default function AnalysisPage({
 
   function handlePhotoCaptured(base64: string) {
     if (!answers) return;
+    setCapturedPhoto(base64);
     setStep("loading");
     analysisMutation.mutate({
       tenantSlug: params.slug,
@@ -253,6 +256,7 @@ export default function AnalysisPage({
             disclaimer={tenant.data.disclaimer ?? undefined}
             primaryColor="#1C1917"
             config={resultsConfig}
+            photoBase64={capturedPhoto ?? undefined}
           />
         )}
 

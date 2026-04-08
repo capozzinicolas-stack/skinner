@@ -56,8 +56,9 @@ REGRAS:
 8. Seja honesto mas acolhedor - nao alarme, mas nao minimize
 9. Se detectar algo que requer atencao medica, indique claramente
 10. Todas as respostas devem ser em portugues brasileiro
-${tenantConfig?.customPromptSuffix ? `\n11. INSTRUCOES ADICIONAIS DO CLIENTE: ${tenantConfig.customPromptSuffix}` : ""}
-${tenantConfig?.restrictedConditions ? `\n12. NAO MENCIONAR estas condicoes: ${tenantConfig.restrictedConditions}` : ""}`;
+11. Para zone_annotations: analise CADA zona facial individualmente. Inclua pelo menos 5 zonas. Use "good" para areas saudaveis, "attention" para areas com leve preocupacao, "concern" para areas que precisam de tratamento. Sempre inclua pelo menos 1-2 zonas "good" para equilibrar o diagnostico.
+${tenantConfig?.customPromptSuffix ? `\n12. INSTRUCOES ADICIONAIS DO CLIENTE: ${tenantConfig.customPromptSuffix}` : ""}
+${tenantConfig?.restrictedConditions ? `\n13. NAO MENCIONAR estas condicoes: ${tenantConfig.restrictedConditions}` : ""}`;
 
   const userPrompt = `QUESTIONARIO DO PACIENTE:
 - Tipo de pele auto-relatado: ${q.skin_type}
@@ -93,7 +94,16 @@ Analise a foto facial acima junto com o questionario e retorne um JSON com EXATA
     "weeks4": "O que esperar em 4 semanas de tratamento",
     "weeks8": "O que esperar em 8 semanas",
     "weeks12": "O que esperar em 12 semanas"
-  }
+  },
+  "zone_annotations": [
+    {
+      "zone": "forehead|left_cheek|right_cheek|nose|chin|under_eyes|jawline",
+      "status": "good|attention|concern",
+      "title": "Titulo curto em portugues",
+      "observation": "1-2 frases sobre o que foi observado nesta zona",
+      "related_conditions": ["nomes das condicoes"]
+    }
+  ]
 }`;
 
   // Extract base64 data and media type from the data URL
@@ -155,6 +165,11 @@ Analise a foto facial acima junto com o questionario e retorne um JSON com EXATA
   // Validate required fields
   if (!parsed.skin_type || !parsed.conditions || !parsed.summary) {
     throw new Error("Claude response missing required fields");
+  }
+
+  // Ensure zone_annotations is always an array (graceful degradation if Claude omits it)
+  if (!parsed.zone_annotations) {
+    parsed.zone_annotations = [];
   }
 
   return parsed;
