@@ -125,6 +125,10 @@ model TenantConfig {
   maxProductRecs              Int?
   maxServiceRecs              Int?
 
+  // Admin overrides (locks prevent tenant from changing)
+  adminLockedFields    String?  // JSON array of field names that tenant cannot modify
+  adminNotes           String?  // Internal notes about this tenant's config
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

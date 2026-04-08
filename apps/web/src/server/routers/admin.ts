@@ -71,6 +71,48 @@ export const adminRouter = router({
     };
   }),
 
+  // ─── Critical configs monitoring ──────────────────────────────────────────
+
+  criticalConfigs: adminProcedure.query(async ({ ctx }) => {
+    const configs = await ctx.db.tenantConfig.findMany({
+      where: {
+        OR: [
+          { questionPregnantEnabled: false },
+          { resultsShowAlertSigns: false },
+          { photoOnlyMode: true },
+        ],
+      },
+      select: {
+        tenantId: true,
+        questionPregnantEnabled: true,
+        resultsShowAlertSigns: true,
+        photoOnlyMode: true,
+        tenant: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            plan: true,
+          },
+        },
+      },
+    });
+
+    return configs.map((c) => {
+      const issues: string[] = [];
+      if (!c.questionPregnantEnabled) issues.push("Pergunta de gravidez desativada");
+      if (!c.resultsShowAlertSigns) issues.push("Sinais de alerta ocultos");
+      if (c.photoOnlyMode) issues.push("Modo somente foto ativo");
+      return {
+        tenantId: c.tenantId,
+        tenantName: c.tenant.name,
+        tenantSlug: c.tenant.slug,
+        tenantPlan: c.tenant.plan,
+        issues,
+      };
+    });
+  }),
+
   // ─── Tenant detail ─────────────────────────────────────────────────────────
 
   tenantDetail: adminProcedure
@@ -136,6 +178,114 @@ export const adminRouter = router({
         currentBill: bill,
         salesTotal,
       };
+    }),
+
+  // ─── Admin analysis config management ─────────────────────────────────────
+
+  // Get the full analysis config for a specific tenant
+  getAnalysisConfig: adminProcedure
+    .input(z.object({ tenantId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const config = await ctx.db.tenantConfig.findUnique({
+        where: { tenantId: input.tenantId },
+      });
+      return config;
+    }),
+
+  // Admin can update any field plus adminLockedFields and adminNotes
+  updateAnalysisConfig: adminProcedure
+    .input(
+      z.object({
+        tenantId: z.string(),
+        // Questionnaire toggles
+        questionAllergiesEnabled: z.boolean().optional(),
+        questionSunscreenEnabled: z.boolean().optional(),
+        questionPregnantEnabled: z.boolean().optional(),
+        photoOnlyMode: z.boolean().optional(),
+        // Results toggles
+        resultsShowBarrier: z.boolean().optional(),
+        resultsShowConditions: z.boolean().optional(),
+        resultsShowConditionsDesc: z.boolean().optional(),
+        resultsShowSeverityBars: z.boolean().optional(),
+        resultsShowActionPlan: z.boolean().optional(),
+        resultsShowTimeline: z.boolean().optional(),
+        resultsShowAlertSigns: z.boolean().optional(),
+        resultsShowProducts: z.boolean().optional(),
+        resultsShowServices: z.boolean().optional(),
+        resultsShowMatchScore: z.boolean().optional(),
+        resultsShowPdfButton: z.boolean().optional(),
+        resultsShowPrices: z.boolean().optional(),
+        // Admin control
+        adminLockedFields: z.string().nullable().optional(),
+        adminNotes: z.string().nullable().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { tenantId, ...data } = input;
+      return ctx.db.tenantConfig.update({
+        where: { tenantId },
+        data,
+      });
+    }),
+
+  // Lock a specific field so the tenant cannot change it
+  lockField: adminProcedure
+    .input(
+      z.object({
+        tenantId: z.string(),
+        field: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const config = await ctx.db.tenantConfig.findUnique({
+        where: { tenantId: input.tenantId },
+        select: { adminLockedFields: true },
+      });
+
+      let locked: string[] = [];
+      try {
+        locked = config?.adminLockedFields ? JSON.parse(config.adminLockedFields) : [];
+      } catch {
+        locked = [];
+      }
+
+      if (!locked.includes(input.field)) {
+        locked.push(input.field);
+      }
+
+      return ctx.db.tenantConfig.update({
+        where: { tenantId: input.tenantId },
+        data: { adminLockedFields: JSON.stringify(locked) },
+      });
+    }),
+
+  // Unlock a specific field so the tenant can change it again
+  unlockField: adminProcedure
+    .input(
+      z.object({
+        tenantId: z.string(),
+        field: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const config = await ctx.db.tenantConfig.findUnique({
+        where: { tenantId: input.tenantId },
+        select: { adminLockedFields: true },
+      });
+
+      let locked: string[] = [];
+      try {
+        locked = config?.adminLockedFields ? JSON.parse(config.adminLockedFields) : [];
+      } catch {
+        locked = [];
+      }
+
+      locked = locked.filter((f) => f !== input.field);
+
+      return ctx.db.tenantConfig.update({
+        where: { tenantId: input.tenantId },
+        data: { adminLockedFields: locked.length > 0 ? JSON.stringify(locked) : null },
+      });
     }),
 
   // Admin: change plan for any tenant

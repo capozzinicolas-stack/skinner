@@ -52,8 +52,10 @@ function safeParseConditions(json: string | null | undefined): string {
 
 export default function AdminDashboard() {
   const overview = trpc.admin.dashboardOverview.useQuery();
+  const criticalConfigs = trpc.admin.criticalConfigs.useQuery();
 
   const data = overview.data;
+  const criticalData = criticalConfigs.data ?? [];
 
   return (
     <div className="p-8">
@@ -156,51 +158,102 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Tenants at risk */}
-            <div>
-              <h2 className="font-serif text-base text-carbone mb-4">
-                Tenants em risco
-              </h2>
-              <div className="space-y-2">
-                {data.tenantsAtRisk.length === 0 ? (
-                  <div className="bg-white border border-sable/20 p-4">
-                    <p className="text-sm text-pierre font-light">
-                      Nenhum tenant acima de 80% do limite.
-                    </p>
-                  </div>
-                ) : (
-                  data.tenantsAtRisk.map((t) => {
-                    const pct =
-                      t.analysisLimit > 0
-                        ? Math.round((t.analysisUsed / t.analysisLimit) * 100)
-                        : 0;
-                    return (
-                      <Link
-                        key={t.id}
-                        href={`/admin/tenants/${t.id}`}
-                        className="block bg-white border border-sable/20 p-4 hover:bg-ivoire/40 transition-colors"
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm text-carbone font-light">
-                            {t.name}
-                          </span>
-                          <span className="text-xs text-pierre font-light">
-                            {pct}%
-                          </span>
-                        </div>
-                        <div className="h-1 bg-sable/20">
-                          <div
-                            className={`h-1 ${pct >= 95 ? "bg-carbone" : "bg-pierre"}`}
-                            style={{ width: `${Math.min(pct, 100)}%` }}
-                          />
-                        </div>
-                        <p className="text-[10px] text-pierre font-light mt-2 uppercase tracking-wider">
-                          {t.analysisUsed} / {t.analysisLimit} analises — {t.plan}
-                        </p>
-                      </Link>
-                    );
-                  })
-                )}
+            {/* Right sidebar: at-risk + critical configs */}
+            <div className="space-y-8">
+              {/* Tenants at risk */}
+              <div>
+                <h2 className="font-serif text-base text-carbone mb-4">
+                  Tenants em risco
+                </h2>
+                <div className="space-y-2">
+                  {data.tenantsAtRisk.length === 0 ? (
+                    <div className="bg-white border border-sable/20 p-4">
+                      <p className="text-sm text-pierre font-light">
+                        Nenhum tenant acima de 80% do limite.
+                      </p>
+                    </div>
+                  ) : (
+                    data.tenantsAtRisk.map((t) => {
+                      const pct =
+                        t.analysisLimit > 0
+                          ? Math.round((t.analysisUsed / t.analysisLimit) * 100)
+                          : 0;
+                      return (
+                        <Link
+                          key={t.id}
+                          href={`/admin/tenants/${t.id}`}
+                          className="block bg-white border border-sable/20 p-4 hover:bg-ivoire/40 transition-colors"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm text-carbone font-light">
+                              {t.name}
+                            </span>
+                            <span className="text-xs text-pierre font-light">
+                              {pct}%
+                            </span>
+                          </div>
+                          <div className="h-1 bg-sable/20">
+                            <div
+                              className={`h-1 ${pct >= 95 ? "bg-carbone" : "bg-pierre"}`}
+                              style={{ width: `${Math.min(pct, 100)}%` }}
+                            />
+                          </div>
+                          <p className="text-[10px] text-pierre font-light mt-2 uppercase tracking-wider">
+                            {t.analysisUsed} / {t.analysisLimit} analises — {t.plan}
+                          </p>
+                        </Link>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+
+              {/* Configuracoes criticas */}
+              <div>
+                <h2 className="font-serif text-base text-carbone mb-1">
+                  Configuracoes criticas
+                </h2>
+                <p className="text-xs text-pierre font-light mb-4">
+                  Tenants com configuracoes de seguranca desativadas.
+                </p>
+                <div className="space-y-2">
+                  {criticalConfigs.isLoading && (
+                    <div className="bg-white border border-sable/20 p-4">
+                      <p className="text-sm text-pierre font-light">Carregando...</p>
+                    </div>
+                  )}
+                  {!criticalConfigs.isLoading && criticalData.length === 0 && (
+                    <div className="bg-white border border-sable/20 p-4">
+                      <p className="text-sm text-pierre font-light">
+                        Nenhum tenant com configuracoes criticas desativadas.
+                      </p>
+                    </div>
+                  )}
+                  {criticalData.map((item) => (
+                    <Link
+                      key={item.tenantId}
+                      href={`/admin/tenants/${item.tenantId}`}
+                      className="block bg-white border border-sable/20 p-4 hover:bg-ivoire/40 transition-colors"
+                    >
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <span className="text-sm text-carbone font-light">
+                          {item.tenantName}
+                        </span>
+                        <span className="text-[9px] text-pierre uppercase tracking-wider font-light px-1.5 py-0.5 border border-sable/30 whitespace-nowrap flex-shrink-0">
+                          {item.tenantPlan}
+                        </span>
+                      </div>
+                      <div className="space-y-1">
+                        {item.issues.map((issue) => (
+                          <p key={issue} className="text-[10px] text-terre font-light flex items-center gap-1.5">
+                            <span className="inline-block w-1 h-1 bg-terre flex-shrink-0" />
+                            {issue}
+                          </p>
+                        ))}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

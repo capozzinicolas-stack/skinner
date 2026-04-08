@@ -62,12 +62,42 @@ function safeParseConditions(json: string | null | undefined): string {
   }
 }
 
+function safeParseLockedFields(json: string | null | undefined): string[] {
+  if (!json) return [];
+  try {
+    return JSON.parse(json) as string[];
+  } catch {
+    return [];
+  }
+}
+
+// All toggle fields that admin can override
+const TOGGLE_FIELDS: Array<{ field: string; label: string; critical?: boolean }> = [
+  { field: "questionPregnantEnabled", label: "Pergunta: gravidez ou amamentacao", critical: true },
+  { field: "resultsShowAlertSigns", label: "Secao: sinais de alerta", critical: true },
+  { field: "photoOnlyMode", label: "Modo somente foto", critical: true },
+  { field: "questionAllergiesEnabled", label: "Pergunta: alergias" },
+  { field: "questionSunscreenEnabled", label: "Pergunta: protetor solar" },
+  { field: "resultsShowBarrier", label: "Secao: barreira cutanea" },
+  { field: "resultsShowConditions", label: "Secao: condicoes identificadas" },
+  { field: "resultsShowConditionsDesc", label: "Secao: descricao das condicoes" },
+  { field: "resultsShowSeverityBars", label: "Secao: barras de severidade" },
+  { field: "resultsShowActionPlan", label: "Secao: plano de acao" },
+  { field: "resultsShowTimeline", label: "Secao: linha do tempo" },
+  { field: "resultsShowProducts", label: "Secao: produtos recomendados" },
+  { field: "resultsShowServices", label: "Secao: servicos recomendados" },
+  { field: "resultsShowMatchScore", label: "Secao: score de compatibilidade" },
+  { field: "resultsShowPdfButton", label: "Secao: botao de PDF" },
+  { field: "resultsShowPrices", label: "Secao: precos" },
+];
+
 export default function TenantDetailPage() {
   const params = useParams();
   const id = params.id as string;
 
   const utils = trpc.useUtils();
   const detail = trpc.admin.tenantDetail.useQuery({ id });
+  const analysisConfigQuery = trpc.admin.getAnalysisConfig.useQuery({ tenantId: id });
 
   const changePlan = trpc.admin.changeTenantPlan.useMutation({
     onSuccess: () => {
@@ -88,10 +118,71 @@ export default function TenantDetailPage() {
     },
   });
 
+  const updateAnalysisConfig = trpc.admin.updateAnalysisConfig.useMutation({
+    onSuccess: () => {
+      utils.admin.getAnalysisConfig.invalidate({ tenantId: id });
+      utils.admin.tenantDetail.invalidate({ id });
+      setConfigSaved(true);
+      setTimeout(() => setConfigSaved(false), 2500);
+    },
+  });
+
+  const lockField = trpc.admin.lockField.useMutation({
+    onSuccess: () => {
+      utils.admin.getAnalysisConfig.invalidate({ tenantId: id });
+    },
+  });
+
+  const unlockField = trpc.admin.unlockField.useMutation({
+    onSuccess: () => {
+      utils.admin.getAnalysisConfig.invalidate({ tenantId: id });
+    },
+  });
+
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [newPlan, setNewPlan] = useState<"starter" | "growth" | "enterprise">("starter");
+  const [configSaved, setConfigSaved] = useState(false);
+  const [adminNotes, setAdminNotes] = useState("");
 
   const d = detail.data;
+  const cfg = analysisConfigQuery.data;
+
+  // Derive typed config values once loaded
+  const cfgRecord = cfg as Record<string, unknown> | null | undefined;
+  const lockedFields = safeParseLockedFields(cfgRecord?.adminLockedFields as string | null | undefined);
+
+  // Sync notes from DB on load
+  const notesFromDb = (cfgRecord?.adminNotes as string) ?? "";
+
+  function getFieldValue(field: string): boolean {
+    if (!cfgRecord) return true;
+    const val = cfgRecord[field];
+    // photoOnlyMode defaults to false; all others default to true
+    if (val === undefined) return field === "photoOnlyMode" ? false : true;
+    return Boolean(val);
+  }
+
+  function handleToggleField(field: string, value: boolean) {
+    updateAnalysisConfig.mutate({
+      tenantId: id,
+      [field]: value,
+    });
+  }
+
+  function handleToggleLock(field: string) {
+    if (lockedFields.includes(field)) {
+      unlockField.mutate({ tenantId: id, field });
+    } else {
+      lockField.mutate({ tenantId: id, field });
+    }
+  }
+
+  function handleSaveNotes() {
+    updateAnalysisConfig.mutate({
+      tenantId: id,
+      adminNotes: adminNotes || null,
+    });
+  }
 
   return (
     <div className="p-8">
@@ -354,6 +445,145 @@ export default function TenantDetailPage() {
               </div>
             </div>
           )}
+
+          {/* ── Admin: Configuracao de Analise ──────────────────────────────── */}
+          <div>
+            <h2 className="font-serif text-base text-carbone mb-1">
+              Configuracao de Analise
+            </h2>
+            <p className="text-xs text-pierre font-light mb-4">
+              Visualize e controle as configuracoes de analise deste tenant. Campos bloqueados nao podem ser alterados pelo tenant.
+            </p>
+
+            {analysisConfigQuery.isLoading && (
+              <p className="text-sm text-pierre font-light">Carregando configuracao...</p>
+            )}
+
+            {cfg !== undefined && (
+              <div className="bg-white border border-sable/20 overflow-hidden">
+                {/* Header row */}
+                <div className="grid grid-cols-[1fr_100px_120px] border-b border-sable/20 bg-ivoire">
+                  <div className="px-6 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
+                    Campo
+                  </div>
+                  <div className="px-4 py-3 text-[10px] text-pierre uppercase tracking-wider font-light text-center">
+                    Estado
+                  </div>
+                  <div className="px-4 py-3 text-[10px] text-pierre uppercase tracking-wider font-light text-center">
+                    Bloqueio
+                  </div>
+                </div>
+
+                <div className="divide-y divide-sable/10">
+                  {TOGGLE_FIELDS.map(({ field, label, critical }) => {
+                    const value = getFieldValue(field);
+                    const isLocked = lockedFields.includes(field);
+                    // For photoOnlyMode: "active" = danger; for the rest: "disabled" = danger
+                    const isDangerous =
+                      critical &&
+                      (field === "photoOnlyMode" ? value === true : value === false);
+
+                    return (
+                      <div
+                        key={field}
+                        className={`grid grid-cols-[1fr_100px_120px] items-center ${
+                          isDangerous ? "bg-ivoire/60" : ""
+                        }`}
+                      >
+                        <div className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-carbone font-light">
+                              {label}
+                            </span>
+                            {critical && (
+                              <span className="text-[9px] text-pierre uppercase tracking-wider font-light px-1.5 py-0.5 border border-sable/30">
+                                critico
+                              </span>
+                            )}
+                          </div>
+                          {isDangerous && (
+                            <p className="text-[10px] text-terre font-light mt-0.5">
+                              Configuracao critica desativada
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Toggle current value */}
+                        <div className="px-4 py-4 flex justify-center">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleField(field, !value)}
+                            disabled={updateAnalysisConfig.isPending}
+                            className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer border transition-colors focus:outline-none disabled:opacity-40 ${
+                              value
+                                ? "bg-carbone border-carbone"
+                                : "bg-sable/40 border-sable/40"
+                            }`}
+                            role="switch"
+                            aria-checked={value}
+                          >
+                            <span
+                              className={`inline-block h-4 w-4 transform bg-blanc-casse transition-transform ${
+                                value ? "translate-x-4" : "translate-x-0.5"
+                              }`}
+                              style={{ marginTop: "2px" }}
+                            />
+                          </button>
+                        </div>
+
+                        {/* Lock/unlock toggle */}
+                        <div className="px-4 py-4 flex justify-center">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleLock(field)}
+                            disabled={lockField.isPending || unlockField.isPending}
+                            className={`text-[10px] uppercase tracking-wider font-light px-3 py-1 border transition-colors disabled:opacity-40 ${
+                              isLocked
+                                ? "border-carbone text-carbone bg-carbone/5 hover:bg-carbone/10"
+                                : "border-sable/30 text-pierre hover:border-carbone hover:text-carbone"
+                            }`}
+                          >
+                            {isLocked ? "Bloqueado" : "Livre"}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Admin notes */}
+                <div className="border-t border-sable/20 p-6">
+                  <p className="text-[10px] text-pierre uppercase tracking-wider font-light mb-2">
+                    Notas internas
+                  </p>
+                  <textarea
+                    value={adminNotes || notesFromDb}
+                    onChange={(e) => setAdminNotes(e.target.value)}
+                    placeholder="Observacoes internas sobre as configuracoes deste tenant..."
+                    rows={3}
+                    className="w-full px-3 py-2 border border-sable/40 bg-blanc-casse text-sm text-carbone font-light focus:outline-none focus:border-carbone resize-none"
+                  />
+                  <div className="flex items-center gap-3 mt-3">
+                    <button
+                      onClick={handleSaveNotes}
+                      disabled={updateAnalysisConfig.isPending}
+                      className="px-4 py-2 bg-carbone text-blanc-casse text-xs font-light tracking-wide hover:bg-terre disabled:opacity-50 transition-colors"
+                    >
+                      {updateAnalysisConfig.isPending ? "Salvando..." : "Salvar notas"}
+                    </button>
+                    {configSaved && (
+                      <span className="text-xs text-pierre font-light">Salvo.</span>
+                    )}
+                    {updateAnalysisConfig.error && (
+                      <span className="text-xs text-red-600 font-light">
+                        {updateAnalysisConfig.error.message}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Users */}
           <div>

@@ -3,6 +3,32 @@
 import { useEffect, useState } from "react";
 import { trpc } from "@/lib/trpc/client";
 
+// ─── Plan restriction helpers ─────────────────────────────────────────────────
+
+type PlanId = "starter" | "growth" | "enterprise";
+
+// Returns the restriction reason for a field given the current plan, or null if allowed.
+function getPlanRestriction(plan: PlanId, field: string): string | null {
+  if (plan === "enterprise") return null;
+
+  const starterRestricted = [
+    "questionPregnantEnabled",
+    "resultsShowAlertSigns",
+    "photoOnlyMode",
+  ];
+
+  // Growth cannot use photoOnlyMode unless admin explicitly enables it
+  const growthRestricted = ["photoOnlyMode"];
+
+  if (plan === "starter" && starterRestricted.includes(field)) {
+    return "Disponivel nos planos Growth e Enterprise";
+  }
+  if (plan === "growth" && growthRestricted.includes(field)) {
+    return "Disponivel apenas no plano Enterprise ou com aprovacao do administrador";
+  }
+  return null;
+}
+
 // ─── Score calculation ────────────────────────────────────────────────────────
 
 type AnalysisFormState = {
@@ -166,6 +192,7 @@ function ToggleRow({
   checked,
   onChange,
   locked = false,
+  lockReason,
   warning,
 }: {
   label: string;
@@ -173,6 +200,7 @@ function ToggleRow({
   checked: boolean;
   onChange: (v: boolean) => void;
   locked?: boolean;
+  lockReason?: string;
   warning?: string;
 }) {
   return (
@@ -190,7 +218,12 @@ function ToggleRow({
           {description && (
             <p className="text-xs text-pierre font-light mt-1">{description}</p>
           )}
-          {warning && !checked && (
+          {locked && lockReason && (
+            <p className="text-xs text-pierre font-light mt-2 border-l-2 border-sable/40 pl-2">
+              {lockReason}
+            </p>
+          )}
+          {warning && !checked && !locked && (
             <p className="text-xs text-terre font-light mt-2 border-l-2 border-terre/40 pl-2">
               {warning}
             </p>
@@ -264,42 +297,68 @@ export default function AnaliseConfigPage() {
   const [form, setForm] = useState<AnalysisFormState>(DEFAULT_FORM);
   const [saved, setSaved] = useState(false);
 
+  // Derive plan and locked fields from the loaded data
+  const plan = (tenantQuery.data?.plan ?? "starter") as PlanId;
+  const cfg = tenantQuery.data?.tenantConfig as Record<string, unknown> | null | undefined;
+
+  let adminLockedFields: string[] = [];
+  try {
+    const raw = cfg?.adminLockedFields as string | null | undefined;
+    adminLockedFields = raw ? JSON.parse(raw) : [];
+  } catch {
+    adminLockedFields = [];
+  }
+
+  // Determine if a field is locked (either by plan or by admin)
+  function isLocked(field: string): boolean {
+    if (adminLockedFields.includes(field)) return true;
+    return getPlanRestriction(plan, field) !== null;
+  }
+
+  function getLockReason(field: string): string | undefined {
+    if (adminLockedFields.includes(field)) {
+      return "Esta configuracao foi bloqueada pelo administrador da plataforma.";
+    }
+    return getPlanRestriction(plan, field) ?? undefined;
+  }
+
   useEffect(() => {
-    const cfg = tenantQuery.data?.tenantConfig;
     if (!cfg) return;
     setForm({
-      questionAllergiesEnabled: (cfg as any).questionAllergiesEnabled ?? true,
-      questionSunscreenEnabled: (cfg as any).questionSunscreenEnabled ?? true,
-      questionPregnantEnabled: (cfg as any).questionPregnantEnabled ?? true,
-      photoOnlyMode: (cfg as any).photoOnlyMode ?? false,
-      welcomeTitle: (cfg as any).welcomeTitle ?? "",
-      welcomeDescription: (cfg as any).welcomeDescription ?? "",
-      welcomeCtaText: (cfg as any).welcomeCtaText ?? "",
-      welcomeSubtext: (cfg as any).welcomeSubtext ?? "",
-      welcomeSubtextVisible: (cfg as any).welcomeSubtextVisible ?? true,
-      consentExtraText: (cfg as any).consentExtraText ?? "",
-      consentButtonText: (cfg as any).consentButtonText ?? "",
-      photoTitle: (cfg as any).photoTitle ?? "",
-      photoInstruction: (cfg as any).photoInstruction ?? "",
-      photoExtraText: (cfg as any).photoExtraText ?? "",
-      resultsShowBarrier: (cfg as any).resultsShowBarrier ?? true,
-      resultsShowConditions: (cfg as any).resultsShowConditions ?? true,
-      resultsShowConditionsDesc: (cfg as any).resultsShowConditionsDesc ?? true,
-      resultsShowSeverityBars: (cfg as any).resultsShowSeverityBars ?? true,
-      resultsShowActionPlan: (cfg as any).resultsShowActionPlan ?? true,
-      resultsShowTimeline: (cfg as any).resultsShowTimeline ?? true,
-      resultsShowAlertSigns: (cfg as any).resultsShowAlertSigns ?? true,
-      resultsShowProducts: (cfg as any).resultsShowProducts ?? true,
-      resultsShowServices: (cfg as any).resultsShowServices ?? true,
-      resultsShowMatchScore: (cfg as any).resultsShowMatchScore ?? true,
-      resultsShowPdfButton: (cfg as any).resultsShowPdfButton ?? true,
-      resultsShowPrices: (cfg as any).resultsShowPrices ?? true,
-      resultsTopMessage: (cfg as any).resultsTopMessage ?? "",
-      resultsFooterText: (cfg as any).resultsFooterText ?? "",
-      productCtaText: (cfg as any).productCtaText ?? "",
-      serviceCtaText: (cfg as any).serviceCtaText ?? "",
-      maxProductRecs: (cfg as any).maxProductRecs != null ? String((cfg as any).maxProductRecs) : "",
-      maxServiceRecs: (cfg as any).maxServiceRecs != null ? String((cfg as any).maxServiceRecs) : "",
+      questionAllergiesEnabled: (cfg.questionAllergiesEnabled as boolean) ?? true,
+      questionSunscreenEnabled: (cfg.questionSunscreenEnabled as boolean) ?? true,
+      questionPregnantEnabled: (cfg.questionPregnantEnabled as boolean) ?? true,
+      photoOnlyMode: (cfg.photoOnlyMode as boolean) ?? false,
+      welcomeTitle: (cfg.welcomeTitle as string) ?? "",
+      welcomeDescription: (cfg.welcomeDescription as string) ?? "",
+      welcomeCtaText: (cfg.welcomeCtaText as string) ?? "",
+      welcomeSubtext: (cfg.welcomeSubtext as string) ?? "",
+      welcomeSubtextVisible: (cfg.welcomeSubtextVisible as boolean) ?? true,
+      consentExtraText: (cfg.consentExtraText as string) ?? "",
+      consentButtonText: (cfg.consentButtonText as string) ?? "",
+      photoTitle: (cfg.photoTitle as string) ?? "",
+      photoInstruction: (cfg.photoInstruction as string) ?? "",
+      photoExtraText: (cfg.photoExtraText as string) ?? "",
+      resultsShowBarrier: (cfg.resultsShowBarrier as boolean) ?? true,
+      resultsShowConditions: (cfg.resultsShowConditions as boolean) ?? true,
+      resultsShowConditionsDesc: (cfg.resultsShowConditionsDesc as boolean) ?? true,
+      resultsShowSeverityBars: (cfg.resultsShowSeverityBars as boolean) ?? true,
+      resultsShowActionPlan: (cfg.resultsShowActionPlan as boolean) ?? true,
+      resultsShowTimeline: (cfg.resultsShowTimeline as boolean) ?? true,
+      resultsShowAlertSigns: (cfg.resultsShowAlertSigns as boolean) ?? true,
+      resultsShowProducts: (cfg.resultsShowProducts as boolean) ?? true,
+      resultsShowServices: (cfg.resultsShowServices as boolean) ?? true,
+      resultsShowMatchScore: (cfg.resultsShowMatchScore as boolean) ?? true,
+      resultsShowPdfButton: (cfg.resultsShowPdfButton as boolean) ?? true,
+      resultsShowPrices: (cfg.resultsShowPrices as boolean) ?? true,
+      resultsTopMessage: (cfg.resultsTopMessage as string) ?? "",
+      resultsFooterText: (cfg.resultsFooterText as string) ?? "",
+      productCtaText: (cfg.productCtaText as string) ?? "",
+      serviceCtaText: (cfg.serviceCtaText as string) ?? "",
+      maxProductRecs:
+        cfg.maxProductRecs != null ? String(cfg.maxProductRecs) : "",
+      maxServiceRecs:
+        cfg.maxServiceRecs != null ? String(cfg.maxServiceRecs) : "",
     });
   }, [tenantQuery.data]);
 
@@ -307,6 +366,8 @@ export default function AnaliseConfigPage() {
     key: K,
     value: AnalysisFormState[K]
   ) {
+    // Do not allow setting locked fields
+    if (isLocked(key)) return;
     setForm((f) => ({ ...f, [key]: value }));
   }
 
@@ -424,6 +485,16 @@ export default function AnaliseConfigPage() {
         <p className="text-pierre text-sm font-light mt-1">
           Personalize o fluxo de analise e os resultados exibidos para seus clientes.
         </p>
+
+        {/* Plan badge */}
+        <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 border border-sable/30 bg-ivoire">
+          <p className="text-[10px] text-pierre uppercase tracking-wider font-light">
+            Plano atual
+          </p>
+          <span className="text-[10px] text-carbone uppercase tracking-wider font-light">
+            {plan === "starter" ? "Starter" : plan === "growth" ? "Growth" : "Enterprise"}
+          </span>
+        </div>
 
         {/* ── PRE-ANALISE ─────────────────────────────────────── */}
         <div className="mt-10">
@@ -570,6 +641,8 @@ export default function AnaliseConfigPage() {
             description="Voce tem alguma alergia ou sensibilidade conhecida?"
             checked={form.questionAllergiesEnabled}
             onChange={(v) => set("questionAllergiesEnabled", v)}
+            locked={isLocked("questionAllergiesEnabled")}
+            lockReason={getLockReason("questionAllergiesEnabled")}
             warning="Sem esta informacao, a IA nao pode filtrar ingredientes alergenos. Risco de recomendacoes inadequadas. Score -8."
           />
           <ToggleRow
@@ -577,6 +650,8 @@ export default function AnaliseConfigPage() {
             description="Com que frequencia voce usa protetor solar?"
             checked={form.questionSunscreenEnabled}
             onChange={(v) => set("questionSunscreenEnabled", v)}
+            locked={isLocked("questionSunscreenEnabled")}
+            lockReason={getLockReason("questionSunscreenEnabled")}
             warning="Sem esta informacao, a analise de fotodano sera menos precisa. Score -5."
           />
           <ToggleRow
@@ -584,6 +659,8 @@ export default function AnaliseConfigPage() {
             description="Esta gravida ou amamentando?"
             checked={form.questionPregnantEnabled}
             onChange={(v) => set("questionPregnantEnabled", v)}
+            locked={isLocked("questionPregnantEnabled")}
+            lockReason={getLockReason("questionPregnantEnabled")}
             warning="Sem esta informacao, a IA pode recomendar ativos contraindicados para gestantes. Score -12."
           />
         </Section>
@@ -593,12 +670,24 @@ export default function AnaliseConfigPage() {
           <div className="p-5 bg-white border border-sable/20">
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
-                <p className="text-sm text-carbone">Desativar questionario</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm text-carbone">Desativar questionario</p>
+                  {isLocked("photoOnlyMode") && (
+                    <span className="text-[10px] text-pierre uppercase tracking-wider font-light px-2 py-0.5 bg-ivoire border border-sable/20">
+                      bloqueado
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-pierre font-light mt-1">
                   Quando ativado, o cliente pula o questionario e a analise e baseada
                   apenas na foto. Recomendado apenas para demos rapidos.
                 </p>
-                {form.photoOnlyMode && (
+                {isLocked("photoOnlyMode") && (
+                  <p className="text-xs text-pierre font-light mt-2 border-l-2 border-sable/40 pl-2">
+                    {getLockReason("photoOnlyMode")}
+                  </p>
+                )}
+                {form.photoOnlyMode && !isLocked("photoOnlyMode") && (
                   <div className="mt-3 p-3 bg-ivoire border border-sable/30">
                     <p className="text-xs text-terre font-light">
                       Atencao: o modo somente foto reduz significativamente a
@@ -612,6 +701,7 @@ export default function AnaliseConfigPage() {
               <Toggle
                 checked={form.photoOnlyMode}
                 onChange={(v) => set("photoOnlyMode", v)}
+                disabled={isLocked("photoOnlyMode")}
               />
             </div>
           </div>
@@ -672,12 +762,16 @@ export default function AnaliseConfigPage() {
             description="Exibe o status da barreira cutanea do cliente."
             checked={form.resultsShowBarrier}
             onChange={(v) => set("resultsShowBarrier", v)}
+            locked={isLocked("resultsShowBarrier")}
+            lockReason={getLockReason("resultsShowBarrier")}
           />
           <ToggleRow
             label="Condicoes identificadas"
             description="Exibe a lista de condicoes de pele encontradas."
             checked={form.resultsShowConditions}
             onChange={(v) => set("resultsShowConditions", v)}
+            locked={isLocked("resultsShowConditions")}
+            lockReason={getLockReason("resultsShowConditions")}
             warning="Ocultar condicoes reduz a transparencia da analise. Score -10."
           />
           <ToggleRow
@@ -685,18 +779,24 @@ export default function AnaliseConfigPage() {
             description="Exibe a descricao textual de cada condicao."
             checked={form.resultsShowConditionsDesc}
             onChange={(v) => set("resultsShowConditionsDesc", v)}
+            locked={isLocked("resultsShowConditionsDesc")}
+            lockReason={getLockReason("resultsShowConditionsDesc")}
           />
           <ToggleRow
             label="Barras de severidade"
             description="Exibe as barras de nivel de severidade das condicoes."
             checked={form.resultsShowSeverityBars}
             onChange={(v) => set("resultsShowSeverityBars", v)}
+            locked={isLocked("resultsShowSeverityBars")}
+            lockReason={getLockReason("resultsShowSeverityBars")}
           />
           <ToggleRow
             label="Plano de acao"
             description="Exibe o plano de tratamento em fases."
             checked={form.resultsShowActionPlan}
             onChange={(v) => set("resultsShowActionPlan", v)}
+            locked={isLocked("resultsShowActionPlan")}
+            lockReason={getLockReason("resultsShowActionPlan")}
             warning="Sem o plano de acao, o cliente nao tera orientacao sobre como aplicar os produtos. Score -7."
           />
           <ToggleRow
@@ -704,12 +804,16 @@ export default function AnaliseConfigPage() {
             description="Exibe a linha do tempo de evolucao esperada."
             checked={form.resultsShowTimeline}
             onChange={(v) => set("resultsShowTimeline", v)}
+            locked={isLocked("resultsShowTimeline")}
+            lockReason={getLockReason("resultsShowTimeline")}
           />
           <ToggleRow
             label="Sinais de alerta"
             description="Exibe os sinais que indicam necessidade de consulta medica."
             checked={form.resultsShowAlertSigns}
             onChange={(v) => set("resultsShowAlertSigns", v)}
+            locked={isLocked("resultsShowAlertSigns")}
+            lockReason={getLockReason("resultsShowAlertSigns")}
             warning="Ocultar sinais de alerta pode comprometer a seguranca do cliente. Score -15."
           />
           <ToggleRow
@@ -717,30 +821,40 @@ export default function AnaliseConfigPage() {
             description="Exibe os produtos do catalogo recomendados pela IA."
             checked={form.resultsShowProducts}
             onChange={(v) => set("resultsShowProducts", v)}
+            locked={isLocked("resultsShowProducts")}
+            lockReason={getLockReason("resultsShowProducts")}
           />
           <ToggleRow
             label="Servicos recomendados"
             description="Exibe os servicos e tratamentos recomendados pela IA."
             checked={form.resultsShowServices}
             onChange={(v) => set("resultsShowServices", v)}
+            locked={isLocked("resultsShowServices")}
+            lockReason={getLockReason("resultsShowServices")}
           />
           <ToggleRow
             label="Score de compatibilidade"
             description="Exibe a porcentagem de compatibilidade de cada produto."
             checked={form.resultsShowMatchScore}
             onChange={(v) => set("resultsShowMatchScore", v)}
+            locked={isLocked("resultsShowMatchScore")}
+            lockReason={getLockReason("resultsShowMatchScore")}
           />
           <ToggleRow
             label="Botao de PDF"
             description="Exibe o botao para baixar o relatorio em PDF."
             checked={form.resultsShowPdfButton}
             onChange={(v) => set("resultsShowPdfButton", v)}
+            locked={isLocked("resultsShowPdfButton")}
+            lockReason={getLockReason("resultsShowPdfButton")}
           />
           <ToggleRow
             label="Precos"
             description="Exibe o preco dos produtos e servicos nos cards."
             checked={form.resultsShowPrices}
             onChange={(v) => set("resultsShowPrices", v)}
+            locked={isLocked("resultsShowPrices")}
+            lockReason={getLockReason("resultsShowPrices")}
           />
         </Section>
 

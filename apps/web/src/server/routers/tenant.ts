@@ -1,4 +1,5 @@
 import { z } from "zod/v4";
+import { TRPCError } from "@trpc/server";
 import { router, adminProcedure, publicProcedure, tenantProcedure } from "../trpc";
 
 export const tenantRouter = router({
@@ -185,6 +186,7 @@ export const tenantRouter = router({
     }),
 
   // Authenticated mutation: update analysis display / UX configuration fields.
+  // Respects adminLockedFields — any field listed there cannot be changed by the tenant.
   updateAnalysisConfig: tenantProcedure
     .input(
       z.object({
@@ -230,9 +232,41 @@ export const tenantRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // Fetch the current config to check locked fields
+      const config = await ctx.db.tenantConfig.findUnique({
+        where: { tenantId: ctx.tenantId },
+        select: { adminLockedFields: true },
+      });
+
+      let lockedFields: string[] = [];
+      try {
+        lockedFields = config?.adminLockedFields
+          ? JSON.parse(config.adminLockedFields)
+          : [];
+      } catch {
+        lockedFields = [];
+      }
+
+      // Strip out any fields that are admin-locked
+      const safeInput = { ...input };
+      for (const field of lockedFields) {
+        if (field in safeInput) {
+          delete (safeInput as Record<string, unknown>)[field];
+        }
+      }
+
+      // If any attempted change was blocked, throw an informative error
+      const blockedAttempts = lockedFields.filter((f) => f in input);
+      if (blockedAttempts.length > 0) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Um ou mais campos foram bloqueados pelo administrador da plataforma e nao podem ser alterados.",
+        });
+      }
+
       return ctx.db.tenantConfig.update({
         where: { tenantId: ctx.tenantId },
-        data: input,
+        data: safeInput,
       });
     }),
 
