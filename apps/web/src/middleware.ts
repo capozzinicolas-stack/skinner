@@ -28,6 +28,7 @@ const PUBLIC_PATHS = [
   "/api/pixel",
   "/api/upload",
   "/api/report",
+  "/api/integrations",
 ];
 
 function isPublicPath(pathname: string): boolean {

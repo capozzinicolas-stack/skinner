@@ -10,6 +10,7 @@ import { reportRouter } from "./report";
 import { billingRouter } from "./billing";
 import { adminRouter } from "./admin";
 import { kitRouter } from "./kit";
+import { integrationRouter } from "./integration";
 
 export const appRouter = router({
   health: healthRouter,
@@ -23,6 +24,7 @@ export const appRouter = router({
   billing: billingRouter,
   admin: adminRouter,
   kit: kitRouter,
+  integration: integrationRouter,
 });
 
 export type AppRouter = typeof appRouter;
