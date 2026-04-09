@@ -160,28 +160,75 @@ export function SkinProjection({
 
       {state.status === "success" && (
         <div>
-          {/* 4-photo grid */}
-          <div className="grid grid-cols-4 gap-2 mb-4">
+          {/* 2x2 grid with larger images and improvement details */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
             {[
-              { label: "Atual", src: photoBase64 },
-              { label: "4 semanas", src: state.week4 },
-              { label: "8 semanas", src: state.week8 },
-              { label: "12 semanas", src: state.week12 },
-            ].map(({ label, src }) => (
-              <div key={label}>
+              {
+                label: "Atual",
+                period: "Estado inicial",
+                src: photoBase64,
+                improvements: conditions.length > 0
+                  ? `Estado atual com ${conditions.map((c) => getConditionLabel(c.name).toLowerCase()).join(", ")}.`
+                  : "Linha de base do diagnostico.",
+                reduction: null,
+              },
+              {
+                label: "4 semanas",
+                period: "Fase inicial",
+                src: state.week4,
+                improvements: "Melhora inicial na textura e hidratacao. Reducao leve dos sinais de oleosidade e primeiros indicios de uniformizacao do tom.",
+                reduction: "-15%",
+              },
+              {
+                label: "8 semanas",
+                period: "Fase intermediaria",
+                src: state.week8,
+                improvements: "Reducao visivel das condicoes identificadas. Pele com maior luminosidade, poros menos aparentes e textura mais refinada.",
+                reduction: "-30%",
+              },
+              {
+                label: "12 semanas",
+                period: "Fase de consolidacao",
+                src: state.week12,
+                improvements: "Resultados consolidados do tratamento. Pele equilibrada, com tom uniforme, textura suave e aspecto saudavel.",
+                reduction: "-50%",
+              },
+            ].map(({ label, period, src, improvements, reduction }) => (
+              <div key={label} className="bg-white border border-sable/20">
                 <div
-                  className="w-full bg-ivoire overflow-hidden"
-                  style={{ aspectRatio: "3/4" }}
+                  className="relative w-full bg-ivoire overflow-hidden"
+                  style={{ aspectRatio: "1/1" }}
                 >
                   <img
                     src={src}
                     alt={label}
                     className="w-full h-full object-cover"
                   />
+                  {reduction && (
+                    <div
+                      className="absolute top-3 right-3 px-2 py-1"
+                      style={{
+                        backgroundColor: "rgba(247, 243, 238, 0.92)",
+                        color: "#1C1917",
+                      }}
+                    >
+                      <span className="text-xs font-light tracking-wide">
+                        {reduction}
+                      </span>
+                    </div>
+                  )}
                 </div>
-                <p className="text-[10px] text-pierre uppercase tracking-wider font-light text-center mt-2">
-                  {label}
-                </p>
+                <div className="p-4">
+                  <div className="flex items-baseline justify-between mb-2">
+                    <h4 className="font-serif text-base text-carbone">{label}</h4>
+                    <span className="text-[10px] text-pierre uppercase tracking-wider font-light">
+                      {period}
+                    </span>
+                  </div>
+                  <p className="text-xs text-pierre font-light leading-relaxed">
+                    {improvements}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
@@ -198,6 +245,16 @@ export function SkinProjection({
               tratamento, genetica, estilo de vida e outros fatores individuais.
               Consulte um dermatologista para orientacao clinica personalizada.
             </p>
+          </div>
+
+          {/* Regenerate button */}
+          <div className="mt-4 text-center">
+            <button
+              onClick={handleGenerate}
+              className="text-xs text-pierre font-light underline hover:text-carbone"
+            >
+              Gerar novamente
+            </button>
           </div>
         </div>
       )}

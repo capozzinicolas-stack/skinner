@@ -20,22 +20,61 @@ function buildPrompt(
   objective: string
 ): string {
   const reductionPct = weeks === 4 ? 15 : weeks === 8 ? 30 : 50;
-  const conditionsList = conditions
-    .map((c) => `${c.name} (severidade ${c.severity}/3)`)
-    .join(", ");
+  const intensityLabel =
+    weeks === 4 ? "subtle early improvement" :
+    weeks === 8 ? "moderate visible improvement" :
+    "significant consolidated improvement";
 
-  return `Edit this facial photo to subtly show how the skin could look after ${weeks} weeks of dermocosmetic treatment focused on: ${objective}.
+  // Translate conditions to specific visual edits
+  const conditionEdits = conditions.map((c) => {
+    const intensity = reductionPct;
+    switch (c.name) {
+      case "acne":
+        return `Reduce visible acne lesions, pimples, and blemishes by approximately ${intensity}% (fade redness, smooth papules)`;
+      case "hyperpigmentation":
+        return `Lighten dark spots, melasma, and hyperpigmentation by approximately ${intensity}% (more even tone)`;
+      case "aging":
+        return `Soften fine lines and wrinkles by approximately ${intensity}% (smoother skin texture)`;
+      case "dehydration":
+        return `Increase skin hydration and plumpness by approximately ${intensity}% (less dry/flaky appearance)`;
+      case "sensitivity":
+        return `Reduce visible redness and irritation by approximately ${intensity}%`;
+      case "rosacea":
+        return `Reduce facial redness and visible capillaries by approximately ${intensity}%`;
+      case "pores":
+        return `Minimize visible pore size by approximately ${intensity}% (smoother texture)`;
+      case "dullness":
+        return `Increase skin luminosity and radiance by approximately ${intensity}% (brighter, healthier glow)`;
+      case "dark_circles":
+        return `Lighten under-eye dark circles by approximately ${intensity}%`;
+      case "oiliness":
+        return `Reduce visible oily shine by approximately ${intensity}% (more balanced matte finish)`;
+      default:
+        return `Improve ${c.name} by approximately ${intensity}%`;
+    }
+  }).join(". ");
 
-Conditions to gradually improve by approximately ${reductionPct}%: ${conditionsList}
+  return `Edit this facial photo to show a photorealistic ${intensityLabel} after ${weeks} weeks of professional dermocosmetic treatment focused on: ${objective}.
 
-CRITICAL RULES:
-- Preserve ALL facial features, identity, hair, eyes, mouth, expression, and pose EXACTLY as they are
-- Only improve skin texture, reduce visible blemishes, and add a subtle healthy glow
-- Do NOT change the person's appearance, age, gender, hair, or background
-- Keep the same lighting and angle
-- The improvement should be subtle and realistic, not dramatic or artificial
-- Do not add makeup or filters
-- Output a photorealistic edited version of the same person
+SPECIFIC IMPROVEMENTS TO APPLY VISIBLY:
+${conditionEdits}.
+
+CRITICAL IDENTITY PRESERVATION RULES:
+- This is the SAME person. Do NOT alter facial structure, bone structure, jawline, nose shape, eye shape, lip shape, or face proportions in any way.
+- Preserve hair (style, color, length), eye color, expression, pose, head angle, and background EXACTLY.
+- Do NOT add makeup, filters, or cosmetic effects.
+- Do NOT change the person's age, gender, ethnicity, or body features.
+- Keep the exact same lighting direction, shadows, and color temperature.
+- The person must be instantly recognizable as the same individual.
+
+QUALITY REQUIREMENTS:
+- High resolution photorealistic output
+- Sharp focus on facial features
+- Natural skin texture (avoid plastic/airbrushed look)
+- The improvements should be clearly visible but still believable
+- Maintain the original photo composition and framing
+
+The improvements should be noticeable enough to see a clear difference compared to the original, but never dramatic to the point of looking fake or like a different person.
 
 Return only the edited image.`;
 }

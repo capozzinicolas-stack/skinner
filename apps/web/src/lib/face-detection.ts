@@ -60,17 +60,21 @@ export async function detectFaceZones(
   }
 
   try {
-    // Use a smaller input size and lower threshold to detect faces in more
-    // photo conditions (distant, angled, low contrast).
-    const detection = await faceapi
-      .detectSingleFace(
-        imageElement,
-        new faceapi.TinyFaceDetectorOptions({
-          inputSize: 416,
-          scoreThreshold: 0.3,
-        })
-      )
-      .withFaceLandmarks();
+    // Try detection with multiple input sizes to maximize face detection success.
+    // Larger input size = more accurate but slower. Try 512 first, then 416, then 320.
+    let detection = null;
+    for (const inputSize of [512, 416, 320]) {
+      detection = await faceapi
+        .detectSingleFace(
+          imageElement,
+          new faceapi.TinyFaceDetectorOptions({
+            inputSize,
+            scoreThreshold: 0.2,
+          })
+        )
+        .withFaceLandmarks();
+      if (detection) break;
+    }
 
     if (!detection) return null;
 
