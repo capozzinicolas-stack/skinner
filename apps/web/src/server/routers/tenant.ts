@@ -79,6 +79,8 @@ export const tenantRouter = router({
               whatsappMessage: true,
               mercadoPagoEnabled: true,
               mercadoPagoEmail: true,
+              // Skin projection
+              projectionEnabled: true,
             },
           },
         },
@@ -265,6 +267,8 @@ export const tenantRouter = router({
         // Limits
         maxProductRecs: z.number().int().min(1).max(20).nullable().optional(),
         maxServiceRecs: z.number().int().min(1).max(20).nullable().optional(),
+        // Skin projection feature
+        projectionEnabled: z.boolean().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {

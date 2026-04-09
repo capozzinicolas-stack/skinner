@@ -97,6 +97,8 @@ export default function AnalysisPage({
         whatsappMessage: cfg.whatsappMessage ?? null,
         mercadoPagoEnabled: cfg.mercadoPagoEnabled ?? false,
         mercadoPagoEmail: cfg.mercadoPagoEmail ?? null,
+        // Skin projection
+        projectionEnabled: cfg.projectionEnabled ?? true,
       }
     : undefined;
 

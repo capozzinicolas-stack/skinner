@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { FullAnalysisResult, MatchedProduct } from "@/lib/sae/types";
 import { AnnotatedPhoto } from "@/components/analysis/annotated-photo";
 import { SkinRadarChart } from "@/components/analysis/skin-radar-chart";
+import { SkinProjection } from "@/components/analysis/skin-projection";
 
 const skinTypeLabels: Record<string, string> = {
   oily: "Oleosa",
@@ -80,6 +81,8 @@ export type ResultsConfig = {
   whatsappMessage?: string | null;
   mercadoPagoEnabled?: boolean;
   mercadoPagoEmail?: string | null;
+  // Skin projection feature
+  projectionEnabled?: boolean;
 };
 
 // Extended MatchedProduct to include optional service fields
@@ -396,6 +399,8 @@ export function ResultsScreen({
   const serviceCtaText = config?.serviceCtaText || "Agendar";
   const maxProducts = config?.maxProductRecs ?? null;
   const maxServices = config?.maxServiceRecs ?? null;
+  // Projection feature — defaults to true so existing tenants see it once schema is migrated
+  const projectionEnabled = config?.projectionEnabled ?? true;
 
   // Storefront config
   const storefrontEnabled = config?.storefrontEnabled ?? false;
@@ -471,6 +476,18 @@ export function ResultsScreen({
         <div className="mb-8 p-5 bg-white border border-sable/20">
           <SkinRadarChart annotations={analysis.zone_annotations} />
         </div>
+      )}
+
+      {/* Skin projection — on-demand, only when photo is available and feature is enabled */}
+      {projectionEnabled && !!photoBase64 && analysis.conditions.length > 0 && (
+        <SkinProjection
+          photoBase64={photoBase64}
+          conditions={analysis.conditions.map((c) => ({
+            name: c.name,
+            severity: c.severity,
+          }))}
+          primaryObjective={analysis.primary_objective}
+        />
       )}
 
       {/* Barrier status */}

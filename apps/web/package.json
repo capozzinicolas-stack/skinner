@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.85.0",
+    "@google/generative-ai": "^0.24.1",
     "@react-pdf/renderer": "^4.3.3",
     "@skinner/db": "workspace:*",
     "@skinner/ui": "workspace:*",

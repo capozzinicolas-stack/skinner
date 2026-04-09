@@ -133,6 +133,9 @@ model TenantConfig {
   mercadoPagoEmail        String?   // email for MercadoPago payment links
   storefrontCtaMode       String  @default("external")  // "whatsapp" | "mercadopago" | "both" | "external"
 
+  // Skin projection feature (~$0.12 per use, on-demand only)
+  projectionEnabled       Boolean @default(true)
+
   // Admin overrides (locks prevent tenant from changing)
   adminLockedFields    String?  // JSON array of field names that tenant cannot modify
   adminNotes           String?  // Internal notes about this tenant's config

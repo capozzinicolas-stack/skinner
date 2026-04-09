@@ -63,6 +63,8 @@ type AnalysisFormState = {
   resultsShowMatchScore: boolean;
   resultsShowPdfButton: boolean;
   resultsShowPrices: boolean;
+  // Skin projection
+  projectionEnabled: boolean;
   // Results text
   resultsTopMessage: string;
   resultsFooterText: string;
@@ -100,6 +102,7 @@ const DEFAULT_FORM: AnalysisFormState = {
   resultsShowMatchScore: true,
   resultsShowPdfButton: true,
   resultsShowPrices: true,
+  projectionEnabled: true,
   resultsTopMessage: "",
   resultsFooterText: "",
   productCtaText: "",
@@ -756,6 +759,7 @@ export default function AnaliseConfigPage() {
       resultsShowMatchScore: (cfg.resultsShowMatchScore as boolean) ?? true,
       resultsShowPdfButton: (cfg.resultsShowPdfButton as boolean) ?? true,
       resultsShowPrices: (cfg.resultsShowPrices as boolean) ?? true,
+      projectionEnabled: (cfg.projectionEnabled as boolean) ?? true,
       resultsTopMessage: (cfg.resultsTopMessage as string) ?? "",
       resultsFooterText: (cfg.resultsFooterText as string) ?? "",
       productCtaText: (cfg.productCtaText as string) ?? "",
@@ -809,6 +813,7 @@ export default function AnaliseConfigPage() {
       resultsShowMatchScore: form.resultsShowMatchScore,
       resultsShowPdfButton: form.resultsShowPdfButton,
       resultsShowPrices: form.resultsShowPrices,
+      projectionEnabled: form.projectionEnabled,
       resultsTopMessage: form.resultsTopMessage || null,
       resultsFooterText: form.resultsFooterText || null,
       productCtaText: form.productCtaText || null,
@@ -1264,6 +1269,14 @@ export default function AnaliseConfigPage() {
                 onChange={(v) => set("resultsShowPrices", v)}
                 locked={isLocked("resultsShowPrices")}
                 lockReason={getLockReason("resultsShowPrices")}
+              />
+              <ToggleRow
+                label="Projecao de resultado"
+                description="Exibe o botao para gerar simulacao visual de evolucao da pele em 4, 8 e 12 semanas. Utiliza Gemini AI (~R$ 0,65 por uso)."
+                checked={form.projectionEnabled}
+                onChange={(v) => set("projectionEnabled", v)}
+                locked={isLocked("projectionEnabled")}
+                lockReason={getLockReason("projectionEnabled")}
               />
             </Section>
 
