@@ -45,7 +45,7 @@ async function generateProjection(
   prompt: string
 ): Promise<string> {
   const model = genAI.getGenerativeModel({
-    model: "gemini-2.5-flash-preview-04-17",
+    model: "gemini-2.5-flash-image",
   });
 
   // Strip data URL prefix if present
