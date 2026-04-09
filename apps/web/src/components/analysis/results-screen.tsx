@@ -4,7 +4,6 @@ import { useState } from "react";
 import type { FullAnalysisResult, MatchedProduct } from "@/lib/sae/types";
 import { AnnotatedPhoto } from "@/components/analysis/annotated-photo";
 import { SkinRadarChart } from "@/components/analysis/skin-radar-chart";
-import { SkinProjection } from "@/components/analysis/skin-projection";
 
 const skinTypeLabels: Record<string, string> = {
   oily: "Oleosa",
@@ -471,13 +470,6 @@ export function ResultsScreen({
       {analysis.zone_annotations && analysis.zone_annotations.length > 0 && (
         <div className="mb-8 p-5 bg-white border border-sable/20">
           <SkinRadarChart annotations={analysis.zone_annotations} />
-        </div>
-      )}
-
-      {/* Skin projection (simulation) */}
-      {photoBase64 && analysis.zone_annotations && analysis.zone_annotations.length > 0 && (
-        <div className="mb-8 p-5 bg-white border border-sable/20">
-          <SkinProjection photoBase64={photoBase64} annotations={analysis.zone_annotations} />
         </div>
       )}
 
