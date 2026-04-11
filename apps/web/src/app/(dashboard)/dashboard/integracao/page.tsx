@@ -34,11 +34,6 @@ const ctaModeOptions: { value: CtaMode; label: string; description: string }[] =
 
 const otherIntegrations = [
   {
-    name: "Shopify",
-    description: "Sincronizacao de catalogo e webhook de compras.",
-    badge: "Em breve",
-  },
-  {
     name: "VTEX",
     description: "Integracao enterprise com plataforma VTEX.",
     badge: "Em breve",
@@ -198,6 +193,177 @@ function NuvemshopCard() {
             className="px-4 py-1.5 bg-carbone text-blanc-casse text-xs font-light tracking-wide hover:bg-terre disabled:opacity-50 transition-colors"
           >
             {connectMutation.isPending ? "Redirecionando..." : "Conectar Nuvemshop"}
+          </button>
+          {connectMutation.error && (
+            <p className="text-xs text-red-600 font-light mt-2">
+              {connectMutation.error.message}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ShopifyCard() {
+  const searchParams = useSearchParams();
+  const utils = trpc.useUtils();
+
+  const status = trpc.integration.getStatusByPlatform.useQuery({ platform: "shopify" });
+  const lastSync = status.data?.lastSyncAt ?? null;
+
+  const connectMutation = trpc.integration.connectShopify.useMutation({
+    onSuccess: (data) => {
+      window.location.href = data.url;
+    },
+  });
+  const disconnectMutation = trpc.integration.disconnectShopify.useMutation({
+    onSuccess: () => {
+      utils.integration.getStatusByPlatform.invalidate({ platform: "shopify" });
+    },
+  });
+  const syncMutation = trpc.integration.syncShopifyProducts.useMutation({
+    onSuccess: () => {
+      utils.integration.getStatusByPlatform.invalidate({ platform: "shopify" });
+      setSyncResult(syncMutation.data ?? null);
+    },
+  });
+
+  const [shopInput, setShopInput] = useState("");
+  const [syncResult, setSyncResult] = useState<{ synced: number; errors: string[] } | null>(null);
+
+  // Handle ?shopify=connected query param feedback
+  useEffect(() => {
+    const param = searchParams.get("shopify");
+    if (param === "connected") {
+      utils.integration.getStatusByPlatform.invalidate({ platform: "shopify" });
+      const url = new URL(window.location.href);
+      url.searchParams.delete("shopify");
+      url.searchParams.delete("reason");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, [searchParams, utils]);
+
+  const integration = status.data;
+  const isConnected = integration?.status === "active";
+
+  function formatDate(date: Date | string | null | undefined): string {
+    if (!date) return "—";
+    return new Intl.DateTimeFormat("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(new Date(date));
+  }
+
+  function handleConnect() {
+    if (!shopInput.trim()) return;
+    connectMutation.mutate({ shop: shopInput.trim() });
+  }
+
+  return (
+    <div className="p-5 bg-white border border-sable/20">
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-sm text-carbone">Shopify</p>
+          <p className="text-xs text-pierre font-light mt-0.5">
+            Sincronizacao de catalogo e webhook de compras.
+          </p>
+        </div>
+        {isConnected ? (
+          <span className="text-[10px] text-terre uppercase tracking-wider font-light px-3 py-1 border border-terre/30 flex-shrink-0">
+            Conectado
+          </span>
+        ) : (
+          <span className="text-[10px] text-pierre uppercase tracking-wider font-light px-3 py-1 border border-sable/30 flex-shrink-0">
+            Desconectado
+          </span>
+        )}
+      </div>
+
+      {isConnected && (
+        <div className="mt-4 pt-4 border-t border-sable/20 space-y-3">
+          <div className="flex items-center gap-6 text-xs text-pierre font-light">
+            <span>
+              Loja:{" "}
+              <span className="text-carbone">{integration?.storeId ?? "—"}</span>
+            </span>
+            <span>
+              Ultima sincronizacao:{" "}
+              <span className="text-carbone">{formatDate(lastSync)}</span>
+            </span>
+          </div>
+
+          {syncResult && (
+            <div className="p-3 bg-ivoire border border-sable/20">
+              <p className="text-xs text-carbone font-light">
+                {syncResult.synced} produto{syncResult.synced !== 1 ? "s" : ""} sincronizado{syncResult.synced !== 1 ? "s" : ""}.
+              </p>
+              {syncResult.errors.length > 0 && (
+                <p className="text-xs text-red-600 font-light mt-1">
+                  {syncResult.errors.length} erro{syncResult.errors.length !== 1 ? "s" : ""}: {syncResult.errors[0]}
+                </p>
+              )}
+            </div>
+          )}
+
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setSyncResult(null);
+                syncMutation.mutate();
+              }}
+              disabled={syncMutation.isPending}
+              className="px-4 py-1.5 bg-carbone text-blanc-casse text-xs font-light tracking-wide hover:bg-terre disabled:opacity-50 transition-colors"
+            >
+              {syncMutation.isPending ? "Sincronizando..." : "Sincronizar produtos"}
+            </button>
+            <button
+              type="button"
+              onClick={() => disconnectMutation.mutate()}
+              disabled={disconnectMutation.isPending}
+              className="px-4 py-1.5 border border-sable text-terre text-xs font-light tracking-wide hover:bg-ivoire disabled:opacity-50 transition-colors"
+            >
+              {disconnectMutation.isPending ? "Desconectando..." : "Desconectar"}
+            </button>
+          </div>
+
+          {syncMutation.error && (
+            <p className="text-xs text-red-600 font-light">{syncMutation.error.message}</p>
+          )}
+          {disconnectMutation.error && (
+            <p className="text-xs text-red-600 font-light">{disconnectMutation.error.message}</p>
+          )}
+        </div>
+      )}
+
+      {!isConnected && (
+        <div className="mt-4 pt-4 border-t border-sable/20 space-y-3">
+          <div>
+            <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
+              Dominio da loja
+            </label>
+            <input
+              type="text"
+              value={shopInput}
+              onChange={(e) => setShopInput(e.target.value)}
+              placeholder="minha-loja.myshopify.com"
+              className="w-full px-3 py-2 border border-sable/40 bg-blanc-casse text-sm text-carbone font-light focus:outline-none focus:border-pierre"
+            />
+            <p className="text-[10px] text-pierre font-light mt-1">
+              Use o dominio completo .myshopify.com ou apenas o subdominio.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleConnect}
+            disabled={connectMutation.isPending || !shopInput.trim()}
+            className="px-4 py-1.5 bg-carbone text-blanc-casse text-xs font-light tracking-wide hover:bg-terre disabled:opacity-50 transition-colors"
+          >
+            {connectMutation.isPending ? "Redirecionando..." : "Conectar Shopify"}
           </button>
           {connectMutation.error && (
             <p className="text-xs text-red-600 font-light mt-2">
@@ -511,6 +677,7 @@ export default function IntegracaoPage() {
         </p>
         <div className="space-y-3">
           <NuvemshopCard />
+          <ShopifyCard />
           {otherIntegrations.map((integration) => (
             <div
               key={integration.name}
