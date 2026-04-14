@@ -40,7 +40,7 @@ export default function UsersPage() {
         </div>
         <button
           onClick={() => setShowCreate(!showCreate)}
-          className="px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 transition-colors"
+          className="px-4 py-2 bg-carbone text-blanc-casse text-sm font-medium hover:bg-terre transition-colors"
         >
           {showCreate ? "Cancelar" : "Convidar Usuário"}
         </button>
@@ -67,7 +67,7 @@ export default function UsersPage() {
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                 required
-                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sable"
               />
             </div>
             <div>
@@ -77,7 +77,7 @@ export default function UsersPage() {
                 value={form.email}
                 onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                 required
-                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sable"
               />
             </div>
             <div>
@@ -88,7 +88,7 @@ export default function UsersPage() {
                 onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
                 required
                 minLength={6}
-                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sable"
               />
             </div>
             <div>
@@ -96,7 +96,7 @@ export default function UsersPage() {
               <select
                 value={form.role}
                 onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
-                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sable"
               >
                 <option value="b2b_viewer">Visualizador</option>
                 <option value="b2b_analyst">Analista</option>
@@ -107,7 +107,7 @@ export default function UsersPage() {
           <button
             type="submit"
             disabled={createMutation.isPending}
-            className="px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 disabled:opacity-50"
+            className="px-4 py-2 bg-carbone text-blanc-casse text-sm font-medium hover:bg-terre disabled:opacity-50"
           >
             {createMutation.isPending ? "Criando..." : "Criar Usuário"}
           </button>

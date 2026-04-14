@@ -87,7 +87,7 @@ export default function DermatologyPage() {
         <button
           onClick={() => setTab("conditions")}
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-            tab === "conditions" ? "border-brand-600 text-brand-600" : "border-transparent text-gray-500 hover:text-gray-700"
+            tab === "conditions" ? "border-carbone text-carbone" : "border-transparent text-gray-500 hover:text-gray-700"
           }`}
         >
           Condições ({conditions.data?.length ?? 0})
@@ -95,7 +95,7 @@ export default function DermatologyPage() {
         <button
           onClick={() => setTab("ingredients")}
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-            tab === "ingredients" ? "border-brand-600 text-brand-600" : "border-transparent text-gray-500 hover:text-gray-700"
+            tab === "ingredients" ? "border-carbone text-carbone" : "border-transparent text-gray-500 hover:text-gray-700"
           }`}
         >
           Ingredientes ({ingredients.data?.length ?? 0})
@@ -108,7 +108,7 @@ export default function DermatologyPage() {
           <div className="flex justify-end mb-4">
             <button
               onClick={() => setShowConditionForm(!showConditionForm)}
-              className="px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700"
+              className="px-4 py-2 bg-carbone text-blanc-casse text-sm font-medium hover:bg-terre"
             >
               {showConditionForm ? "Cancelar" : "Nova Condição"}
             </button>
@@ -137,7 +137,7 @@ export default function DermatologyPage() {
                     value={conditionForm.name}
                     onChange={(e) => setConditionForm((f) => ({ ...f, name: e.target.value.toLowerCase().replace(/\s/g, "_") }))}
                     required placeholder="acne"
-                    className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sable"
                   />
                 </div>
                 <div>
@@ -146,7 +146,7 @@ export default function DermatologyPage() {
                     value={conditionForm.displayName}
                     onChange={(e) => setConditionForm((f) => ({ ...f, displayName: e.target.value }))}
                     required placeholder="Acne"
-                    className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sable"
                   />
                 </div>
                 <div>
@@ -154,7 +154,7 @@ export default function DermatologyPage() {
                   <select
                     value={conditionForm.category}
                     onChange={(e) => setConditionForm((f) => ({ ...f, category: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sable"
                   >
                     {Object.entries(categoryLabels).map(([k, v]) => (
                       <option key={k} value={k}>{v}</option>
@@ -168,7 +168,7 @@ export default function DermatologyPage() {
                   value={conditionForm.description}
                   onChange={(e) => setConditionForm((f) => ({ ...f, description: e.target.value }))}
                   required rows={2}
-                  className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sable"
                 />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -178,7 +178,7 @@ export default function DermatologyPage() {
                     value={conditionForm.commonIngredients}
                     onChange={(e) => setConditionForm((f) => ({ ...f, commonIngredients: e.target.value }))}
                     placeholder="Ácido Salicílico, Niacinamida"
-                    className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sable"
                   />
                 </div>
                 <div>
@@ -187,7 +187,7 @@ export default function DermatologyPage() {
                     value={conditionForm.avoidIngredients}
                     onChange={(e) => setConditionForm((f) => ({ ...f, avoidIngredients: e.target.value }))}
                     placeholder="Óleos comedogênicos, Lanolina"
-                    className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sable"
                   />
                 </div>
               </div>
@@ -197,7 +197,7 @@ export default function DermatologyPage() {
                   <input
                     value={conditionForm.severity1Desc}
                     onChange={(e) => setConditionForm((f) => ({ ...f, severity1Desc: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sable"
                   />
                 </div>
                 <div>
@@ -205,7 +205,7 @@ export default function DermatologyPage() {
                   <input
                     value={conditionForm.severity2Desc}
                     onChange={(e) => setConditionForm((f) => ({ ...f, severity2Desc: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sable"
                   />
                 </div>
                 <div>
@@ -213,14 +213,14 @@ export default function DermatologyPage() {
                   <input
                     value={conditionForm.severity3Desc}
                     onChange={(e) => setConditionForm((f) => ({ ...f, severity3Desc: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sable"
                   />
                 </div>
               </div>
               <button
                 type="submit"
                 disabled={createCondition.isPending}
-                className="px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 disabled:opacity-50"
+                className="px-4 py-2 bg-carbone text-blanc-casse text-sm font-medium hover:bg-terre disabled:opacity-50"
               >
                 {createCondition.isPending ? "Criando..." : "Criar Condição"}
               </button>
@@ -279,7 +279,7 @@ export default function DermatologyPage() {
           <div className="flex justify-end mb-4">
             <button
               onClick={() => setShowIngredientForm(!showIngredientForm)}
-              className="px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700"
+              className="px-4 py-2 bg-carbone text-blanc-casse text-sm font-medium hover:bg-terre"
             >
               {showIngredientForm ? "Cancelar" : "Novo Ingrediente"}
             </button>
@@ -307,7 +307,7 @@ export default function DermatologyPage() {
                     value={ingredientForm.name}
                     onChange={(e) => setIngredientForm((f) => ({ ...f, name: e.target.value.toLowerCase().replace(/\s/g, "_") }))}
                     required placeholder="retinol"
-                    className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sable"
                   />
                 </div>
                 <div>
@@ -316,7 +316,7 @@ export default function DermatologyPage() {
                     value={ingredientForm.displayName}
                     onChange={(e) => setIngredientForm((f) => ({ ...f, displayName: e.target.value }))}
                     required placeholder="Retinol"
-                    className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sable"
                   />
                 </div>
                 <div>
@@ -325,7 +325,7 @@ export default function DermatologyPage() {
                     value={ingredientForm.category}
                     onChange={(e) => setIngredientForm((f) => ({ ...f, category: e.target.value }))}
                     placeholder="retinoid, aha, vitamin..."
-                    className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sable"
                   />
                 </div>
               </div>
@@ -335,7 +335,7 @@ export default function DermatologyPage() {
                   value={ingredientForm.description}
                   onChange={(e) => setIngredientForm((f) => ({ ...f, description: e.target.value }))}
                   rows={2}
-                  className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sable"
                 />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -345,7 +345,7 @@ export default function DermatologyPage() {
                     value={ingredientForm.treatsConditions}
                     onChange={(e) => setIngredientForm((f) => ({ ...f, treatsConditions: e.target.value }))}
                     placeholder="acne, aging"
-                    className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sable"
                   />
                 </div>
                 <div>
@@ -354,7 +354,7 @@ export default function DermatologyPage() {
                     value={ingredientForm.skinTypes}
                     onChange={(e) => setIngredientForm((f) => ({ ...f, skinTypes: e.target.value }))}
                     placeholder="oily, combination"
-                    className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sable"
                   />
                 </div>
                 <div>
@@ -363,14 +363,14 @@ export default function DermatologyPage() {
                     value={ingredientForm.contraindications}
                     onChange={(e) => setIngredientForm((f) => ({ ...f, contraindications: e.target.value }))}
                     placeholder="gravidez, amamentação"
-                    className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sable"
                   />
                 </div>
               </div>
               <button
                 type="submit"
                 disabled={createIngredient.isPending}
-                className="px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 disabled:opacity-50"
+                className="px-4 py-2 bg-carbone text-blanc-casse text-sm font-medium hover:bg-terre disabled:opacity-50"
               >
                 {createIngredient.isPending ? "Criando..." : "Criar Ingrediente"}
               </button>

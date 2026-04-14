@@ -37,7 +37,7 @@ export default function ChannelsPage() {
               onClick={() => {
                 navigator.clipboard.writeText(analysisUrl);
               }}
-              className="px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 transition-colors"
+              className="px-4 py-2 bg-carbone text-blanc-casse text-sm font-medium hover:bg-terre transition-colors"
             >
               Copiar
             </button>
@@ -60,7 +60,7 @@ export default function ChannelsPage() {
               <a
                 href={qrApiUrl}
                 download={`skinner-qr-${slug}.png`}
-                className="px-4 py-2 border border-brand-300 text-brand-700 rounded-lg text-sm font-medium hover:bg-brand-50 transition-colors"
+                className="px-4 py-2 border border-sable text-terre text-sm font-medium hover:bg-ivoire transition-colors"
               >
                 Baixar QR Code
               </a>
