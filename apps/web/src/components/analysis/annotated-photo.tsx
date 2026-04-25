@@ -40,17 +40,17 @@ const STATUS_LABELS: Record<ZoneStatus, string> = {
   concern:   "Cuidado",
 };
 
-// Resolve a zone's position — ONLY uses detected landmarks.
-// Returns null if detection failed (no fallback to fixed positions).
+// Resolve a zone's position — uses detected landmarks when available,
+// falls back to calibrated fixed positions when detection fails.
 function resolvePosition(
   zone: FaceZone,
   detected: FaceZonePositions | null
-): { top: string; left: string } | null {
+): { top: string; left: string } {
   if (detected && detected[zone]) {
     const p = detected[zone];
     return { top: `${p.top.toFixed(2)}%`, left: `${p.left.toFixed(2)}%` };
   }
-  return null;
+  return ZONE_POSITIONS_FALLBACK[zone];
 }
 
 export function AnnotatedPhoto({
@@ -149,28 +149,9 @@ export function AnnotatedPhoto({
           </div>
         )}
 
-        {/* No face detected warning */}
-        {!detecting && !detectedPositions && (
-          <div
-            className="absolute bottom-3 left-3 right-3 flex justify-center"
-            style={{ zIndex: 15 }}
-          >
-            <span
-              className="text-[10px] uppercase tracking-wider font-light px-3 py-2 text-center"
-              style={{
-                backgroundColor: "rgba(28, 25, 23, 0.8)",
-                color: "#C8BAA9",
-              }}
-            >
-              Nao foi possivel mapear o rosto. Veja a analise abaixo.
-            </span>
-          </div>
-        )}
-
-        {/* Zone markers — ONLY rendered when face detection succeeded */}
-        {!detecting && detectedPositions && annotations.map((annotation) => {
+        {/* Zone markers — rendered with detected positions or fallback */}
+        {!detecting && annotations.map((annotation) => {
           const pos = resolvePosition(annotation.zone, detectedPositions);
-          if (!pos) return null;
           const color = STATUS_COLORS[annotation.status];
           const isActive = activeZone === annotation.zone;
 
