@@ -116,9 +116,9 @@ export function PhotoCapture({
       <h2 className="font-serif text-xl text-carbone mb-2 text-center">
         Fotografe seu rosto
       </h2>
-      <p className="text-sm text-pierre text-center mb-6 font-light">
-        Para uma analise precisa, tire uma foto com boa iluminacao, sem
-        maquiagem e de frente.
+      <p className="text-sm text-pierre text-center mb-6 font-light leading-relaxed">
+        Para uma analise precisa, posicione seu rosto dentro da guia oval.
+        Sem maquiagem, sem oculos e de frente para a camera.
       </p>
 
       {error && (
@@ -129,11 +129,30 @@ export function PhotoCapture({
 
       {mode === "choose" && (
         <div className="space-y-4">
-          <div className="relative w-64 h-80 mx-auto bg-ivoire flex items-center justify-center">
-            <div className="w-48 h-60 border border-dashed border-sable flex items-center justify-center">
-              <p className="text-sm text-pierre text-center px-4 font-light">
-                Posicione seu rosto aqui
-              </p>
+          {/* Face positioning guide */}
+          <div className="relative w-72 h-96 mx-auto bg-ivoire flex items-center justify-center overflow-hidden">
+            {/* Oval guide */}
+            <div className="relative w-52 h-72 border-2 border-dashed border-sable/60 rounded-[50%] flex items-center justify-center">
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-[10px] text-pierre uppercase tracking-wider font-light">
+                  Posicione seu rosto
+                </span>
+                <span className="text-[10px] text-pierre/50 font-light">
+                  dentro da guia oval
+                </span>
+              </div>
+            </div>
+            {/* Top guide label */}
+            <div className="absolute top-2 left-0 right-0 flex justify-center">
+              <span className="text-[9px] text-pierre/60 uppercase tracking-wider font-light px-2 py-1 bg-ivoire">
+                ↓ Topo da testa aqui ↓
+              </span>
+            </div>
+            {/* Bottom guide label */}
+            <div className="absolute bottom-2 left-0 right-0 flex justify-center">
+              <span className="text-[9px] text-pierre/60 uppercase tracking-wider font-light px-2 py-1 bg-ivoire">
+                ↑ Queixo aqui ↑
+              </span>
             </div>
           </div>
 
@@ -159,16 +178,36 @@ export function PhotoCapture({
             className="hidden"
           />
 
-          <div className="mt-6 space-y-2">
-            <p className="text-xs text-pierre uppercase tracking-wider font-light">
-              Dicas para melhor resultado
+          <div className="mt-6 p-4 bg-white border border-sable/20 space-y-3">
+            <p className="text-[10px] text-pierre uppercase tracking-wider font-light">
+              Para uma analise precisa
             </p>
-            <ul className="text-xs text-pierre/70 space-y-1 font-light">
-              <li>Boa iluminacao natural, sem sombras fortes</li>
-              <li>Sem maquiagem ou filtros</li>
-              <li>Rosto de frente, olhando para a camera</li>
-              <li>Cabelo preso para mostrar a testa</li>
-            </ul>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <p className="text-xs text-carbone font-light">Iluminacao</p>
+                <p className="text-[11px] text-pierre/70 font-light leading-relaxed">
+                  Luz natural frontal. Evite sombras no rosto e luz forte atras de voce.
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-carbone font-light">Posicao</p>
+                <p className="text-[11px] text-pierre/70 font-light leading-relaxed">
+                  Olhe direto para a camera, rosto reto sem inclinar para os lados.
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-carbone font-light">Preparacao</p>
+                <p className="text-[11px] text-pierre/70 font-light leading-relaxed">
+                  Sem maquiagem, sem oculos, cabelo preso mostrando a testa.
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-carbone font-light">Enquadramento</p>
+                <p className="text-[11px] text-pierre/70 font-light leading-relaxed">
+                  Preencha o oval do topo da testa ate o queixo. So o rosto, sem corpo.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -184,9 +223,35 @@ export function PhotoCapture({
               className="w-full aspect-[3/4] object-cover"
               style={{ transform: "scaleX(-1)" }}
             />
-            {/* Face oval guide */}
+            {/* Face oval guide with labels */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-48 h-60 border border-white/40 rounded-[50%]" />
+              <div className="relative w-52 h-72">
+                {/* Oval border */}
+                <div className="absolute inset-0 border-2 border-white/50 rounded-[50%]" />
+                {/* Corner tick marks for precision */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-px bg-white/60" />
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-px bg-white/60" />
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-px h-6 bg-white/60" />
+                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-6 bg-white/60" />
+              </div>
+            </div>
+            {/* Top label */}
+            <div className="absolute top-3 left-0 right-0 flex justify-center pointer-events-none">
+              <span
+                className="text-[10px] uppercase tracking-wider font-light px-3 py-1"
+                style={{ backgroundColor: "rgba(0,0,0,0.5)", color: "rgba(255,255,255,0.8)" }}
+              >
+                Testa aqui
+              </span>
+            </div>
+            {/* Bottom label */}
+            <div className="absolute bottom-3 left-0 right-0 flex justify-center pointer-events-none">
+              <span
+                className="text-[10px] uppercase tracking-wider font-light px-3 py-1"
+                style={{ backgroundColor: "rgba(0,0,0,0.5)", color: "rgba(255,255,255,0.8)" }}
+              >
+                Queixo aqui
+              </span>
             </div>
             {/* Loading indicator while camera initializes */}
             {!cameraReady && (
@@ -197,6 +262,9 @@ export function PhotoCapture({
               </div>
             )}
           </div>
+          <p className="text-xs text-pierre font-light text-center">
+            Alinhe o topo da testa e o queixo com a guia oval
+          </p>
           <div className="flex gap-3">
             <button
               onClick={() => {
