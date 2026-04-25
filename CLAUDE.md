@@ -79,6 +79,14 @@
 - Claude compares self-reported skin_type with observed skin_type from photo
 - If different, returns `skin_type_discrepancy` explanation shown to user on results screen
 
+### Prompt Configuration (Admin)
+- Base system prompt is hardcoded in `claude-analyzer.ts` (read-only in UI)
+- Global rules editable via `/admin/prompt` → stored in `PlatformConfig.analysisGlobalRules`
+- Global restricted conditions → `PlatformConfig.analysisRestrictedConditions`
+- Per-tenant overrides: `TenantConfig.customPromptSuffix` and `TenantConfig.restrictedConditions`
+- Prompt hierarchy: base prompt → KB (conditions + ingredients) → rules → global rules → global restricted → tenant rules → tenant restricted
+- Admin can view full prompt preview, KB as injected, and recent analysis raw responses
+
 ## Conventions
 
 - All user-facing text in Portuguese (Brazilian)

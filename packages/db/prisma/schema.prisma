@@ -467,6 +467,19 @@ model Ingredient {
 }
 
 // ============================================
+// PLATFORM CONFIG (Singleton — global settings)
+// ============================================
+
+model PlatformConfig {
+  id                          String   @id @default("default")
+  analysisGlobalRules         String?  // Custom rules appended to Claude system prompt
+  analysisRestrictedConditions String? // Global conditions Claude should never mention
+  updatedAt                   DateTime @updatedAt
+
+  @@map("platform_config")
+}
+
+// ============================================
 // LEADS (Marketing site)
 // ============================================
 

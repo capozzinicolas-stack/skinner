@@ -20,6 +20,11 @@ export async function claudeAnalyze(input: AnalysisInput): Promise<AnalysisOutpu
     where: { tenantId: input.tenantId },
   });
 
+  // Load global platform rules
+  const platformConfig = await db.platformConfig.findUnique({
+    where: { id: "default" },
+  });
+
   const conditionsKB = conditions
     .map(
       (c) =>
@@ -58,8 +63,10 @@ REGRAS:
 10. Todas as respostas devem ser em portugues brasileiro
 11. Para zone_annotations: analise CADA zona facial individualmente. Inclua pelo menos 5 zonas. Use "good" para areas saudaveis, "attention" para areas com leve preocupacao, "concern" para areas que precisam de tratamento. Sempre inclua pelo menos 1-2 zonas "good" para equilibrar o diagnostico.
 12. DISCREPANCIA DE TIPO DE PELE: Compare o tipo de pele que o paciente auto-relatou com o que voce observa na foto. Se forem diferentes, preencha "skin_type_self_reported" com o tipo que o paciente disse e "skin_type_discrepancy" com uma explicacao gentil e educativa de por que sua observacao profissional difere da percepcao do paciente. Se forem iguais, deixe esses campos como null.
-${tenantConfig?.customPromptSuffix ? `\n12. INSTRUCOES ADICIONAIS DO CLIENTE: ${tenantConfig.customPromptSuffix}` : ""}
-${tenantConfig?.restrictedConditions ? `\n13. NAO MENCIONAR estas condicoes: ${tenantConfig.restrictedConditions}` : ""}`;
+${platformConfig?.analysisGlobalRules ? `\nREGRAS GLOBAIS DA PLATAFORMA:\n${platformConfig.analysisGlobalRules}` : ""}
+${platformConfig?.analysisRestrictedConditions ? `\nCONDICOES RESTRITAS GLOBALMENTE (NAO MENCIONAR): ${platformConfig.analysisRestrictedConditions}` : ""}
+${tenantConfig?.customPromptSuffix ? `\nINSTRUCOES ADICIONAIS DO CLIENTE: ${tenantConfig.customPromptSuffix}` : ""}
+${tenantConfig?.restrictedConditions ? `\nCONDICOES RESTRITAS PELO CLIENTE (NAO MENCIONAR): ${tenantConfig.restrictedConditions}` : ""}`;
 
   const userPrompt = `QUESTIONARIO DO PACIENTE:
 - Tipo de pele auto-relatado: ${q.skin_type}

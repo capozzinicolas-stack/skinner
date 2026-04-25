@@ -398,6 +398,110 @@ export const adminRouter = router({
       return ctx.db.lead.delete({ where: { id: input.id } });
     }),
 
+  // ─── Prompt configuration ──────────────────────────────────────────────────
+
+  getPromptConfig: adminProcedure.query(async ({ ctx }) => {
+    // Upsert singleton — create if it doesn't exist
+    const config = await ctx.db.platformConfig.upsert({
+      where: { id: "default" },
+      create: { id: "default" },
+      update: {},
+    });
+    return config;
+  }),
+
+  updatePromptConfig: adminProcedure
+    .input(
+      z.object({
+        analysisGlobalRules: z.string().nullable().optional(),
+        analysisRestrictedConditions: z.string().nullable().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      return ctx.db.platformConfig.upsert({
+        where: { id: "default" },
+        create: { id: "default", ...input },
+        update: input,
+      });
+    }),
+
+  // Returns the full system prompt preview as it would be sent to Claude
+  getPromptPreview: adminProcedure.query(async ({ ctx }) => {
+    const conditions = await ctx.db.skinCondition.findMany();
+    const ingredients = await ctx.db.ingredient.findMany();
+    const platformConfig = await ctx.db.platformConfig.findUnique({
+      where: { id: "default" },
+    });
+
+    const conditionsKB = conditions
+      .map(
+        (c) =>
+          `- ${c.name} (${c.displayName}): ${c.description}. Severidade 1: ${c.severity1Desc ?? "leve"}. Severidade 2: ${c.severity2Desc ?? "moderada"}. Severidade 3: ${c.severity3Desc ?? "severa"}.`
+      )
+      .join("\n");
+
+    const ingredientsKB = ingredients
+      .map((i) => `- ${i.name} (${i.displayName}): ${i.description ?? ""}`)
+      .join("\n");
+
+    const basePrompt = `Voce e um dermatologista especialista em analise facial e dermocosmeticos. Voce trabalha para a plataforma Skinner, que fornece analise de pele baseada em IA para clinicas, laboratorios e farmacias no Brasil.
+
+Sua tarefa e analisar a foto facial do paciente junto com as respostas do questionario para fornecer um diagnostico dermatologico preciso e um plano de tratamento personalizado.`;
+
+    const rules = `REGRAS:
+1. Analise a foto com atencao: textura, poros, manchas, vermelhidao, oleosidade, linhas, firmeza, tom de pele
+2. Cruze o que voce ve na foto com as respostas do questionario
+3. Identifique TODAS as condicoes visiveis, nao apenas as que o paciente reportou
+4. Atribua severidade (1-3) baseada no que voce observa na foto
+5. Avalie o estado da barreira cutanea
+6. Estime o fototipo Fitzpatrick pela foto
+7. Crie um plano de acao em 3 fases progressivas
+8. Seja honesto mas acolhedor - nao alarme, mas nao minimize
+9. Se detectar algo que requer atencao medica, indique claramente
+10. Todas as respostas devem ser em portugues brasileiro
+11. Para zone_annotations: analise CADA zona facial individualmente. Inclua pelo menos 5 zonas.
+12. DISCREPANCIA DE TIPO DE PELE: Compare o tipo auto-relatado com o observado na foto. Se diferentes, preencha skin_type_discrepancy.`;
+
+    const globalRules = platformConfig?.analysisGlobalRules || null;
+    const restrictedConditions = platformConfig?.analysisRestrictedConditions || null;
+
+    return {
+      basePrompt,
+      conditionsKB,
+      ingredientsKB,
+      rules,
+      globalRules,
+      restrictedConditions,
+      conditionsCount: conditions.length,
+      ingredientsCount: ingredients.length,
+    };
+  }),
+
+  // Recent analyses with full raw response for debugging
+  recentAnalysesDetailed: adminProcedure
+    .input(z.object({ limit: z.number().int().min(1).max(50).default(10) }))
+    .query(async ({ ctx, input }) => {
+      return ctx.db.analysis.findMany({
+        orderBy: { createdAt: "desc" },
+        take: input.limit,
+        select: {
+          id: true,
+          createdAt: true,
+          skinType: true,
+          conditions: true,
+          barrierStatus: true,
+          fitzpatrick: true,
+          primaryObjective: true,
+          questionnaireData: true,
+          rawResponse: true,
+          latencyMs: true,
+          clientName: true,
+          clientEmail: true,
+          tenant: { select: { name: true, slug: true } },
+        },
+      });
+    }),
+
   // ─── Platform analytics ────────────────────────────────────────────────────
 
   analytics: adminProcedure.query(async ({ ctx }) => {

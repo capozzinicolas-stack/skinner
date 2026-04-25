@@ -7,6 +7,7 @@ const adminNav = [
   { label: "Leads", href: "/admin/leads", icon: "◈" },
   { label: "Analytics", href: "/admin/analytics", icon: "▦" },
   { label: "Dermatologia", href: "/admin/dermatologia", icon: "⚕" },
+  { label: "Prompt IA", href: "/admin/prompt", icon: "✎" },
 ];
 
 export default function AdminLayout({
