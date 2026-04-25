@@ -223,7 +223,7 @@ export function PhotoCapture({
               className="w-full aspect-[3/4] object-cover"
               style={{ transform: "scaleX(-1)" }}
             />
-            {/* Face oval guide with labels */}
+            {/* Face oval guide with labels anchored to oval edges */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="relative w-52 h-72">
                 {/* Oval border */}
@@ -233,25 +233,25 @@ export function PhotoCapture({
                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-px bg-white/60" />
                 <div className="absolute left-0 top-1/2 -translate-y-1/2 w-px h-6 bg-white/60" />
                 <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-6 bg-white/60" />
+                {/* Top label — anchored to top of oval */}
+                <div className="absolute -top-7 left-0 right-0 flex justify-center">
+                  <span
+                    className="text-[10px] uppercase tracking-wider font-light px-3 py-1"
+                    style={{ backgroundColor: "rgba(0,0,0,0.5)", color: "rgba(255,255,255,0.8)" }}
+                  >
+                    Testa aqui
+                  </span>
+                </div>
+                {/* Bottom label — anchored to bottom of oval */}
+                <div className="absolute -bottom-7 left-0 right-0 flex justify-center">
+                  <span
+                    className="text-[10px] uppercase tracking-wider font-light px-3 py-1"
+                    style={{ backgroundColor: "rgba(0,0,0,0.5)", color: "rgba(255,255,255,0.8)" }}
+                  >
+                    Queixo aqui
+                  </span>
+                </div>
               </div>
-            </div>
-            {/* Top label */}
-            <div className="absolute top-3 left-0 right-0 flex justify-center pointer-events-none">
-              <span
-                className="text-[10px] uppercase tracking-wider font-light px-3 py-1"
-                style={{ backgroundColor: "rgba(0,0,0,0.5)", color: "rgba(255,255,255,0.8)" }}
-              >
-                Testa aqui
-              </span>
-            </div>
-            {/* Bottom label */}
-            <div className="absolute bottom-3 left-0 right-0 flex justify-center pointer-events-none">
-              <span
-                className="text-[10px] uppercase tracking-wider font-light px-3 py-1"
-                style={{ backgroundColor: "rgba(0,0,0,0.5)", color: "rgba(255,255,255,0.8)" }}
-              >
-                Queixo aqui
-              </span>
             </div>
             {/* Loading indicator while camera initializes */}
             {!cameraReady && (
