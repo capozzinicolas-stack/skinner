@@ -9,13 +9,21 @@ export type Context = {
   userId?: string;
   tenantId?: string;
   role?: string;
+  headers?: Headers;
 };
 
-export const createContext = async (): Promise<Context> => {
+type ContextOptions = {
+  req?: Request;
+};
+
+export const createContext = async (
+  opts?: ContextOptions
+): Promise<Context> => {
   const session = await getServerSession(authOptions);
+  const headers = opts?.req?.headers;
 
   if (!session?.user) {
-    return { db };
+    return { db, headers };
   }
 
   const user = session.user as any;
@@ -24,6 +32,7 @@ export const createContext = async (): Promise<Context> => {
     userId: user.id,
     tenantId: user.tenantId ?? undefined,
     role: user.role,
+    headers,
   };
 };
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateProjections } from "@/lib/sae/gemini-projection";
+import { projectionLimiter, getClientIp } from "@/lib/rate-limit";
 import { z } from "zod/v4";
 
 const RequestSchema = z.object({
@@ -15,6 +16,19 @@ const RequestSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
+    // Rate limit by client IP — projection is expensive (~$0.12 per call)
+    const ip = getClientIp(req.headers);
+    const rl = await projectionLimiter.limit(ip);
+    if (!rl.success) {
+      return NextResponse.json(
+        {
+          error:
+            "Muitas projecoes solicitadas. Aguarde alguns minutos antes de tentar novamente.",
+        },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const parsed = RequestSchema.safeParse(body);
 
