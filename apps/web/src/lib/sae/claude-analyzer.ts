@@ -57,6 +57,7 @@ REGRAS:
 9. Se detectar algo que requer atencao medica, indique claramente
 10. Todas as respostas devem ser em portugues brasileiro
 11. Para zone_annotations: analise CADA zona facial individualmente. Inclua pelo menos 5 zonas. Use "good" para areas saudaveis, "attention" para areas com leve preocupacao, "concern" para areas que precisam de tratamento. Sempre inclua pelo menos 1-2 zonas "good" para equilibrar o diagnostico.
+12. DISCREPANCIA DE TIPO DE PELE: Compare o tipo de pele que o paciente auto-relatou com o que voce observa na foto. Se forem diferentes, preencha "skin_type_self_reported" com o tipo que o paciente disse e "skin_type_discrepancy" com uma explicacao gentil e educativa de por que sua observacao profissional difere da percepcao do paciente. Se forem iguais, deixe esses campos como null.
 ${tenantConfig?.customPromptSuffix ? `\n12. INSTRUCOES ADICIONAIS DO CLIENTE: ${tenantConfig.customPromptSuffix}` : ""}
 ${tenantConfig?.restrictedConditions ? `\n13. NAO MENCIONAR estas condicoes: ${tenantConfig.restrictedConditions}` : ""}`;
 
@@ -73,6 +74,8 @@ Analise a foto facial acima junto com o questionario e retorne um JSON com EXATA
 
 {
   "skin_type": "oily|dry|combination|normal|sensitive",
+  "skin_type_self_reported": "tipo que o paciente informou, ou null se igual ao detectado",
+  "skin_type_discrepancy": "Explicacao gentil da diferenca entre percepcao e observacao, ou null se iguais",
   "conditions": [
     {
       "name": "nome_da_condicao (use os nomes exatos da base de conhecimento)",

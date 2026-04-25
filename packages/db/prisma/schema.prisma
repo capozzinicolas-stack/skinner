@@ -192,6 +192,9 @@ model Product {
   useTime           String  @default("both") // am, pm, both
   contraindications String? // JSON array
 
+  // Ranking (tenant-controlled priority for tiebreaking in recommendations)
+  priorityRank      Int     @default(0) // higher = recommended first on score ties
+
   // Type & service fields
   type              String  @default("product") // "product" | "service"
   bookingLink       String?  // booking/scheduling link for services

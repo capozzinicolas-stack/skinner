@@ -42,6 +42,42 @@
 - NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY (Supabase Storage bucket: product-images)
 - NUVEMSHOP_APP_ID, NUVEMSHOP_CLIENT_SECRET, NUVEMSHOP_CALLBACK_URL
 - SHOPIFY_CLIENT_ID, SHOPIFY_CLIENT_SECRET, SHOPIFY_CALLBACK_URL
+- UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN (rate limiting)
+
+## Rate Limits
+
+- `analysis.run` (tRPC mutation): 10 requests per IP per hour (sliding window)
+- `/api/projection`: 3 requests per IP per hour (sliding window, expensive ~$0.12/call)
+- Falls back to no-op limiter when Upstash not configured (dev)
+- Returns 429 with Portuguese message when exceeded
+
+## Analysis Pipeline
+
+### Scoring Formula (matcher.ts)
+- Concern match: 35% — overlap between detected conditions and product concernTags
+- Skin type match: 20% — binary, product has detected skin_type in skinTypeTags
+- Objective match: 15% — binary, product has patient objective in objectiveTags
+- Severity match: 10% — proximity of product severityLevel to max detected severity
+- Ingredient bonus: 20% — product activeIngredients that match commonIngredients from dermatological KB
+
+### Scoring Tiebreakers
+- priorityRank (higher first — tenant-controlled ranking on Product model)
+- Recommendation count (popularity — more recommendations = higher priority)
+- Lower price first (more accessible)
+
+### Routine Diversity
+- Matcher picks one product per stepRoutine (cleanser → toner → serum → moisturizer → SPF → treatment)
+- First pick per step is tagged `recomendado`, additional products are tagged `alternativa`
+- Returns up to 8 products + 2 services
+
+### Contraindication Filtering
+- Products with activeIngredients matching avoidIngredients from detected conditions are excluded
+- Products with pregnancy/nursing contraindications are excluded when user reports pregnant/nursing
+- Sex question controls visibility of pregnancy question (only shown for female)
+
+### Skin Type Discrepancy
+- Claude compares self-reported skin_type with observed skin_type from photo
+- If different, returns `skin_type_discrepancy` explanation shown to user on results screen
 
 ## Conventions
 

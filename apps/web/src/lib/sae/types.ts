@@ -2,6 +2,7 @@ export type AnalysisInput = {
   tenantId: string;
   photoBase64: string;
   questionnaire: {
+    sex: string;
     skin_type: string;
     concerns: string[];
     primary_objective: string;
@@ -33,6 +34,8 @@ export type ZoneAnnotation = {
 
 export type AnalysisOutput = {
   skin_type: string;
+  skin_type_self_reported?: string;
+  skin_type_discrepancy?: string;
   conditions: { name: string; severity: number; description: string }[];
   barrier_status: "healthy" | "compromised" | "needs_attention";
   fitzpatrick: string;
@@ -70,6 +73,7 @@ export type MatchedProduct = {
   sessionCount: number | null;
   sessionFrequency: string | null;
   durationMinutes: number | null;
+  recommendationTag: "recomendado" | "alternativa";
 };
 
 export type FullAnalysisResult = {

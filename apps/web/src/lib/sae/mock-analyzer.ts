@@ -211,6 +211,8 @@ export async function mockAnalyze(input: AnalysisInput): Promise<AnalysisOutput>
 
   return {
     skin_type: q.skin_type,
+    skin_type_self_reported: undefined,
+    skin_type_discrepancy: undefined,
     conditions,
     barrier_status: barrierStatus,
     fitzpatrick,

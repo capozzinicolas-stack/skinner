@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 export type QuestionnaireAnswers = {
+  sex: string;
   skin_type: string;
   concerns: string[];
   primary_objective: string;
@@ -29,6 +30,16 @@ type Question = {
 };
 
 const ALL_QUESTIONS: Question[] = [
+  {
+    id: "sex",
+    text: "Qual e o seu sexo biologico?",
+    type: "single",
+    required: true,
+    options: [
+      { value: "female", label: "Feminino" },
+      { value: "male", label: "Masculino" },
+    ],
+  },
   {
     id: "skin_type",
     text: "Como voce descreveria sua pele geralmente?",
@@ -121,6 +132,7 @@ const ALL_QUESTIONS: Question[] = [
 
 // Default answers used when photoOnlyMode bypasses the questionnaire
 const DEFAULT_ANSWERS: QuestionnaireAnswers = {
+  sex: "female",
   skin_type: "normal",
   concerns: [],
   primary_objective: "hydration",
@@ -172,11 +184,15 @@ function QuestionnaireInner({
   onComplete: (answers: QuestionnaireAnswers) => void;
   config?: QuestionnaireConfig;
 }) {
-  // Filter questions based on config toggles
+  // Filter questions based on config toggles and conditional logic
   const questions = ALL_QUESTIONS.filter((q) => {
     if (q.id === "allergies" && config?.questionAllergiesEnabled === false) return false;
     if (q.id === "sunscreen_frequency" && config?.questionSunscreenEnabled === false) return false;
-    if (q.id === "pregnant_or_nursing" && config?.questionPregnantEnabled === false) return false;
+    if (q.id === "pregnant_or_nursing") {
+      if (config?.questionPregnantEnabled === false) return false;
+      // Only show pregnancy question for female users
+      if (answers.sex !== "female") return false;
+    }
     return true;
   });
 

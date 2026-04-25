@@ -5,6 +5,7 @@ import { mockAnalyze } from "@/lib/sae/mock-analyzer";
 import { claudeAnalyze } from "@/lib/sae/claude-analyzer";
 import { matchProducts } from "@/lib/sae/matcher";
 import type { AnalysisInput, FullAnalysisResult } from "@/lib/sae/types";
+import { analysisLimiter, getClientIp } from "@/lib/rate-limit";
 
 export const analysisRouter = router({
   run: publicProcedure
@@ -13,6 +14,7 @@ export const analysisRouter = router({
         tenantSlug: z.string(),
         photoBase64: z.string(),
         questionnaire: z.object({
+          sex: z.string().default("female"),
           skin_type: z.string(),
           concerns: z.array(z.string()),
           primary_objective: z.string(),
@@ -27,6 +29,19 @@ export const analysisRouter = router({
     )
     .mutation(async ({ ctx, input }): Promise<FullAnalysisResult> => {
       const startTime = Date.now();
+
+      // 0. Rate limit by client IP (prevents scripts from burning credits)
+      if (ctx.headers) {
+        const ip = getClientIp(ctx.headers);
+        const rl = await analysisLimiter.limit(`${input.tenantSlug}:${ip}`);
+        if (!rl.success) {
+          throw new TRPCError({
+            code: "TOO_MANY_REQUESTS",
+            message:
+              "Muitas solicitacoes. Aguarde alguns minutos antes de tentar novamente.",
+          });
+        }
+      }
 
       // 1. Resolve tenant
       const tenant = await ctx.db.tenant.findUnique({
@@ -65,8 +80,10 @@ export const analysisRouter = router({
         analysisOutput = await mockAnalyze(analysisInput);
       }
 
-      // 4. Match products
-      const recommendations = await matchProducts(tenant.id, analysisOutput);
+      // 4. Match products (pass pregnancy status for contraindication filtering)
+      const recommendations = await matchProducts(tenant.id, analysisOutput, {
+        pregnantOrNursing: input.questionnaire.pregnant_or_nursing,
+      });
 
       const latencyMs = Date.now() - startTime;
 

@@ -165,7 +165,18 @@ function ProductCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between">
             <div>
-              <h4 className="text-sm text-carbone">{rec.name}</h4>
+              <div className="flex items-center gap-2">
+                <h4 className="text-sm text-carbone">{rec.name}</h4>
+                {rec.recommendationTag && (
+                  <span className={`text-[9px] px-2 py-0.5 uppercase tracking-wider font-light ${
+                    rec.recommendationTag === "recomendado"
+                      ? "bg-carbone text-blanc-casse"
+                      : "bg-ivoire text-terre border border-sable/30"
+                  }`}>
+                    {rec.recommendationTag}
+                  </span>
+                )}
+              </div>
               {rec.stepRoutine && (
                 <span className="text-[10px] text-pierre uppercase tracking-wider font-light">
                   {stepLabels[rec.stepRoutine] ?? rec.stepRoutine}
@@ -457,6 +468,24 @@ export function ResultsScreen({
         <div className="w-12 h-px bg-sable mx-auto mt-4 mb-4" />
         <p className="text-sm text-pierre font-light leading-relaxed">{analysis.summary}</p>
       </div>
+
+      {/* Skin type discrepancy notice */}
+      {analysis.skin_type_discrepancy && analysis.skin_type_self_reported && (
+        <div className="mb-6 p-5 bg-ivoire border border-sable/20">
+          <p className="text-[10px] text-pierre uppercase tracking-wider font-light mb-2">
+            Observacao sobre seu tipo de pele
+          </p>
+          <p className="text-sm text-terre font-light leading-relaxed">
+            Voce informou que sua pele e{" "}
+            <span className="text-carbone">{skinTypeLabels[analysis.skin_type_self_reported] ?? analysis.skin_type_self_reported}</span>,
+            porem nossa analise identificou que sua pele e{" "}
+            <span className="text-carbone">{skinTypeLabels[analysis.skin_type] ?? analysis.skin_type}</span>.
+          </p>
+          <p className="text-xs text-pierre font-light mt-2 leading-relaxed">
+            {analysis.skin_type_discrepancy}
+          </p>
+        </div>
+      )}
 
       {/* Mapa Facial — annotated photo overlay */}
       {hasAnnotations && (
