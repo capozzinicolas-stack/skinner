@@ -126,7 +126,7 @@ export default async function ManualKitPage({
           <img
             src="/brand/logo-primary.png"
             alt="Skinner"
-            className="h-10 object-contain"
+            className="h-[72px] object-contain"
           />
         )}
       </header>

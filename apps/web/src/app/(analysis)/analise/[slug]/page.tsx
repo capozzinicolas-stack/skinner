@@ -156,7 +156,7 @@ export default function AnalysisPage({
         {tenant.data.logoUrl ? (
           <img src={tenant.data.logoUrl} alt={tenantName} className="h-8 object-contain" />
         ) : (
-          <img src="/brand/logo-primary.png" alt="Skinner" className="h-10 object-contain" />
+          <img src="/brand/logo-primary.png" alt="Skinner" className="h-[72px] object-contain" />
         )}
       </header>
 

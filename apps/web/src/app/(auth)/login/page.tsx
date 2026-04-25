@@ -142,7 +142,7 @@ function LoginForm() {
           <img
             src="/brand/logo-primary.png"
             alt="Skinner"
-            className="h-12 mx-auto mb-6 object-contain brightness-0 invert"
+            className="h-[86px] mx-auto mb-6 object-contain brightness-0 invert"
           />
           <p className="font-mono text-[10px] tracking-[0.2em] uppercase text-sable/80 mb-3">
             {cfg.eyebrow}

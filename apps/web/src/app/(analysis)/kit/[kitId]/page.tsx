@@ -126,7 +126,7 @@ export default async function KitPage({
         {tenant.logoUrl ? (
           <img src={tenant.logoUrl} alt={tenant.name} className="h-8 object-contain" />
         ) : (
-          <img src="/brand/logo-primary.png" alt="Skinner" className="h-10 object-contain" />
+          <img src="/brand/logo-primary.png" alt="Skinner" className="h-[72px] object-contain" />
         )}
       </header>
 
