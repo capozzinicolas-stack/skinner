@@ -2,7 +2,7 @@ import Link from "next/link";
 
 const navLinks = [
   { label: "Produto", href: "/como-funciona" },
-  { label: "Segmentos", href: "/laboratorios" },
+  { label: "Segmentos", href: "/segmentos" },
   { label: "Resultados", href: "/demo" },
   { label: "Planos", href: "/planos" },
 ];

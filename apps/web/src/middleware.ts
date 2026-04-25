@@ -13,6 +13,7 @@ const PUBLIC_PATHS = [
   "/laboratorios",
   "/clinicas",
   "/farmacias",
+  "/segmentos",
   "/contato",
   "/privacidade",
   "/termos",
