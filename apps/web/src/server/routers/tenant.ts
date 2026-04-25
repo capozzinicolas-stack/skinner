@@ -92,11 +92,29 @@ export const tenantRouter = router({
   getAnalysisConfig: publicProcedure
     .input(z.object({ slug: z.string() }))
     .query(async ({ ctx, input }) => {
-      const tenant = await ctx.db.tenant.findUnique({
-        where: { slug: input.slug },
-        select: { tenantConfig: true },
-      });
-      return tenant?.tenantConfig ?? null;
+      const [tenant, platformConfig] = await Promise.all([
+        ctx.db.tenant.findUnique({
+          where: { slug: input.slug },
+          select: { tenantConfig: true },
+        }),
+        ctx.db.platformConfig.findUnique({
+          where: { id: "default" },
+          select: { questionnaireConfig: true },
+        }),
+      ]);
+
+      const tenantConfig = tenant?.tenantConfig ?? null;
+      let questions = null;
+      if (platformConfig?.questionnaireConfig) {
+        try {
+          questions = JSON.parse(platformConfig.questionnaireConfig);
+        } catch { /* ignore */ }
+      }
+
+      return {
+        ...tenantConfig,
+        questions,
+      };
     }),
 
   // Public query: returns only storefront config for a given tenant slug.

@@ -475,6 +475,7 @@ model PlatformConfig {
   analysisGlobalRules         String?  // Custom rules appended to Claude system prompt
   analysisRestrictedConditions String? // Global conditions Claude should never mention
   projectionPromptTemplate    String?  // Custom Gemini projection prompt (overrides default)
+  questionnaireConfig         String?  // JSON: StoredQuestion[] — dynamic questionnaire definition
   updatedAt                   DateTime @updatedAt
 
   @@map("platform_config")

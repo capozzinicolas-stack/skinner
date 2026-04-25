@@ -8,9 +8,13 @@ export async function mockAnalyze(input: AnalysisInput): Promise<AnalysisOutput>
   // Simulate API latency
   await new Promise((r) => setTimeout(r, 2000 + Math.random() * 1000));
 
-  const { questionnaire: q } = input;
-  const concerns = q.concerns ?? [];
-  const isPregnant = q.pregnant_or_nursing === "pregnant" || q.pregnant_or_nursing === "nursing";
+  const q = input.questionnaire;
+  const concerns = (Array.isArray(q.concerns) ? q.concerns : []) as string[];
+  const skinType = (q.skin_type as string) ?? "normal";
+  const ageRange = (q.age_range as string) ?? "25-34";
+  const primaryObjective = (q.primary_objective as string) ?? "hydration";
+  const pregnantOrNursing = (q.pregnant_or_nursing as string) ?? "no";
+  const isPregnant = pregnantOrNursing === "pregnant" || pregnantOrNursing === "nursing";
 
   // Build conditions from questionnaire
   const conditionMap: Record<string, { severity: number; description: string }> = {
@@ -23,7 +27,7 @@ export async function mockAnalyze(input: AnalysisInput): Promise<AnalysisOutput>
       description: "Manchas leves pós-inflamatórias e lentigos solares detectados nas maçãs do rosto. Pigmentação irregular na região periorbital.",
     },
     aging: {
-      severity: q.age_range === "45-54" || q.age_range === "55+" ? 2 : 1,
+      severity: ageRange === "45-54" || ageRange === "55+" ? 2 : 1,
       description: "Linhas finas ao redor dos olhos e boca. Perda leve de firmeza na região do contorno facial.",
     },
     dehydration: {
@@ -51,7 +55,7 @@ export async function mockAnalyze(input: AnalysisInput): Promise<AnalysisOutput>
       description: "Hiperpigmentação periorbital leve, possivelmente de origem vascular e hereditária.",
     },
     oiliness: {
-      severity: q.skin_type === "oily" ? 2 : 1,
+      severity: skinType === "oily" ? 2 : 1,
       description: "Produção sebácea elevada na zona T. Brilho excessivo notável na testa e nariz.",
     },
   };
@@ -83,9 +87,9 @@ export async function mockAnalyze(input: AnalysisInput): Promise<AnalysisOutput>
     : "healthy";
 
   const fitzpatrick =
-    q.skin_type === "sensitive"
+    skinType === "sensitive"
       ? "II"
-      : q.age_range === "55+"
+      : ageRange === "55+"
       ? "III"
       : "III";
 
@@ -96,7 +100,7 @@ export async function mockAnalyze(input: AnalysisInput): Promise<AnalysisOutput>
       combination: "mista",
       normal: "normal",
       sensitive: "sensível",
-    }[q.skin_type] ?? q.skin_type
+    }[skinType] ?? skinType
   }. Foram identificadas ${conditions.length} condição(ões): ${conditions
     .map((c) => c.name)
     .join(", ")}. ${
@@ -120,7 +124,7 @@ export async function mockAnalyze(input: AnalysisInput): Promise<AnalysisOutput>
 
   // Build zone annotations based on questionnaire concerns
   const hasAcne = concerns.includes("acne");
-  const hasOiliness = concerns.includes("oiliness") || q.skin_type === "oily";
+  const hasOiliness = concerns.includes("oiliness") || skinType === "oily";
   const hasDarkCircles = concerns.includes("dark_circles");
   const hasSensitivity = concerns.includes("sensitivity") || concerns.includes("rosacea");
   const hasAging = concerns.includes("aging");
@@ -135,7 +139,7 @@ export async function mockAnalyze(input: AnalysisInput): Promise<AnalysisOutput>
       observation: hasOiliness || hasAcne
         ? "Poros levemente dilatados e produção sebácea elevada na região frontal. Zona T ativa."
         : "Região frontal com textura equilibrada e hidratação adequada.",
-      related_conditions: hasOiliness || hasAcne ? ["oiliness", "acne"].filter(c => concerns.includes(c) || (c === "oiliness" && q.skin_type === "oily")) : [],
+      related_conditions: hasOiliness || hasAcne ? ["oiliness", "acne"].filter(c => concerns.includes(c) || (c === "oiliness" && skinType === "oily")) : [],
     },
     // Nose: concern for acne/pores, attention for oiliness
     {
@@ -210,13 +214,13 @@ export async function mockAnalyze(input: AnalysisInput): Promise<AnalysisOutput>
   ];
 
   return {
-    skin_type: q.skin_type,
+    skin_type: skinType,
     skin_type_self_reported: undefined,
     skin_type_discrepancy: undefined,
     conditions,
     barrier_status: barrierStatus,
     fitzpatrick,
-    primary_objective: q.primary_objective,
+    primary_objective: primaryObjective,
     summary,
     action_plan: {
       phase1:

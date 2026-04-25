@@ -13,16 +13,7 @@ export const analysisRouter = router({
       z.object({
         tenantSlug: z.string(),
         photoBase64: z.string(),
-        questionnaire: z.object({
-          sex: z.string().default("female"),
-          skin_type: z.string(),
-          concerns: z.array(z.string()),
-          primary_objective: z.string(),
-          allergies: z.string().default(""),
-          age_range: z.string(),
-          sunscreen_frequency: z.string().default(""),
-          pregnant_or_nursing: z.string().default("no"),
-        }),
+        questionnaire: z.record(z.string(), z.union([z.string(), z.array(z.string())])),
         clientEmail: z.string().optional(),
         clientName: z.string().optional(),
       })
@@ -81,8 +72,11 @@ export const analysisRouter = router({
       }
 
       // 4. Match products (pass pregnancy status for contraindication filtering)
+      const pregnantOrNursing = typeof input.questionnaire.pregnant_or_nursing === "string"
+        ? input.questionnaire.pregnant_or_nursing
+        : "no";
       const recommendations = await matchProducts(tenant.id, analysisOutput, {
-        pregnantOrNursing: input.questionnaire.pregnant_or_nursing,
+        pregnantOrNursing,
       });
 
       const latencyMs = Date.now() - startTime;
@@ -93,7 +87,7 @@ export const analysisRouter = router({
           tenantId: tenant.id,
           clientEmail: input.clientEmail,
           clientName: input.clientName,
-          clientAge: input.questionnaire.age_range,
+          clientAge: (input.questionnaire.age_range as string) ?? null,
           questionnaireData: JSON.stringify(input.questionnaire),
           status: "completed",
           skinType: analysisOutput.skin_type,

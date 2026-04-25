@@ -1,4 +1,5 @@
 import { z } from "zod/v4";
+import { TRPCError } from "@trpc/server";
 import { router, adminProcedure } from "../trpc";
 import { PLANS, type PlanId } from "@/lib/billing/plans";
 import { calculateMonthlyBill } from "@/lib/billing/stripe-mock";
@@ -396,6 +397,82 @@ export const adminRouter = router({
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       return ctx.db.lead.delete({ where: { id: input.id } });
+    }),
+
+  // ─── Questionnaire configuration ───────────────────────────────────────────
+
+  getQuestionnaireConfig: adminProcedure.query(async ({ ctx }) => {
+    const config = await ctx.db.platformConfig.findUnique({
+      where: { id: "default" },
+    });
+    if (config?.questionnaireConfig) {
+      try {
+        return JSON.parse(config.questionnaireConfig);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }),
+
+  updateQuestionnaireConfig: adminProcedure
+    .input(
+      z.object({
+        questions: z.array(
+          z.object({
+            id: z.string().min(1),
+            text: z.string().min(1),
+            type: z.enum(["single", "multi", "text"]),
+            required: z.boolean(),
+            enabled: z.boolean(),
+            maxSelect: z.number().int().min(1).optional(),
+            options: z.array(
+              z.object({
+                value: z.string().min(1),
+                label: z.string().min(1),
+              })
+            ).optional(),
+            order: z.number().int(),
+            showCondition: z.object({
+              questionId: z.string(),
+              value: z.string(),
+            }).optional(),
+          })
+        ).min(1),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Validate core questions are present
+      const coreIds = ["sex", "skin_type", "concerns", "primary_objective"];
+      const inputIds = input.questions.map((q) => q.id);
+      for (const coreId of coreIds) {
+        if (!inputIds.includes(coreId)) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `A pergunta "${coreId}" e obrigatoria e nao pode ser removida.`,
+          });
+        }
+      }
+
+      // Validate unique IDs
+      const uniqueIds = new Set(inputIds);
+      if (uniqueIds.size !== inputIds.length) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "IDs de perguntas devem ser unicos.",
+        });
+      }
+
+      return ctx.db.platformConfig.upsert({
+        where: { id: "default" },
+        create: {
+          id: "default",
+          questionnaireConfig: JSON.stringify(input.questions),
+        },
+        update: {
+          questionnaireConfig: JSON.stringify(input.questions),
+        },
+      });
     }),
 
   // ─── Prompt configuration ──────────────────────────────────────────────────

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { trpc } from "@/lib/trpc/client";
-import { Questionnaire, type QuestionnaireAnswers, type QuestionnaireConfig } from "@/components/analysis/questionnaire";
+import { Questionnaire, type QuestionnaireAnswers, type QuestionnaireConfig, type DynamicQuestion } from "@/components/analysis/questionnaire";
 import { PhotoCapture } from "@/components/analysis/photo-capture";
 import { LoadingScreen } from "@/components/analysis/loading-screen";
 import { ResultsScreen, type ResultsConfig } from "@/components/analysis/results-screen";
@@ -68,6 +68,9 @@ export default function AnalysisPage({
         photoOnlyMode: cfg.photoOnlyMode ?? false,
       }
     : undefined;
+
+  const questionnaireQuestions: DynamicQuestion[] | undefined =
+    cfg?.questions ?? undefined;
 
   const resultsConfig: ResultsConfig | undefined = cfg
     ? {
@@ -242,6 +245,7 @@ export default function AnalysisPage({
           <Questionnaire
             onComplete={handleQuestionnaireDone}
             config={questionnaireConfig}
+            questions={questionnaireQuestions}
           />
         )}
 

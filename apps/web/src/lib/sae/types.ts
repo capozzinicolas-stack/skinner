@@ -1,16 +1,7 @@
 export type AnalysisInput = {
   tenantId: string;
   photoBase64: string;
-  questionnaire: {
-    sex: string;
-    skin_type: string;
-    concerns: string[];
-    primary_objective: string;
-    allergies: string;
-    age_range: string;
-    sunscreen_frequency: string;
-    pregnant_or_nursing: string;
-  };
+  questionnaire: Record<string, string | string[]>;
 };
 
 export type FaceZone =

@@ -95,6 +95,17 @@
 - Template variables: {intensityLabel}, {weeks}, {objective}, {conditionsList}, {conditionEdits}, {productsSection}
 - Falls back to DEFAULT_PROMPT_TEMPLATE when custom template is empty
 
+## Questionnaire System
+
+- Questionnaire is dynamic — questions stored as JSON in `PlatformConfig.questionnaireConfig`
+- Admin manages via `/admin/formulario` — add, edit, reorder, enable/disable questions
+- Core questions (sex, skin_type, concerns, primary_objective) cannot be deleted — their IDs are used by the analysis engine
+- `QuestionnaireAnswers` type is `Record<string, string | string[]>` (not fixed keys)
+- `AnalysisInput.questionnaire` accepts any string keys
+- Fallback: if PlatformConfig has no config, uses hardcoded DEFAULT_QUESTIONS
+- Conditional display: questions can have `showCondition` (e.g. pregnancy only shown when sex=female)
+- TenantConfig toggles (questionAllergiesEnabled, etc.) still work as per-tenant overrides
+
 ## Conventions
 
 - All user-facing text in Portuguese (Brazilian)

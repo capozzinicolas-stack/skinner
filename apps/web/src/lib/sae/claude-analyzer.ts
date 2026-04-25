@@ -37,6 +37,7 @@ export async function claudeAnalyze(input: AnalysisInput): Promise<AnalysisOutpu
     .join("\n");
 
   const q = input.questionnaire;
+  const concerns = Array.isArray(q.concerns) ? q.concerns : [];
 
   const systemPrompt = `Voce e um dermatologista especialista em analise facial e dermocosmeticos. Voce trabalha para a plataforma Skinner, que fornece analise de pele baseada em IA para clinicas, laboratorios e farmacias no Brasil.
 
@@ -69,11 +70,11 @@ ${tenantConfig?.customPromptSuffix ? `\nINSTRUCOES ADICIONAIS DO CLIENTE: ${tena
 ${tenantConfig?.restrictedConditions ? `\nCONDICOES RESTRITAS PELO CLIENTE (NAO MENCIONAR): ${tenantConfig.restrictedConditions}` : ""}`;
 
   const userPrompt = `QUESTIONARIO DO PACIENTE:
-- Tipo de pele auto-relatado: ${q.skin_type}
-- Preocupacoes principais: ${q.concerns.join(", ")}
-- Objetivo principal: ${q.primary_objective}
+- Tipo de pele auto-relatado: ${q.skin_type ?? "nao informado"}
+- Preocupacoes principais: ${concerns.join(", ") || "nenhuma selecionada"}
+- Objetivo principal: ${q.primary_objective ?? "nao informado"}
 - Alergias/sensibilidades: ${q.allergies || "nenhuma relatada"}
-- Faixa etaria: ${q.age_range}
+- Faixa etaria: ${q.age_range ?? "nao informada"}
 - Uso de protetor solar: ${q.sunscreen_frequency || "nao informado"}
 - Gestante/amamentando: ${q.pregnant_or_nursing || "nao"}
 

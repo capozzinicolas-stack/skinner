@@ -2,16 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-export type QuestionnaireAnswers = {
-  sex: string;
-  skin_type: string;
-  concerns: string[];
-  primary_objective: string;
-  allergies: string;
-  age_range: string;
-  sunscreen_frequency: string;
-  pregnant_or_nursing: string;
-};
+export type QuestionnaireAnswers = Record<string, string | string[]>;
 
 export type QuestionnaireConfig = {
   questionAllergiesEnabled?: boolean;
@@ -20,21 +11,30 @@ export type QuestionnaireConfig = {
   photoOnlyMode?: boolean;
 };
 
-type Question = {
-  id: keyof QuestionnaireAnswers;
+export type DynamicQuestion = {
+  id: string;
   text: string;
   type: "single" | "multi" | "text";
   required: boolean;
-  options?: { value: string; label: string }[];
+  enabled: boolean;
   maxSelect?: number;
+  options?: { value: string; label: string }[];
+  order: number;
+  showCondition?: { questionId: string; value: string };
 };
 
-const ALL_QUESTIONS: Question[] = [
+// Core question IDs that must always exist for the analysis pipeline
+export const CORE_QUESTION_IDS = ["sex", "skin_type", "concerns", "primary_objective"];
+
+// Default hardcoded questions — used as fallback when PlatformConfig has no data
+export const DEFAULT_QUESTIONS: DynamicQuestion[] = [
   {
     id: "sex",
     text: "Qual e o seu sexo biologico?",
     type: "single",
     required: true,
+    enabled: true,
+    order: 0,
     options: [
       { value: "female", label: "Feminino" },
       { value: "male", label: "Masculino" },
@@ -45,6 +45,8 @@ const ALL_QUESTIONS: Question[] = [
     text: "Como voce descreveria sua pele geralmente?",
     type: "single",
     required: true,
+    enabled: true,
+    order: 1,
     options: [
       { value: "oily", label: "Oleosa" },
       { value: "dry", label: "Seca" },
@@ -58,6 +60,8 @@ const ALL_QUESTIONS: Question[] = [
     text: "Quais sao suas principais preocupacoes?",
     type: "multi",
     required: true,
+    enabled: true,
+    order: 2,
     maxSelect: 3,
     options: [
       { value: "acne", label: "Acne e espinhas" },
@@ -77,6 +81,8 @@ const ALL_QUESTIONS: Question[] = [
     text: "Qual e seu principal objetivo com o tratamento?",
     type: "single",
     required: true,
+    enabled: true,
+    order: 3,
     options: [
       { value: "anti-aging", label: "Anti-envelhecimento" },
       { value: "anti-acne", label: "Controle de acne" },
@@ -91,12 +97,16 @@ const ALL_QUESTIONS: Question[] = [
     text: "Voce tem alguma alergia ou sensibilidade conhecida?",
     type: "text",
     required: false,
+    enabled: true,
+    order: 4,
   },
   {
     id: "age_range",
     text: "Qual e a sua faixa etaria?",
     type: "single",
     required: true,
+    enabled: true,
+    order: 5,
     options: [
       { value: "18-24", label: "18 a 24 anos" },
       { value: "25-34", label: "25 a 34 anos" },
@@ -110,6 +120,8 @@ const ALL_QUESTIONS: Question[] = [
     text: "Com que frequencia voce usa protetor solar?",
     type: "single",
     required: false,
+    enabled: true,
+    order: 6,
     options: [
       { value: "daily", label: "Todos os dias" },
       { value: "sometimes", label: "As vezes" },
@@ -122,6 +134,9 @@ const ALL_QUESTIONS: Question[] = [
     text: "Esta gravida ou amamentando?",
     type: "single",
     required: false,
+    enabled: true,
+    order: 7,
+    showCondition: { questionId: "sex", value: "female" },
     options: [
       { value: "no", label: "Nao" },
       { value: "pregnant", label: "Sim, estou gravida" },
@@ -130,28 +145,39 @@ const ALL_QUESTIONS: Question[] = [
   },
 ];
 
-// Default answers used when photoOnlyMode bypasses the questionnaire
-const DEFAULT_ANSWERS: QuestionnaireAnswers = {
-  sex: "female",
-  skin_type: "normal",
-  concerns: [],
-  primary_objective: "hydration",
-  allergies: "",
-  age_range: "25-34",
-  sunscreen_frequency: "sometimes",
-  pregnant_or_nursing: "no",
-};
+function computeDefaults(questions: DynamicQuestion[]): QuestionnaireAnswers {
+  const defaults: QuestionnaireAnswers = {};
+  for (const q of questions) {
+    if (q.type === "multi") {
+      defaults[q.id] = [];
+    } else if (q.type === "single" && q.options && q.options.length > 0) {
+      defaults[q.id] = "";
+    } else {
+      defaults[q.id] = "";
+    }
+  }
+  return defaults;
+}
 
 // Safety bypass: if Questionnaire is rendered with photoOnlyMode, call onComplete
-// immediately with defaults (the B2C page normally avoids this step entirely, but
-// this ensures robustness if the component is used directly).
+// immediately with defaults.
 function PhotoOnlyBypass({
   onComplete,
+  questions,
 }: {
   onComplete: (answers: QuestionnaireAnswers) => void;
+  questions: DynamicQuestion[];
 }) {
   useEffect(() => {
-    onComplete(DEFAULT_ANSWERS);
+    const defaults = computeDefaults(questions);
+    // Set sensible defaults for core fields
+    if (!defaults.sex) defaults.sex = "female";
+    if (!defaults.skin_type) defaults.skin_type = "normal";
+    if (!defaults.primary_objective) defaults.primary_objective = "hydration";
+    if (!defaults.age_range) defaults.age_range = "25-34";
+    if (!defaults.sunscreen_frequency) defaults.sunscreen_frequency = "sometimes";
+    if (!defaults.pregnant_or_nursing) defaults.pregnant_or_nursing = "no";
+    onComplete(defaults);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -165,43 +191,53 @@ function PhotoOnlyBypass({
 export function Questionnaire({
   onComplete,
   config,
+  questions: externalQuestions,
 }: {
   onComplete: (answers: QuestionnaireAnswers) => void;
   config?: QuestionnaireConfig;
+  questions?: DynamicQuestion[];
 }) {
-  // photoOnlyMode: skip questionnaire entirely
+  const allQuestions = externalQuestions ?? DEFAULT_QUESTIONS;
+
   if (config?.photoOnlyMode) {
-    return <PhotoOnlyBypass onComplete={onComplete} />;
+    return <PhotoOnlyBypass onComplete={onComplete} questions={allQuestions} />;
   }
 
-  return <QuestionnaireInner onComplete={onComplete} config={config} />;
+  return <QuestionnaireInner onComplete={onComplete} config={config} allQuestions={allQuestions} />;
 }
 
 function QuestionnaireInner({
   onComplete,
   config,
+  allQuestions,
 }: {
   onComplete: (answers: QuestionnaireAnswers) => void;
   config?: QuestionnaireConfig;
+  allQuestions: DynamicQuestion[];
 }) {
-  // Filter questions based on config toggles and conditional logic
-  const questions = ALL_QUESTIONS.filter((q) => {
-    if (q.id === "allergies" && config?.questionAllergiesEnabled === false) return false;
-    if (q.id === "sunscreen_frequency" && config?.questionSunscreenEnabled === false) return false;
-    if (q.id === "pregnant_or_nursing") {
-      if (config?.questionPregnantEnabled === false) return false;
-      // Only show pregnancy question for female users
-      if (answers.sex !== "female") return false;
-    }
-    return true;
-  });
-
   const [currentIdx, setCurrentIdx] = useState(0);
-  const [answers, setAnswers] = useState<Partial<QuestionnaireAnswers>>({});
+  const [answers, setAnswers] = useState<QuestionnaireAnswers>({});
+
+  // Filter and sort questions
+  const questions = allQuestions
+    .filter((q) => {
+      if (!q.enabled) return false;
+      // Legacy tenant config toggles
+      if (q.id === "allergies" && config?.questionAllergiesEnabled === false) return false;
+      if (q.id === "sunscreen_frequency" && config?.questionSunscreenEnabled === false) return false;
+      if (q.id === "pregnant_or_nursing" && config?.questionPregnantEnabled === false) return false;
+      // Generic showCondition
+      if (q.showCondition) {
+        const condValue = answers[q.showCondition.questionId];
+        if (condValue !== q.showCondition.value) return false;
+      }
+      return true;
+    })
+    .sort((a, b) => a.order - b.order);
 
   const question = questions[currentIdx];
   const isLast = currentIdx === questions.length - 1;
-  const progress = ((currentIdx + 1) / questions.length) * 100;
+  const progress = questions.length > 0 ? ((currentIdx + 1) / questions.length) * 100 : 0;
 
   const currentAnswer = question ? answers[question.id] : undefined;
   const canProceed = question?.required
@@ -226,11 +262,9 @@ function QuestionnaireInner({
 
   function handleNext() {
     if (isLast) {
-      // Merge answers with defaults for any questions that were disabled/skipped
-      const merged: QuestionnaireAnswers = {
-        ...DEFAULT_ANSWERS,
-        ...(answers as QuestionnaireAnswers),
-      };
+      // Merge answers with defaults for disabled/skipped questions
+      const defaults = computeDefaults(allQuestions);
+      const merged: QuestionnaireAnswers = { ...defaults, ...answers };
       onComplete(merged);
     } else {
       setCurrentIdx((i) => i + 1);
