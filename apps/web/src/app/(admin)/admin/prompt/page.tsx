@@ -53,19 +53,22 @@ export default function PromptConfigPage() {
 
   const [globalRules, setGlobalRules] = useState<string | null>(null);
   const [restrictedConditions, setRestrictedConditions] = useState<string | null>(null);
+  const [projectionPrompt, setProjectionPrompt] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"prompt" | "scoring" | "kb" | "log">("prompt");
+  const [activeTab, setActiveTab] = useState<"prompt" | "scoring" | "projection" | "kb" | "log">("prompt");
   const [expandedAnalysis, setExpandedAnalysis] = useState<string | null>(null);
 
   // Initialize form values from server data
   const rulesValue = globalRules ?? config.data?.analysisGlobalRules ?? "";
   const restrictedValue = restrictedConditions ?? config.data?.analysisRestrictedConditions ?? "";
+  const projectionValue = projectionPrompt ?? config.data?.projectionPromptTemplate ?? "";
 
   function handleSave() {
     setSaveStatus("salvando...");
     updateMutation.mutate({
       analysisGlobalRules: rulesValue || null,
       analysisRestrictedConditions: restrictedValue || null,
+      projectionPromptTemplate: projectionValue || null,
     });
   }
 
@@ -80,7 +83,7 @@ export default function PromptConfigPage() {
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-sable/20 mb-8">
-        {(["prompt", "scoring", "kb", "log"] as const).map((tab) => (
+        {(["prompt", "scoring", "projection", "kb", "log"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -92,6 +95,7 @@ export default function PromptConfigPage() {
           >
             {tab === "prompt" && "Prompt e Regras"}
             {tab === "scoring" && "Scoring e Recomendacao"}
+            {tab === "projection" && "Projecao de Imagem"}
             {tab === "kb" && `Base de Conhecimento (${(preview.data?.conditionsCount ?? 0) + (preview.data?.ingredientsCount ?? 0)})`}
             {tab === "log" && "Log de Analises"}
           </button>
@@ -195,6 +199,127 @@ INGREDIENTES ATIVOS CONHECIDOS:
 {rulesValue ? `\nREGRAS GLOBAIS DA PLATAFORMA:\n${rulesValue}` : ""}
 {restrictedValue ? `\nCONDICOES RESTRITAS GLOBALMENTE (NAO MENCIONAR): ${restrictedValue}` : ""}
               </pre>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Tab: Projecao de Imagem ─────────────────────────────────────── */}
+      {activeTab === "projection" && (
+        <div className="space-y-8">
+          <div>
+            <p className="text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
+              Como funciona a projecao
+            </p>
+            <p className="text-xs text-pierre font-light mb-4 leading-relaxed">
+              A projecao gera 2 imagens usando Gemini (google AI) que simulam a evolucao da pele do paciente
+              em 8 semanas (-50%) e 12 semanas (-80%). O prompt recebe as condicoes detectadas pelo Claude,
+              o objetivo do paciente, e agora tambem os produtos recomendados com seus ingredientes ativos
+              para gerar uma projecao mais realista e conectada ao tratamento.
+            </p>
+          </div>
+
+          {/* Variables available */}
+          <div>
+            <p className="text-[10px] text-pierre uppercase tracking-wider font-light mb-3">
+              Variaveis disponiveis no template
+            </p>
+            <div className="bg-white border border-sable/20 overflow-hidden">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-sable/20 bg-ivoire">
+                    <th className="text-left px-5 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">Variavel</th>
+                    <th className="text-left px-5 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">Descricao</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-sable/10">
+                  {[
+                    ["{intensityLabel}", "Nivel de melhoria: \"moderate but clearly visible\" (8sem) ou \"significant and dramatic\" (12sem)"],
+                    ["{weeks}", "Numero de semanas: 8 ou 12"],
+                    ["{objective}", "Objetivo principal do paciente (ex: anti-aging, anti-acne)"],
+                    ["{conditionsList}", "Lista de condicoes detectadas com severidade (ex: acne severity 2/3)"],
+                    ["{conditionEdits}", "Instrucoes visuais especificas por condicao com % de reducao"],
+                    ["{productsSection}", "Lista de produtos recomendados com ingredientes ativos"],
+                  ].map(([variable, desc]) => (
+                    <tr key={variable}>
+                      <td className="px-5 py-3">
+                        <code className="text-xs text-carbone bg-ivoire px-2 py-0.5">{variable}</code>
+                      </td>
+                      <td className="px-5 py-3 text-xs text-pierre font-light">{desc}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Editable projection prompt */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-[10px] text-pierre uppercase tracking-wider font-light">
+                  Template do prompt de projecao
+                </p>
+                <p className="text-xs text-pierre font-light mt-1">
+                  Deixe vazio para usar o template padrao. Use as variaveis acima para personalizar.
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                {saveStatus && (
+                  <span className="text-xs text-pierre font-light">{saveStatus}</span>
+                )}
+                <button
+                  onClick={handleSave}
+                  disabled={updateMutation.isPending}
+                  className="px-5 py-2 bg-carbone text-blanc-casse text-xs font-light tracking-wide hover:bg-terre transition-colors disabled:opacity-30"
+                >
+                  Salvar
+                </button>
+              </div>
+            </div>
+            <textarea
+              value={projectionValue}
+              onChange={(e) => setProjectionPrompt(e.target.value)}
+              rows={20}
+              placeholder="Deixe vazio para usar o template padrao. O template padrao instrui o Gemini a editar a foto facial mostrando melhorias fotorrealistas baseadas nas condicoes e produtos recomendados."
+              className="w-full px-5 py-4 border border-sable/20 bg-blanc-casse text-xs font-light text-carbone focus:outline-none focus:border-terre leading-relaxed font-mono"
+            />
+          </div>
+
+          {/* Default template reference */}
+          <div>
+            <p className="text-[10px] text-pierre uppercase tracking-wider font-light mb-3">
+              Template padrao (referencia)
+            </p>
+            <div className="bg-ivoire border border-sable/20 p-5 max-h-80 overflow-y-auto">
+              <pre className="text-xs text-terre font-light whitespace-pre-wrap leading-relaxed font-mono">{`Edit this facial photo to show a photorealistic {intensityLabel} after {weeks} weeks of professional dermocosmetic treatment.
+
+TREATMENT CONTEXT:
+- Primary objective: {objective}
+- Conditions being treated: {conditionsList}
+{productsSection}
+
+SPECIFIC IMPROVEMENTS TO APPLY VISIBLY:
+{conditionEdits}
+
+CRITICAL IDENTITY PRESERVATION RULES:
+- This is the SAME person. Do NOT alter facial structure, bone structure, jawline, nose shape, eye shape, lip shape, or face proportions in any way.
+- Preserve hair (style, color, length), eye color, expression, pose, head angle, and background EXACTLY.
+- Do NOT add makeup, filters, or cosmetic effects.
+- Do NOT change the person's age, gender, ethnicity, or body features.
+- Keep the exact same lighting direction, shadows, and color temperature.
+- The person must be instantly recognizable as the same individual.
+
+QUALITY REQUIREMENTS:
+- High resolution photorealistic output
+- Sharp focus on facial features
+- Natural skin texture (avoid plastic/airbrushed look)
+- The improvements should be clearly visible and pronounced
+- Maintain the original photo composition and framing
+
+The improvements must be visually obvious and impactful while remaining believable.
+
+Return only the edited image.`}</pre>
             </div>
           </div>
         </div>

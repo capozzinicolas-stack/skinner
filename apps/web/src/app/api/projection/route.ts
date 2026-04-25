@@ -12,6 +12,13 @@ const RequestSchema = z.object({
     })
   ),
   primaryObjective: z.string().min(1),
+  products: z.array(
+    z.object({
+      name: z.string(),
+      activeIngredients: z.array(z.string()),
+      stepRoutine: z.string().nullable(),
+    })
+  ).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -39,13 +46,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { photoBase64, conditions, primaryObjective } = parsed.data;
+    const { photoBase64, conditions, primaryObjective, products } = parsed.data;
 
     // Photo is only held in memory during this request — never persisted to disk or DB
     const result = await generateProjections({
       photoBase64,
       conditions,
       primaryObjective,
+      products,
     });
 
     return NextResponse.json(result);

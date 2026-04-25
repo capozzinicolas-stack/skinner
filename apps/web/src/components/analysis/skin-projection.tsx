@@ -5,12 +5,18 @@ import { useState } from "react";
 type ProjectionState =
   | { status: "idle" }
   | { status: "loading" }
-  | { status: "success"; week4: string; week8: string; week12: string }
+  | { status: "success"; week8: string; week12: string }
   | { status: "error"; message: string };
 
 type SkinCondition = {
   name: string;
   severity: number;
+};
+
+type ProjectionProduct = {
+  name: string;
+  activeIngredients: string[];
+  stepRoutine: string | null;
 };
 
 const conditionLabels: Record<string, string> = {
@@ -34,10 +40,12 @@ export function SkinProjection({
   photoBase64,
   conditions,
   primaryObjective,
+  products,
 }: {
   photoBase64: string;
   conditions: SkinCondition[];
   primaryObjective: string;
+  products?: ProjectionProduct[];
 }) {
   const [state, setState] = useState<ProjectionState>({ status: "idle" });
 
@@ -47,7 +55,7 @@ export function SkinProjection({
       const res = await fetch("/api/projection", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ photoBase64, conditions, primaryObjective }),
+        body: JSON.stringify({ photoBase64, conditions, primaryObjective, products }),
       });
 
       if (!res.ok) {
@@ -58,14 +66,12 @@ export function SkinProjection({
       }
 
       const data = (await res.json()) as {
-        week4: string;
         week8: string;
         week12: string;
       };
 
       setState({
         status: "success",
-        week4: data.week4,
         week8: data.week8,
         week12: data.week12,
       });
@@ -96,9 +102,9 @@ export function SkinProjection({
             Simule a evolucao da sua pele
           </h3>
           <p className="text-sm text-pierre font-light leading-relaxed mb-1">
-            Veja como sua pele poderia responder ao tratamento ao longo de 4, 8 e
-            12 semanas. A simulacao e gerada por inteligencia artificial com base
-            nas condicoes identificadas.
+            Veja como sua pele poderia responder ao tratamento recomendado ao longo de
+            8 e 12 semanas. A simulacao e gerada por inteligencia artificial com base
+            nas condicoes identificadas e nos produtos recomendados.
           </p>
           {conditions.length > 0 && (
             <p className="text-xs text-pierre/70 font-light mb-5">
@@ -160,77 +166,103 @@ export function SkinProjection({
 
       {state.status === "success" && (
         <div>
-          {/* 2x2 grid with larger images and improvement details */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-            {[
-              {
-                label: "Atual",
-                period: "Estado inicial",
-                src: photoBase64,
-                improvements: conditions.length > 0
-                  ? `Estado atual com ${conditions.map((c) => getConditionLabel(c.name).toLowerCase()).join(", ")}.`
-                  : "Linha de base do diagnostico.",
-                reduction: null,
-              },
-              {
-                label: "4 semanas",
-                period: "Fase inicial",
-                src: state.week4,
-                improvements: "Melhora inicial na textura e hidratacao. Reducao leve dos sinais de oleosidade e primeiros indicios de uniformizacao do tom.",
-                reduction: "-15%",
-              },
-              {
-                label: "8 semanas",
-                period: "Fase intermediaria",
-                src: state.week8,
-                improvements: "Reducao visivel das condicoes identificadas. Pele com maior luminosidade, poros menos aparentes e textura mais refinada.",
-                reduction: "-30%",
-              },
-              {
-                label: "12 semanas",
-                period: "Fase de consolidacao",
-                src: state.week12,
-                improvements: "Resultados consolidados do tratamento. Pele equilibrada, com tom uniforme, textura suave e aspecto saudavel.",
-                reduction: "-50%",
-              },
-            ].map(({ label, period, src, improvements, reduction }) => (
-              <div key={label} className="bg-white border border-sable/20">
-                <div
-                  className="relative w-full bg-ivoire overflow-hidden"
-                  style={{ aspectRatio: "1/1" }}
-                >
-                  <img
-                    src={src}
-                    alt={label}
-                    className="w-full h-full object-cover"
-                  />
-                  {reduction && (
-                    <div
-                      className="absolute top-3 right-3 px-2 py-1"
-                      style={{
-                        backgroundColor: "rgba(247, 243, 238, 0.92)",
-                        color: "#1C1917",
-                      }}
-                    >
-                      <span className="text-xs font-light tracking-wide">
-                        {reduction}
-                      </span>
-                    </div>
-                  )}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
+            {/* Current photo */}
+            <div className="bg-white border border-sable/20">
+              <div
+                className="relative w-full bg-ivoire overflow-hidden"
+                style={{ aspectRatio: "1/1" }}
+              >
+                <img
+                  src={photoBase64}
+                  alt="Atual"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="p-4">
+                <div className="flex items-baseline justify-between mb-2">
+                  <h4 className="font-serif text-base text-carbone">Atual</h4>
+                  <span className="text-[10px] text-pierre uppercase tracking-wider font-light">
+                    Estado inicial
+                  </span>
                 </div>
-                <div className="p-4">
-                  <div className="flex items-baseline justify-between mb-2">
-                    <h4 className="font-serif text-base text-carbone">{label}</h4>
-                    <span className="text-[10px] text-pierre uppercase tracking-wider font-light">
-                      {period}
-                    </span>
-                  </div>
-                  <p className="text-xs text-pierre font-light leading-relaxed">
-                    {improvements}
-                  </p>
+                <p className="text-xs text-pierre font-light leading-relaxed">
+                  {conditions.length > 0
+                    ? `Estado atual com ${conditions.map((c) => getConditionLabel(c.name).toLowerCase()).join(", ")}.`
+                    : "Linha de base do diagnostico."}
+                </p>
+              </div>
+            </div>
+
+            {/* 8 weeks — 50% improvement */}
+            <div className="bg-white border border-sable/20">
+              <div
+                className="relative w-full bg-ivoire overflow-hidden"
+                style={{ aspectRatio: "1/1" }}
+              >
+                <img
+                  src={state.week8}
+                  alt="8 semanas"
+                  className="w-full h-full object-cover"
+                />
+                <div
+                  className="absolute top-3 right-3 px-2 py-1"
+                  style={{
+                    backgroundColor: "rgba(247, 243, 238, 0.92)",
+                    color: "#1C1917",
+                  }}
+                >
+                  <span className="text-xs font-light tracking-wide">-50%</span>
                 </div>
               </div>
-            ))}
+              <div className="p-4">
+                <div className="flex items-baseline justify-between mb-2">
+                  <h4 className="font-serif text-base text-carbone">8 semanas</h4>
+                  <span className="text-[10px] text-pierre uppercase tracking-wider font-light">
+                    Fase intermediaria
+                  </span>
+                </div>
+                <p className="text-xs text-pierre font-light leading-relaxed">
+                  Reducao visivel das condicoes identificadas. Pele com maior luminosidade,
+                  textura mais refinada e tom mais uniforme.
+                </p>
+              </div>
+            </div>
+
+            {/* 12 weeks — 80% improvement */}
+            <div className="bg-white border border-sable/20">
+              <div
+                className="relative w-full bg-ivoire overflow-hidden"
+                style={{ aspectRatio: "1/1" }}
+              >
+                <img
+                  src={state.week12}
+                  alt="12 semanas"
+                  className="w-full h-full object-cover"
+                />
+                <div
+                  className="absolute top-3 right-3 px-2 py-1"
+                  style={{
+                    backgroundColor: "rgba(247, 243, 238, 0.92)",
+                    color: "#1C1917",
+                  }}
+                >
+                  <span className="text-xs font-light tracking-wide">-80%</span>
+                </div>
+              </div>
+              <div className="p-4">
+                <div className="flex items-baseline justify-between mb-2">
+                  <h4 className="font-serif text-base text-carbone">12 semanas</h4>
+                  <span className="text-[10px] text-pierre uppercase tracking-wider font-light">
+                    Resultado consolidado
+                  </span>
+                </div>
+                <p className="text-xs text-pierre font-light leading-relaxed">
+                  Transformacao significativa com tratamento consistente. Pele equilibrada,
+                  saudavel e visivelmente rejuvenescida.
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Disclaimer */}
@@ -240,7 +272,7 @@ export function SkinProjection({
             </p>
             <p className="text-xs text-terre font-light leading-relaxed">
               Estas imagens sao simulacoes geradas por inteligencia artificial com
-              base nas condicoes identificadas na analise. Nao representam uma
+              base nas condicoes identificadas e nos produtos recomendados. Nao representam uma
               garantia de resultado. Resultados reais variam conforme adesao ao
               tratamento, genetica, estilo de vida e outros fatores individuais.
               Consulte um dermatologista para orientacao clinica personalizada.

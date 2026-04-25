@@ -516,6 +516,13 @@ export function ResultsScreen({
             severity: c.severity,
           }))}
           primaryObjective={analysis.primary_objective}
+          products={recommendations
+            .filter((r) => r.recommendationTag === "recomendado")
+            .map((r) => ({
+              name: r.name,
+              activeIngredients: r.activeIngredients ?? [],
+              stepRoutine: r.stepRoutine,
+            }))}
         />
       )}
 

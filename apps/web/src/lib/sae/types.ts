@@ -74,6 +74,7 @@ export type MatchedProduct = {
   sessionFrequency: string | null;
   durationMinutes: number | null;
   recommendationTag: "recomendado" | "alternativa";
+  activeIngredients: string[];
 };
 
 export type FullAnalysisResult = {

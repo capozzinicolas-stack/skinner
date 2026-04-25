@@ -87,6 +87,14 @@
 - Prompt hierarchy: base prompt → KB (conditions + ingredients) → rules → global rules → global restricted → tenant rules → tenant restricted
 - Admin can view full prompt preview, KB as injected, and recent analysis raw responses
 
+### Skin Projection (Gemini)
+- Generates 2 images: 8 weeks (-50%) and 12 weeks (-80%) improvement
+- Uses Gemini 2.5 Flash Image model (~$0.12 per call, rate limited to 3/hour/IP)
+- Receives: patient photo, detected conditions, primary objective, AND recommended products with activeIngredients
+- Prompt template editable via `/admin/prompt` → "Projecao de Imagem" tab → stored in `PlatformConfig.projectionPromptTemplate`
+- Template variables: {intensityLabel}, {weeks}, {objective}, {conditionsList}, {conditionEdits}, {productsSection}
+- Falls back to DEFAULT_PROMPT_TEMPLATE when custom template is empty
+
 ## Conventions
 
 - All user-facing text in Portuguese (Brazilian)

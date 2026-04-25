@@ -415,6 +415,7 @@ export const adminRouter = router({
       z.object({
         analysisGlobalRules: z.string().nullable().optional(),
         analysisRestrictedConditions: z.string().nullable().optional(),
+        projectionPromptTemplate: z.string().nullable().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {

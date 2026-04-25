@@ -151,6 +151,7 @@ export async function matchProducts(
       sessionFrequency: product.sessionFrequency,
       durationMinutes: product.durationMinutes,
       recommendationTag: "recomendado", // will be updated below
+      activeIngredients: safeParseArray(product.activeIngredients),
       // Internal fields for sorting (not part of MatchedProduct type, stripped later)
       _popularity: product._count.recommendations,
       _priorityRank: product.priorityRank,
