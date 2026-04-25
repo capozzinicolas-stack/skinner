@@ -71,7 +71,7 @@ function SegmentosContent() {
             modelo de negocio do mercado dermatologico brasileiro.
           </p>
           {/* Tabs */}
-          <div className="flex mt-10">
+          <div className="flex gap-3 mt-10">
             {(Object.keys(segments) as SegmentId[]).map((key) => (
               <button
                 key={key}
