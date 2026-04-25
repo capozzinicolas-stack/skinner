@@ -3,113 +3,122 @@
 import { useState } from "react";
 
 export default function ContatoPage() {
-  const [form, setForm] = useState({ name: "", email: "", company: "", segment: "", message: "" });
-  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [sent, setSent] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setStatus("sending");
+    const form = e.currentTarget;
+    const data = new FormData(form);
     try {
-      const res = await fetch("/api/leads", {
+      await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          name: data.get("name"),
+          email: data.get("email"),
+          company: data.get("company"),
+          segment: data.get("segment"),
+          message: data.get("message"),
+          source: "website",
+        }),
       });
-      if (res.ok) {
-        setStatus("sent");
-        setForm({ name: "", email: "", company: "", segment: "", message: "" });
-      } else {
-        setStatus("error");
-      }
-    } catch {
-      setStatus("error");
-    }
+    } catch { /* silent */ }
+    setSent(true);
   }
 
   return (
-    <section className="py-20 px-8">
-      <div className="max-w-lg mx-auto">
-        <div className="text-center mb-12">
-          <p className="text-[10px] text-pierre uppercase tracking-skinners font-light mb-4">Contato</p>
-          <h1 className="font-serif text-4xl text-carbone italic">Fale conosco</h1>
-          <p className="text-pierre font-light mt-4">
-            Preencha o formulario e entraremos em contato em ate 24 horas.
+    <>
+      <section className="py-24 px-8">
+        <div className="max-w-[1200px] mx-auto">
+          <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-pierre mb-4">Contato</p>
+          <h1 className="font-serif text-[clamp(48px,7vw,84px)] leading-[1.02] tracking-[-0.015em] text-carbone">
+            <i className="text-terre">Vamos</i> conversar.
+          </h1>
+          <p className="text-lg font-light text-terre mt-6 leading-relaxed max-w-[620px]">
+            Demo de 25 min com o time de produto. A gente entende seu modelo de negocio e desenha um piloto sob medida.
           </p>
         </div>
+      </section>
 
-        {status === "sent" ? (
-          <div className="p-8 bg-ivoire border border-sable/20 text-center">
-            <h2 className="font-serif text-xl text-carbone">Mensagem enviada</h2>
-            <p className="text-sm text-pierre font-light mt-2">
-              Obrigado pelo interesse. Nossa equipe entrara em contato em breve.
-            </p>
+      <section className="py-24 px-8">
+        <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-[1fr_1.1fr] gap-20">
+          {/* Left info */}
+          <div>
+            <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-pierre mb-4">O que esperar</p>
+            <h2 className="font-serif text-[clamp(32px,4.2vw,52px)] leading-[1.08] text-carbone mb-6">
+              Em <i className="text-terre">25 min</i>, a gente cobre:
+            </h2>
+            <ul className="flex flex-col gap-3">
+              {[
+                "Tour pelo produto (10 min)",
+                "Casos parecidos com o seu (5 min)",
+                "Analise rapida do seu funil atual (5 min)",
+                "Plano de piloto desenhado ao vivo (5 min)",
+              ].map((b, i) => (
+                <li key={i} className="flex gap-3 text-sm text-terre font-light leading-relaxed pb-3 border-b border-sable/30">
+                  <span className="w-1.5 h-1.5 bg-carbone mt-2 flex-shrink-0" />{b}
+                </li>
+              ))}
+            </ul>
+            <div className="mt-8 space-y-4">
+              <div className="flex gap-4">
+                <span className="font-mono text-[10px] tracking-[0.12em] uppercase text-pierre w-24">comercial</span>
+                <span className="text-sm text-carbone">vendas@skinner.lat</span>
+              </div>
+              <div className="flex gap-4">
+                <span className="font-mono text-[10px] tracking-[0.12em] uppercase text-pierre w-24">whatsapp</span>
+                <span className="text-sm text-carbone">+55 11 9 8888-0000</span>
+              </div>
+              <div className="flex gap-4">
+                <span className="font-mono text-[10px] tracking-[0.12em] uppercase text-pierre w-24">endereco</span>
+                <span className="text-sm text-carbone">Sao Paulo, SP</span>
+              </div>
+            </div>
           </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label className="block text-xs text-pierre uppercase tracking-wider font-light mb-2">Nome</label>
-              <input
-                value={form.name}
-                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                required
-                className="w-full px-4 py-3 border border-sable/40 bg-blanc-casse text-sm font-light text-carbone focus:outline-none focus:border-terre"
-              />
+
+          {/* Form */}
+          {sent ? (
+            <div className="p-12 border border-sable/30 bg-white flex flex-col justify-center">
+              <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-pierre mb-2">Recebido</p>
+              <h3 className="font-serif text-[28px] text-carbone">
+                Obrigado.<br />Falamos <i className="text-terre">em ate 1 dia util</i>.
+              </h3>
             </div>
-            <div>
-              <label className="block text-xs text-pierre uppercase tracking-wider font-light mb-2">E-mail</label>
-              <input
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                required
-                className="w-full px-4 py-3 border border-sable/40 bg-blanc-casse text-sm font-light text-carbone focus:outline-none focus:border-terre"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-pierre uppercase tracking-wider font-light mb-2">Empresa</label>
-              <input
-                value={form.company}
-                onChange={(e) => setForm((f) => ({ ...f, company: e.target.value }))}
-                className="w-full px-4 py-3 border border-sable/40 bg-blanc-casse text-sm font-light text-carbone focus:outline-none focus:border-terre"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-pierre uppercase tracking-wider font-light mb-2">Segmento</label>
-              <select
-                value={form.segment}
-                onChange={(e) => setForm((f) => ({ ...f, segment: e.target.value }))}
-                className="w-full px-4 py-3 border border-sable/40 bg-blanc-casse text-sm font-light text-carbone focus:outline-none focus:border-terre"
-              >
-                <option value="">Selecione...</option>
-                <option value="laboratorio">Laboratorio / Marca</option>
-                <option value="clinica">Clinica dermatologica</option>
-                <option value="farmacia">Farmacia</option>
-                <option value="spa">Spa / Estetica</option>
-                <option value="outro">Outro</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs text-pierre uppercase tracking-wider font-light mb-2">Mensagem</label>
-              <textarea
-                value={form.message}
-                onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
-                rows={4}
-                className="w-full px-4 py-3 border border-sable/40 bg-blanc-casse text-sm font-light text-carbone focus:outline-none focus:border-terre"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={status === "sending"}
-              className="w-full py-3 bg-carbone text-blanc-casse text-sm font-light tracking-wide hover:bg-terre disabled:opacity-50 transition-colors"
-            >
-              {status === "sending" ? "Enviando..." : "Enviar mensagem"}
-            </button>
-            {status === "error" && (
-              <p className="text-sm text-terre font-light text-center">Erro ao enviar. Tente novamente.</p>
-            )}
-          </form>
-        )}
-      </div>
-    </section>
+          ) : (
+            <form onSubmit={handleSubmit} className="p-8 border border-sable/30 bg-white space-y-5">
+              <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-pierre">Preencha pra agendar</p>
+              <label className="block">
+                <span className="text-sm text-carbone block mb-1">Nome</span>
+                <input name="name" type="text" required placeholder="Seu nome completo" className="w-full px-4 py-3 border border-sable/30 bg-blanc-casse text-sm font-light text-carbone focus:outline-none focus:border-terre" />
+              </label>
+              <label className="block">
+                <span className="text-sm text-carbone block mb-1">Email corporativo</span>
+                <input name="email" type="email" required placeholder="voce@empresa.com.br" className="w-full px-4 py-3 border border-sable/30 bg-blanc-casse text-sm font-light text-carbone focus:outline-none focus:border-terre" />
+              </label>
+              <label className="block">
+                <span className="text-sm text-carbone block mb-1">Empresa</span>
+                <input name="company" type="text" placeholder="Razao social ou nome fantasia" className="w-full px-4 py-3 border border-sable/30 bg-blanc-casse text-sm font-light text-carbone focus:outline-none focus:border-terre" />
+              </label>
+              <label className="block">
+                <span className="text-sm text-carbone block mb-1">Segmento</span>
+                <select name="segment" className="w-full px-4 py-3 border border-sable/30 bg-blanc-casse text-sm font-light text-carbone focus:outline-none focus:border-terre">
+                  <option>Clinica</option>
+                  <option>Laboratorio</option>
+                  <option>Farmacia</option>
+                  <option>Outro</option>
+                </select>
+              </label>
+              <label className="block">
+                <span className="text-sm text-carbone block mb-1">Mensagem</span>
+                <textarea name="message" rows={3} placeholder="Conta um pouco do que voce procura." className="w-full px-4 py-3 border border-sable/30 bg-blanc-casse text-sm font-light text-carbone focus:outline-none focus:border-terre" />
+              </label>
+              <button type="submit" className="w-full py-4 bg-carbone text-blanc-casse text-sm tracking-[0.02em] hover:bg-terre transition-all">
+                Solicitar demo →
+              </button>
+            </form>
+          )}
+        </div>
+      </section>
+    </>
   );
 }

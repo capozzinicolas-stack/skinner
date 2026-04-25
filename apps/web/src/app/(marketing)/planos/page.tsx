@@ -1,94 +1,88 @@
 import Link from "next/link";
-import { PLANS } from "@/lib/billing/plans";
+
+const plans = [
+  {
+    id: "starter", name: "Starter", price: "R$ 890", setup: "R$ 1.500", commission: "3%",
+    target: "Clinicas e farmacias independentes", popular: false,
+    features: ["Ate 200 analises/mes", "1 usuario admin", "Relatorio PDF", "Marca branca basica", "Suporte por email", "Comissao 3% sobre venda atribuida"],
+  },
+  {
+    id: "growth", name: "Growth", price: "R$ 2.490", setup: "R$ 3.000", commission: "2%",
+    target: "Redes regionais e clinicas multi-unidade", popular: true,
+    features: ["Ate 1.500 analises/mes", "5 usuarios · multi-unidade", "Marca branca completa", "Painel de atribuicao", "Integracao ERP/marketplace", "CSM dedicado", "Comissao 2% sobre venda atribuida"],
+  },
+  {
+    id: "enterprise", name: "Enterprise", price: "Sob consulta", setup: "—", commission: "1%",
+    target: "Laboratorios, redes nacionais", popular: false,
+    features: ["Analises ilimitadas", "Usuarios ilimitados", "API privada + webhooks", "SLA 99.9%", "Modelo de IA dedicado", "Co-marketing", "Comissao 1% sobre venda atribuida"],
+  },
+];
+
+const faq = [
+  ["Como funciona a comissao?", "Cobrada apenas sobre vendas confirmadas geradas pela recomendacao Skinner. Rastreamento via pixel ou API. Voce so paga quando a Skinner gera venda."],
+  ["Tem fidelidade?", "Nao. Cancela quando quiser. Historico exportavel e dados ficam disponiveis por 30 dias apos o cancelamento."],
+  ["LGPD?", "Foto descartada apos analise por padrao. DPO dedicado. Conforme ANPD. Termo de tratamento de dados disponivel para analise juridica."],
+  ["Quanto tempo leva pra implementar?", "14 dias do contrato ao primeiro relatorio em producao. CSM acompanha as 50 primeiras analises."],
+  ["Funciona com meu catalogo?", "Sim. Importacao por CSV, integracao com Bling, Tiny, Linx, VTEX, Shopify, ou API direta."],
+  ["Precisa de hardware?", "Nao. Funciona em qualquer dispositivo com camera. Tablet recomendado pra PDV."],
+];
 
 export default function PlanosPage() {
-  const planEntries = Object.entries(PLANS);
-
   return (
-    <section className="py-20 px-8">
-      <div className="max-w-5xl mx-auto">
-        <div className="text-center mb-16">
-          <p className="text-[10px] text-pierre uppercase tracking-skinners font-light mb-4">Precos</p>
-          <h1 className="font-serif text-4xl text-carbone italic">Planos</h1>
-          <p className="text-pierre font-light mt-4 max-w-md mx-auto">
-            Escolha o plano ideal para o seu negocio. Todos incluem analise por IA,
-            relatorios PDF e suporte.
+    <>
+      <section className="py-24 px-8">
+        <div className="max-w-[1200px] mx-auto">
+          <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-pierre mb-4">Planos · pt-BR · CNPJ ativo</p>
+          <h1 className="font-serif text-[clamp(48px,7vw,84px)] leading-[1.02] tracking-[-0.015em] text-carbone">
+            <i className="text-terre">Planos</i> simples.<br />Sem letra miuda.
+          </h1>
+          <p className="text-lg font-light text-terre mt-6 leading-relaxed max-w-[620px]">
+            Mensalidade fixa + comissao sobre venda atribuida. Sem fidelidade. Sem custo escondido.
           </p>
         </div>
+      </section>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {planEntries.map(([id, plan]) => (
-            <div key={id} className={`p-8 bg-white border ${id === "growth" ? "border-carbone" : "border-sable/20"}`}>
-              {id === "growth" && (
-                <p className="text-[10px] text-carbone uppercase tracking-wider mb-2">Mais popular</p>
-              )}
-              <h2 className="font-serif text-2xl text-carbone">{plan.name}</h2>
-              <div className="mt-4">
-                {plan.monthlyPrice ? (
-                  <>
-                    <span className="text-3xl font-serif text-carbone">
-                      R$ {plan.monthlyPrice.toLocaleString("pt-BR")}
-                    </span>
-                    <span className="text-sm text-pierre font-light">/mes</span>
-                    {plan.setupFee && (
-                      <p className="text-xs text-pierre font-light mt-1">
-                        Setup: R$ {plan.setupFee.toLocaleString("pt-BR")} (unico)
-                      </p>
-                    )}
-                  </>
-                ) : (
-                  <p className="text-2xl font-serif text-carbone">Sob consulta</p>
-                )}
+      <section className="py-24 px-8">
+        <div className="max-w-[1200px] mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {plans.map((p) => (
+              <div key={p.id} className={`relative p-8 border flex flex-col ${p.popular ? "border-carbone bg-blanc-casse" : "border-sable/40 bg-white"}`}>
+                {p.popular && <span className="absolute -top-3 left-8 font-mono text-[10px] tracking-[0.12em] uppercase text-blanc-casse bg-carbone px-3 py-1">Mais escolhido</span>}
+                <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-pierre">{p.target}</p>
+                <h2 className="font-serif text-4xl italic text-carbone mt-2">{p.name}</h2>
+                <div className="mt-4 mb-1">
+                  <b className="font-serif text-3xl text-carbone">{p.price}</b>
+                  {p.price.startsWith("R$") && <small className="text-pierre font-light text-sm ml-1">/mes</small>}
+                </div>
+                <p className="text-[13px] text-pierre font-light">Setup: {p.setup} · Comissao: {p.commission}</p>
+                <div className="h-px bg-sable/30 my-6" />
+                <ul className="flex flex-col gap-3 flex-1">
+                  {p.features.map((f, i) => (
+                    <li key={i} className="flex gap-3 text-sm text-terre font-light">
+                      <span className="w-1.5 h-1.5 bg-carbone mt-2 flex-shrink-0" />{f}
+                    </li>
+                  ))}
+                </ul>
+                <Link href="/contato" className={`mt-8 block text-center py-4 text-sm tracking-[0.02em] transition-all ${p.popular ? "bg-carbone text-blanc-casse border border-carbone hover:bg-terre" : "border border-sable text-carbone hover:bg-ivoire hover:border-carbone"}`}>
+                  {p.popular ? "Comecar com Growth" : "Falar com vendas"}
+                </Link>
               </div>
-              <div className="w-full h-px bg-sable/20 my-6" />
-              <ul className="space-y-3">
-                {plan.features.map((f, i) => (
-                  <li key={i} className="text-sm text-pierre font-light">{f}</li>
-                ))}
-              </ul>
-              <div className="mt-8">
-                {plan.monthlyPrice ? (
-                  <Link
-                    href="/contato"
-                    className={`block text-center py-3 text-sm font-light tracking-wide transition-colors ${
-                      id === "growth"
-                        ? "bg-carbone text-blanc-casse hover:bg-terre"
-                        : "border border-sable text-terre hover:bg-ivoire"
-                    }`}
-                  >
-                    Comecar agora
-                  </Link>
-                ) : (
-                  <Link
-                    href="/contato"
-                    className="block text-center py-3 border border-sable text-terre text-sm font-light tracking-wide hover:bg-ivoire transition-colors"
-                  >
-                    Falar com vendas
-                  </Link>
-                )}
-              </div>
+            ))}
+          </div>
+
+          <div className="mt-24">
+            <h3 className="font-serif text-[28px] text-carbone mb-8">Perguntas <i className="text-terre">recorrentes</i>.</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {faq.map(([q, a], i) => (
+                <div key={i} className="p-6 border border-sable/30 bg-white">
+                  <h4 className="font-serif text-base text-carbone mb-2">{q}</h4>
+                  <p className="text-sm text-pierre font-light leading-relaxed">{a}</p>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-
-        {/* FAQ / extra info */}
-        <div className="mt-16 max-w-2xl mx-auto space-y-6">
-          <div className="p-6 bg-white border border-sable/20">
-            <h3 className="text-sm text-carbone mb-2">Comissao por venda</h3>
-            <p className="text-xs text-pierre font-light leading-relaxed">
-              A comissao e cobrada apenas sobre vendas confirmadas geradas pela recomendacao Skinner.
-              Starter: 3%, Growth: 2%, Enterprise: 1%. Rastreamento automatico via pixel.
-            </p>
-          </div>
-          <div className="p-6 bg-white border border-sable/20">
-            <h3 className="text-sm text-carbone mb-2">Sem contrato de permanencia</h3>
-            <p className="text-xs text-pierre font-light leading-relaxed">
-              Cancele a qualquer momento. Seus dados sao exportaveis e o acesso
-              ao historico de analises e mantido por 30 dias apos o cancelamento.
-            </p>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </>
   );
 }
