@@ -54,7 +54,7 @@ export default function PromptConfigPage() {
   const [globalRules, setGlobalRules] = useState<string | null>(null);
   const [restrictedConditions, setRestrictedConditions] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"prompt" | "kb" | "log">("prompt");
+  const [activeTab, setActiveTab] = useState<"prompt" | "scoring" | "kb" | "log">("prompt");
   const [expandedAnalysis, setExpandedAnalysis] = useState<string | null>(null);
 
   // Initialize form values from server data
@@ -80,7 +80,7 @@ export default function PromptConfigPage() {
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-sable/20 mb-8">
-        {(["prompt", "kb", "log"] as const).map((tab) => (
+        {(["prompt", "scoring", "kb", "log"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -91,6 +91,7 @@ export default function PromptConfigPage() {
             }`}
           >
             {tab === "prompt" && "Prompt e Regras"}
+            {tab === "scoring" && "Scoring e Recomendacao"}
             {tab === "kb" && `Base de Conhecimento (${(preview.data?.conditionsCount ?? 0) + (preview.data?.ingredientsCount ?? 0)})`}
             {tab === "log" && "Log de Analises"}
           </button>
@@ -194,6 +195,235 @@ INGREDIENTES ATIVOS CONHECIDOS:
 {rulesValue ? `\nREGRAS GLOBAIS DA PLATAFORMA:\n${rulesValue}` : ""}
 {restrictedValue ? `\nCONDICOES RESTRITAS GLOBALMENTE (NAO MENCIONAR): ${restrictedValue}` : ""}
               </pre>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Tab: Scoring e Recomendacao ──────────────────────────────────── */}
+      {activeTab === "scoring" && (
+        <div className="space-y-8">
+          {/* Scoring formula */}
+          <div>
+            <p className="text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
+              Formula de scoring
+            </p>
+            <p className="text-xs text-pierre font-light mb-4">
+              Cada produto do catalogo recebe uma pontuacao de 0 a 1.0 baseada nestas variaveis.
+              O produto com maior score e recomendado primeiro.
+            </p>
+            <div className="bg-white border border-sable/20 overflow-hidden">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-sable/20 bg-ivoire">
+                    <th className="text-left px-5 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">Variavel</th>
+                    <th className="text-center px-5 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">Peso</th>
+                    <th className="text-left px-5 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">Como funciona</th>
+                    <th className="text-left px-5 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">Fonte</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-sable/10">
+                  <tr>
+                    <td className="px-5 py-4 text-sm text-carbone">Concern match</td>
+                    <td className="px-5 py-4 text-center">
+                      <span className="text-sm text-carbone font-serif">35%</span>
+                    </td>
+                    <td className="px-5 py-4 text-xs text-pierre font-light">
+                      Proporcao de condicoes detectadas que o produto trata.
+                      Se Claude detecta 3 condicoes e o produto trata 2 delas, score = 2/3 * 0.35
+                    </td>
+                    <td className="px-5 py-4 text-xs text-pierre font-light">
+                      Product.concernTags vs Analysis.conditions
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="px-5 py-4 text-sm text-carbone">Skin type match</td>
+                    <td className="px-5 py-4 text-center">
+                      <span className="text-sm text-carbone font-serif">20%</span>
+                    </td>
+                    <td className="px-5 py-4 text-xs text-pierre font-light">
+                      Binario: o produto e compativel com o tipo de pele detectado pelo Claude?
+                      Sim = 0.20, Nao = 0
+                    </td>
+                    <td className="px-5 py-4 text-xs text-pierre font-light">
+                      Product.skinTypeTags vs Analysis.skin_type
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="px-5 py-4 text-sm text-carbone">Ingredientes ativos</td>
+                    <td className="px-5 py-4 text-center">
+                      <span className="text-sm text-carbone font-serif">20%</span>
+                    </td>
+                    <td className="px-5 py-4 text-xs text-pierre font-light">
+                      Proporcao de ingredientes ativos do produto que sao recomendados pela base
+                      dermatologica para as condicoes detectadas. Produtos com ingredientes a evitar sao excluidos.
+                    </td>
+                    <td className="px-5 py-4 text-xs text-pierre font-light">
+                      Product.activeIngredients vs SkinCondition.commonIngredients / avoidIngredients
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="px-5 py-4 text-sm text-carbone">Objective match</td>
+                    <td className="px-5 py-4 text-center">
+                      <span className="text-sm text-carbone font-serif">15%</span>
+                    </td>
+                    <td className="px-5 py-4 text-xs text-pierre font-light">
+                      Binario: o produto esta alinhado ao objetivo principal do paciente?
+                      Sim = 0.15, Nao = 0
+                    </td>
+                    <td className="px-5 py-4 text-xs text-pierre font-light">
+                      Product.objectiveTags vs Analysis.primary_objective
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="px-5 py-4 text-sm text-carbone">Severity match</td>
+                    <td className="px-5 py-4 text-center">
+                      <span className="text-sm text-carbone font-serif">10%</span>
+                    </td>
+                    <td className="px-5 py-4 text-xs text-pierre font-light">
+                      Proximidade entre o nivel de severidade do produto e a severidade maxima detectada.
+                      Quanto mais proximo, maior o score.
+                    </td>
+                    <td className="px-5 py-4 text-xs text-pierre font-light">
+                      Product.severityLevel vs max(Analysis.conditions.severity)
+                    </td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr className="border-t border-sable/30 bg-ivoire">
+                    <td className="px-5 py-3 text-sm text-carbone">Total</td>
+                    <td className="px-5 py-3 text-center">
+                      <span className="text-sm text-carbone font-serif">100%</span>
+                    </td>
+                    <td colSpan={2} className="px-5 py-3 text-xs text-pierre font-light">
+                      Score final = soma ponderada de todas as variaveis (0.00 a 1.00)
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
+          {/* Tiebreakers */}
+          <div>
+            <p className="text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
+              Desempate (quando dois produtos tem o mesmo score)
+            </p>
+            <p className="text-xs text-pierre font-light mb-4">
+              Quando multiplos produtos empatam no score, a ordem de recomendacao e decidida por:
+            </p>
+            <div className="bg-white border border-sable/20 overflow-hidden">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-sable/20 bg-ivoire">
+                    <th className="text-center px-5 py-3 text-[10px] text-pierre uppercase tracking-wider font-light w-16">Ordem</th>
+                    <th className="text-left px-5 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">Criterio</th>
+                    <th className="text-left px-5 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">Descricao</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-sable/10">
+                  <tr>
+                    <td className="px-5 py-4 text-center text-sm text-carbone font-serif">1</td>
+                    <td className="px-5 py-4 text-sm text-carbone">Priority Rank</td>
+                    <td className="px-5 py-4 text-xs text-pierre font-light">
+                      Ranking definido pelo tenant no cadastro do produto. Maior valor = recomendado primeiro.
+                      Use para priorizar produtos de maior margem ou parceiros estrategicos.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="px-5 py-4 text-center text-sm text-carbone font-serif">2</td>
+                    <td className="px-5 py-4 text-sm text-carbone">Popularidade</td>
+                    <td className="px-5 py-4 text-xs text-pierre font-light">
+                      Numero de vezes que o produto ja foi recomendado em analises anteriores.
+                      Produtos mais recomendados sobem no ranking de desempate.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="px-5 py-4 text-center text-sm text-carbone font-serif">3</td>
+                    <td className="px-5 py-4 text-sm text-carbone">Preco menor</td>
+                    <td className="px-5 py-4 text-xs text-pierre font-light">
+                      Em ultimo caso, o produto mais acessivel e priorizado.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Routine diversity */}
+          <div>
+            <p className="text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
+              Diversidade de rutina
+            </p>
+            <p className="text-xs text-pierre font-light mb-4">
+              O matcher seleciona o melhor produto por etapa da rotina para montar um protocolo completo.
+            </p>
+            <div className="bg-white border border-sable/20 overflow-hidden">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-sable/20 bg-ivoire">
+                    <th className="text-center px-5 py-3 text-[10px] text-pierre uppercase tracking-wider font-light w-16">Etapa</th>
+                    <th className="text-left px-5 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">Rotina</th>
+                    <th className="text-left px-5 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">Tag</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-sable/10">
+                  {[
+                    { step: "1", name: "Limpeza (cleanser)", tag: "recomendado" },
+                    { step: "2", name: "Tonico (toner)", tag: "recomendado" },
+                    { step: "3", name: "Serum (serum)", tag: "recomendado" },
+                    { step: "4", name: "Hidratante (moisturizer)", tag: "recomendado" },
+                    { step: "5", name: "Protetor Solar (SPF)", tag: "recomendado" },
+                    { step: "6", name: "Tratamento (treatment)", tag: "recomendado" },
+                  ].map((row) => (
+                    <tr key={row.step}>
+                      <td className="px-5 py-3 text-center text-sm text-carbone font-serif">{row.step}</td>
+                      <td className="px-5 py-3 text-sm text-carbone font-light">{row.name}</td>
+                      <td className="px-5 py-3">
+                        <span className="text-[9px] px-2 py-0.5 uppercase tracking-wider font-light bg-carbone text-blanc-casse">
+                          {row.tag}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                  <tr className="bg-ivoire/50">
+                    <td className="px-5 py-3 text-center text-sm text-pierre font-light">+</td>
+                    <td className="px-5 py-3 text-sm text-pierre font-light">
+                      Produtos adicionais com alto score (qualquer etapa)
+                    </td>
+                    <td className="px-5 py-3">
+                      <span className="text-[9px] px-2 py-0.5 uppercase tracking-wider font-light bg-ivoire text-terre border border-sable/30">
+                        alternativa
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p className="text-xs text-pierre font-light mt-3">
+              Retorna ate 5 produtos + 2 servicos (ou 6 produtos se nao houver servicos no catalogo).
+            </p>
+          </div>
+
+          {/* Exclusion rules */}
+          <div>
+            <p className="text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
+              Regras de exclusao
+            </p>
+            <p className="text-xs text-pierre font-light mb-4">
+              Produtos sao automaticamente excluidos da recomendacao quando:
+            </p>
+            <div className="space-y-2">
+              {[
+                "O produto contem ingredientes ativos listados em \"avoidIngredients\" das condicoes detectadas",
+                "O paciente esta gravida/amamentando e o produto tem contraindicacao para gravidez",
+                "O produto esta inativo (isActive = false)",
+              ].map((rule, i) => (
+                <div key={i} className="flex items-start gap-3 p-4 bg-white border border-sable/20">
+                  <span className="text-[10px] text-pierre font-light mt-0.5">{i + 1}.</span>
+                  <p className="text-xs text-pierre font-light">{rule}</p>
+                </div>
+              ))}
             </div>
           </div>
         </div>
