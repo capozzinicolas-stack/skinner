@@ -1,17 +1,40 @@
 "use client";
 
+import { useState } from "react";
 import { trpc } from "@/lib/trpc/client";
 
 export default function BillingPage() {
   const utils = trpc.useUtils();
   const billing = trpc.billing.status.useQuery();
   const plans = trpc.billing.plans.useQuery();
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const changePlan = trpc.billing.changePlan.useMutation({
     onSuccess: () => {
       utils.billing.status.invalidate();
       utils.dashboard.stats.invalidate();
     },
   });
+
+  async function handleStripeCheckout(planId: string) {
+    setCheckoutLoading(planId);
+    try {
+      const res = await fetch("/api/billing/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planId }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert(data.error || "Erro ao criar sessao de pagamento");
+        setCheckoutLoading(null);
+      }
+    } catch {
+      alert("Erro ao conectar com o sistema de pagamento");
+      setCheckoutLoading(null);
+    }
+  }
   const usageHistory = trpc.billing.usageHistory.useQuery();
 
   if (billing.isLoading) return <div className="p-8 text-pierre font-light">Carregando...</div>;
@@ -100,15 +123,11 @@ export default function BillingPage() {
                 </ul>
                 {!isCurrent && plan.monthlyPrice && (
                   <button
-                    onClick={() => {
-                      if (confirm(`Mudar para o plano ${plan.name}?`)) {
-                        changePlan.mutate({ planId: plan.id as any });
-                      }
-                    }}
-                    disabled={changePlan.isPending}
+                    onClick={() => handleStripeCheckout(plan.id)}
+                    disabled={checkoutLoading === plan.id}
                     className="w-full mt-6 py-2.5 bg-carbone text-blanc-casse text-xs font-light tracking-wide hover:bg-terre disabled:opacity-50 transition-colors"
                   >
-                    {changePlan.isPending ? "Alterando..." : "Mudar plano"}
+                    {checkoutLoading === plan.id ? "Redirecionando..." : "Inscrever-se"}
                   </button>
                 )}
                 {isCurrent && (

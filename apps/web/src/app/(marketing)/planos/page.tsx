@@ -63,8 +63,15 @@ export default function PlanosPage() {
                     </li>
                   ))}
                 </ul>
-                <Link href="/contato" className={`mt-8 block text-center py-4 text-sm tracking-[0.02em] transition-all ${p.popular ? "bg-carbone text-blanc-casse border border-carbone hover:bg-terre" : "border border-sable text-carbone hover:bg-ivoire hover:border-carbone"}`}>
-                  {p.popular ? "Comecar com Growth" : "Falar com vendas"}
+                <Link
+                  href={p.id === "enterprise" ? "/contato" : `/contato?plan=${p.id}`}
+                  className={`mt-8 block text-center py-4 text-sm tracking-[0.02em] transition-all ${
+                    p.popular
+                      ? "bg-carbone text-blanc-casse border border-carbone hover:bg-terre"
+                      : "border border-sable text-carbone hover:bg-ivoire hover:border-carbone"
+                  }`}
+                >
+                  {p.id === "enterprise" ? "Falar com vendas" : "Inscrever-se"}
                 </Link>
               </div>
             ))}
