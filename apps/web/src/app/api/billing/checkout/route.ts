@@ -51,6 +51,7 @@ export async function POST(req: NextRequest) {
     }
 
     // ── New user signup — no account yet ───────────────────────────
+    // In subscription mode, Stripe always creates a customer and collects email
     const session = await getStripe().checkout.sessions.create({
       mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
@@ -60,8 +61,6 @@ export async function POST(req: NextRequest) {
       subscription_data: {
         metadata: { planId },
       },
-      // Force email collection for new signups
-      customer_creation: "always",
     });
 
     return NextResponse.json({ url: session.url });
