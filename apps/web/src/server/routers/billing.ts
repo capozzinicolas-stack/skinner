@@ -1,7 +1,7 @@
 import { z } from "zod/v4";
 import { router, tenantProcedure, adminProcedure } from "../trpc";
 import { PLANS, type PlanId } from "@/lib/billing/plans";
-import { calculateMonthlyBill, createCheckoutUrl, createPortalUrl } from "@/lib/billing/stripe-mock";
+import { calculateMonthlyBill, createCheckoutUrl, createPortalUrl, isStripeConfigured } from "@/lib/billing/stripe-mock";
 
 export const billingRouter = router({
   // Get current plan and usage for tenant
@@ -59,9 +59,21 @@ export const billingRouter = router({
   checkout: tenantProcedure
     .input(z.object({ planId: z.enum(["starter", "growth", "enterprise"]) }))
     .mutation(async ({ ctx, input }) => {
+      if (isStripeConfigured() && input.planId !== "enterprise") {
+        // Real Stripe — return API endpoint URL for the client to POST to
+        return { url: `/api/billing/checkout`, planId: input.planId, useApi: true };
+      }
       const url = createCheckoutUrl(input.planId, ctx.tenantId);
-      return { url };
+      return { url, useApi: false };
     }),
+
+  // Create portal session for managing subscription
+  portal: tenantProcedure.mutation(async () => {
+    if (isStripeConfigured()) {
+      return { url: `/api/billing/portal`, useApi: true };
+    }
+    return { url: `/dashboard/faturamento`, useApi: false };
+  }),
 
   // Upgrade/downgrade plan (mock - in production this would be Stripe webhook)
   changePlan: tenantProcedure

@@ -1,50 +1,26 @@
 /**
- * Mock Stripe client for local development.
- * When STRIPE_SECRET_KEY is set, replace with real Stripe SDK.
+ * Billing utilities — uses real Stripe when configured, mock otherwise.
  */
 
 import { PLANS, type PlanId } from "./plans";
-
-export type MockSubscription = {
-  id: string;
-  tenantId: string;
-  plan: PlanId;
-  status: "active" | "past_due" | "canceled";
-  currentPeriodStart: Date;
-  currentPeriodEnd: Date;
-  stripeCustomerId: string;
-  stripeSubscriptionId: string;
-};
-
-export type MockInvoice = {
-  id: string;
-  tenantId: string;
-  amount: number;
-  currency: string;
-  status: "paid" | "open" | "past_due";
-  description: string;
-  createdAt: Date;
-};
 
 // Check if real Stripe is available
 export function isStripeConfigured(): boolean {
   return !!process.env.STRIPE_SECRET_KEY;
 }
 
-// Generate mock checkout URL
+// Generate checkout URL — real Stripe goes through /api/billing/checkout
 export function createCheckoutUrl(planId: PlanId, tenantId: string): string {
   if (isStripeConfigured()) {
-    // TODO: Real Stripe checkout session
     return `/api/billing/checkout?plan=${planId}&tenant=${tenantId}`;
   }
   // Mock: redirect to success directly
   return `/dashboard?billing=success&plan=${planId}`;
 }
 
-// Generate mock customer portal URL
+// Generate customer portal URL
 export function createPortalUrl(tenantId: string): string {
   if (isStripeConfigured()) {
-    // TODO: Real Stripe customer portal
     return `/api/billing/portal?tenant=${tenantId}`;
   }
   return `/dashboard/faturamento`;

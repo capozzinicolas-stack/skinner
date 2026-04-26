@@ -106,6 +106,18 @@
 - Conditional display: questions can have `showCondition` (e.g. pregnancy only shown when sex=female)
 - TenantConfig toggles (questionAllergiesEnabled, etc.) still work as per-tenant overrides
 
+## Stripe Billing
+
+- Real Stripe integration when `STRIPE_SECRET_KEY` is set, mock otherwise
+- Checkout: `POST /api/billing/checkout` → creates Stripe Checkout Session → redirects to Stripe
+- Portal: `POST /api/billing/portal` → creates Stripe Customer Portal session
+- Webhook: `POST /api/billing/webhook` → receives checkout.session.completed, subscription.updated/deleted, invoice.paid
+- Price IDs: starter=price_1TQH3RPTPxVx2t2Rg4i8jPOZ, growth=price_1TQH7WPTPxVx2t2RQkmaIDRY
+- Enterprise plan has no Stripe price (custom pricing, handled manually)
+- On checkout success: webhook updates tenant plan, creates subscription record
+- On subscription cancel: tenant status set to "paused"
+- Environment: STRIPE_SECRET_KEY, NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY, STRIPE_WEBHOOK_SECRET (optional)
+
 ## Conventions
 
 - All user-facing text in Portuguese (Brazilian)
