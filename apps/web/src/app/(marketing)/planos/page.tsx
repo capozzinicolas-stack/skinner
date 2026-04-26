@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 
 const plans = [
   {
@@ -28,6 +31,29 @@ const faq = [
 ];
 
 export default function PlanosPage() {
+  const [loading, setLoading] = useState<string | null>(null);
+
+  async function handleCheckout(planId: string) {
+    setLoading(planId);
+    try {
+      const res = await fetch("/api/billing/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planId }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert(data.error || "Erro ao criar sessao de pagamento");
+        setLoading(null);
+      }
+    } catch {
+      alert("Erro ao conectar com o sistema de pagamento");
+      setLoading(null);
+    }
+  }
+
   return (
     <>
       <section className="py-24 px-8">
@@ -63,16 +89,23 @@ export default function PlanosPage() {
                     </li>
                   ))}
                 </ul>
-                <Link
-                  href={p.id === "enterprise" ? "/contato" : `/contato?plan=${p.id}`}
-                  className={`mt-8 block text-center py-4 text-sm tracking-[0.02em] transition-all ${
-                    p.popular
-                      ? "bg-carbone text-blanc-casse border border-carbone hover:bg-terre"
-                      : "border border-sable text-carbone hover:bg-ivoire hover:border-carbone"
-                  }`}
-                >
-                  {p.id === "enterprise" ? "Falar com vendas" : "Inscrever-se"}
-                </Link>
+                {p.id === "enterprise" ? (
+                  <Link href="/contato" className="mt-8 block text-center py-4 text-sm tracking-[0.02em] transition-all border border-sable text-carbone hover:bg-ivoire hover:border-carbone">
+                    Falar com vendas
+                  </Link>
+                ) : (
+                  <button
+                    onClick={() => handleCheckout(p.id)}
+                    disabled={loading === p.id}
+                    className={`mt-8 block w-full text-center py-4 text-sm tracking-[0.02em] transition-all disabled:opacity-50 ${
+                      p.popular
+                        ? "bg-carbone text-blanc-casse border border-carbone hover:bg-terre"
+                        : "border border-sable text-carbone hover:bg-ivoire hover:border-carbone"
+                    }`}
+                  >
+                    {loading === p.id ? "Redirecionando..." : "Inscrever-se"}
+                  </button>
+                )}
               </div>
             ))}
           </div>

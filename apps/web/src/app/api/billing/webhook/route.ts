@@ -2,19 +2,35 @@ import { NextRequest, NextResponse } from "next/server";
 import { getStripe, PRICE_TO_PLAN } from "@/lib/billing/stripe";
 import { PLANS, type PlanId } from "@/lib/billing/plans";
 import { db } from "@skinner/db";
+import { hashSync } from "bcryptjs";
+import { sendEmail, buildWelcomeEmail } from "@/lib/email";
 import type Stripe from "stripe";
 
-// Disable body parsing — Stripe needs the raw body for signature verification
 export const dynamic = "force-dynamic";
 
+function generateTempPassword(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+  let pass = "";
+  for (let i = 0; i < 10; i++) {
+    pass += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return pass;
+}
+
+function generateSlug(email: string): string {
+  const base = email.split("@")[0].toLowerCase().replace(/[^a-z0-9]/g, "-").slice(0, 20);
+  const suffix = Math.random().toString(36).slice(2, 6);
+  return `${base}-${suffix}`;
+}
+
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
-  const tenantId = session.metadata?.tenantId;
   const planId = session.metadata?.planId as PlanId | undefined;
+  const flow = session.metadata?.flow ?? "signup";
   const customerId = session.customer as string;
   const subscriptionId = session.subscription as string;
 
-  if (!tenantId || !planId) {
-    console.error("[webhook] Missing tenantId or planId in metadata");
+  if (!planId) {
+    console.error("[webhook] Missing planId in metadata");
     return;
   }
 
@@ -24,22 +40,119 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     return;
   }
 
-  // Update tenant plan
-  await db.tenant.update({
-    where: { id: tenantId },
+  // ── Existing tenant upgrade ────────────────────────────────────────
+  if (flow === "upgrade" && session.metadata?.tenantId) {
+    const tenantId = session.metadata.tenantId;
+    await db.tenant.update({
+      where: { id: tenantId },
+      data: {
+        plan: planId,
+        analysisLimit: planConfig.analysisLimit,
+        commissionRate: planConfig.commissionRate,
+        excessCostPerAnalysis: planConfig.excessCostPerAnalysis,
+      },
+    });
+
+    await db.subscription.upsert({
+      where: { stripeSubscriptionId: subscriptionId },
+      create: {
+        tenantId,
+        plan: planId,
+        status: "active",
+        stripeSubscriptionId: subscriptionId,
+        stripeCustomerId: customerId,
+        currentPeriodStart: new Date(),
+        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      },
+      update: {
+        plan: planId,
+        status: "active",
+        stripeCustomerId: customerId,
+        currentPeriodStart: new Date(),
+        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      },
+    });
+
+    console.log(`[webhook] Tenant ${tenantId} upgraded to ${planId}`);
+    return;
+  }
+
+  // ── New signup — create tenant + user ──────────────────────────────
+  const customerEmail = session.customer_details?.email ?? (session as any).customer_email;
+  if (!customerEmail) {
+    console.error("[webhook] No customer email in checkout session");
+    return;
+  }
+
+  // Check if user already exists
+  const existingUser = await db.user.findUnique({ where: { email: customerEmail } });
+  if (existingUser) {
+    console.log(`[webhook] User ${customerEmail} already exists, skipping creation`);
+    // Still update subscription if needed
+    if (existingUser.tenantId) {
+      await db.tenant.update({
+        where: { id: existingUser.tenantId },
+        data: {
+          plan: planId,
+          analysisLimit: planConfig.analysisLimit,
+          commissionRate: planConfig.commissionRate,
+          excessCostPerAnalysis: planConfig.excessCostPerAnalysis,
+        },
+      });
+      await db.subscription.upsert({
+        where: { stripeSubscriptionId: subscriptionId },
+        create: {
+          tenantId: existingUser.tenantId,
+          plan: planId,
+          status: "active",
+          stripeSubscriptionId: subscriptionId,
+          stripeCustomerId: customerId,
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        },
+        update: {
+          plan: planId,
+          status: "active",
+          stripeCustomerId: customerId,
+        },
+      });
+    }
+    return;
+  }
+
+  // Generate temp password and slug
+  const tempPassword = generateTempPassword();
+  const slug = generateSlug(customerEmail);
+  const customerName = session.customer_details?.name ?? customerEmail.split("@")[0];
+
+  // Create tenant
+  const tenant = await db.tenant.create({
     data: {
+      name: customerName,
+      slug,
       plan: planId,
       analysisLimit: planConfig.analysisLimit,
       commissionRate: planConfig.commissionRate,
       excessCostPerAnalysis: planConfig.excessCostPerAnalysis,
+      tenantConfig: { create: {} },
     },
   });
 
-  // Create/update subscription record
-  await db.subscription.upsert({
-    where: { stripeSubscriptionId: subscriptionId },
-    create: {
-      tenantId,
+  // Create user with temp password
+  await db.user.create({
+    data: {
+      email: customerEmail,
+      name: customerName,
+      password: hashSync(tempPassword, 10),
+      role: "b2b_admin",
+      tenantId: tenant.id,
+    },
+  });
+
+  // Create subscription record
+  await db.subscription.create({
+    data: {
+      tenantId: tenant.id,
       plan: planId,
       status: "active",
       stripeSubscriptionId: subscriptionId,
@@ -47,16 +160,29 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       currentPeriodStart: new Date(),
       currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     },
-    update: {
-      plan: planId,
-      status: "active",
-      stripeCustomerId: customerId,
-      currentPeriodStart: new Date(),
-      currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-    },
   });
 
-  console.log(`[webhook] Tenant ${tenantId} upgraded to ${planId}`);
+  // Update Stripe subscription metadata with tenantId for future webhooks
+  try {
+    await getStripe().subscriptions.update(subscriptionId, {
+      metadata: { tenantId: tenant.id, planId },
+    });
+  } catch (err) {
+    console.error("[webhook] Failed to update Stripe subscription metadata:", err);
+  }
+
+  // Send welcome email with temp password
+  const loginUrl = "https://app.skinner.lat/login";
+  const { subject, html } = buildWelcomeEmail({
+    tenantName: customerName,
+    email: customerEmail,
+    tempPassword,
+    planName: planConfig.name,
+    loginUrl,
+  });
+  await sendEmail({ to: customerEmail, subject, html });
+
+  console.log(`[webhook] New signup: ${customerEmail} → tenant ${tenant.slug} (${planId})`);
 }
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
@@ -66,11 +192,9 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
 
   if (!tenantId) return;
 
-  // Determine plan from price
   const priceId = subscription.items.data[0]?.price?.id;
   const planId = priceId ? PRICE_TO_PLAN[priceId] : null;
 
-  // Map Stripe status to internal status
   const statusMap: Record<string, string> = {
     active: "active",
     past_due: "past_due",
@@ -100,7 +224,6 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     },
   });
 
-  // If plan changed, update tenant limits
   if (planId && PLANS[planId as PlanId]) {
     const planConfig = PLANS[planId as PlanId];
     await db.tenant.update({
@@ -114,7 +237,6 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     });
   }
 
-  // If canceled, pause the tenant
   if (status === "canceled") {
     await db.tenant.update({
       where: { id: tenantId },
@@ -132,7 +254,6 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
   });
   if (!sub) return;
 
-  // Log payment as usage event
   await db.usageEvent.create({
     data: {
       tenantId: sub.tenantId,
@@ -140,12 +261,7 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
       quantity: 1,
       unitPrice: (invoice.amount_paid ?? 0) / 100,
       total: (invoice.amount_paid ?? 0) / 100,
-      metadata: JSON.stringify({
-        invoiceId: invoice.id,
-        period: invoice.period_start
-          ? `${new Date(invoice.period_start * 1000).toISOString()} - ${new Date((invoice.period_end ?? 0) * 1000).toISOString()}`
-          : null,
-      }),
+      metadata: JSON.stringify({ invoiceId: invoice.id }),
     },
   });
 }
@@ -165,9 +281,8 @@ export async function POST(req: NextRequest) {
     if (webhookSecret) {
       event = getStripe().webhooks.constructEvent(body, signature, webhookSecret);
     } else {
-      // No webhook secret configured — parse but skip verification (dev only)
       event = JSON.parse(body) as Stripe.Event;
-      console.warn("[webhook] No STRIPE_WEBHOOK_SECRET set — skipping signature verification");
+      console.warn("[webhook] No STRIPE_WEBHOOK_SECRET — skipping verification");
     }
   } catch (err) {
     console.error("[webhook] Signature verification failed:", err);
@@ -185,9 +300,6 @@ export async function POST(req: NextRequest) {
         break;
       case "invoice.paid":
         await handleInvoicePaid(event.data.object as Stripe.Invoice);
-        break;
-      default:
-        // Ignore other event types
         break;
     }
   } catch (err) {

@@ -5,11 +5,6 @@ import { db } from "@skinner/db";
 
 export async function POST(req: NextRequest) {
   try {
-    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-    if (!token?.tenantId) {
-      return NextResponse.json({ error: "Nao autorizado" }, { status: 401 });
-    }
-
     const body = await req.json();
     const planId = body.planId as string;
     const priceId = STRIPE_PRICE_IDS[planId];
@@ -18,35 +13,55 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Plano invalido" }, { status: 400 });
     }
 
-    const tenantId = token.tenantId as string;
-    const tenant = await db.tenant.findUniqueOrThrow({
-      where: { id: tenantId },
-      include: { subscriptions: { orderBy: { createdAt: "desc" }, take: 1 } },
-    });
+    const origin = req.headers.get("origin") || "https://www.skinner.lat";
 
-    // Get or create Stripe customer
-    let customerId = tenant.subscriptions[0]?.stripeCustomerId;
+    // Check if user is already authenticated (existing tenant upgrading)
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
 
-    if (!customerId || customerId.startsWith("mock_")) {
-      const customer = await getStripe().customers.create({
-        name: tenant.name,
-        metadata: { tenantId, tenantSlug: tenant.slug },
+    if (token?.tenantId) {
+      // ── Existing tenant upgrading ──────────────────────────────────
+      const tenantId = token.tenantId as string;
+      const tenant = await db.tenant.findUniqueOrThrow({
+        where: { id: tenantId },
+        include: { subscriptions: { orderBy: { createdAt: "desc" }, take: 1 } },
       });
-      customerId = customer.id;
+
+      let customerId = tenant.subscriptions[0]?.stripeCustomerId;
+      if (!customerId || customerId.startsWith("mock_")) {
+        const customer = await getStripe().customers.create({
+          name: tenant.name,
+          metadata: { tenantId, tenantSlug: tenant.slug },
+        });
+        customerId = customer.id;
+      }
+
+      const session = await getStripe().checkout.sessions.create({
+        customer: customerId,
+        mode: "subscription",
+        line_items: [{ price: priceId, quantity: 1 }],
+        success_url: `${origin}/dashboard/faturamento?billing=success&plan=${planId}`,
+        cancel_url: `${origin}/dashboard/faturamento?billing=cancel`,
+        metadata: { tenantId, planId, flow: "upgrade" },
+        subscription_data: {
+          metadata: { tenantId, planId },
+        },
+      });
+
+      return NextResponse.json({ url: session.url });
     }
 
-    // Create checkout session
-    const origin = req.headers.get("origin") || "https://app.skinner.lat";
+    // ── New user signup — no account yet ───────────────────────────
     const session = await getStripe().checkout.sessions.create({
-      customer: customerId,
       mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${origin}/dashboard/faturamento?billing=success&plan=${planId}`,
-      cancel_url: `${origin}/dashboard/faturamento?billing=cancel`,
-      metadata: { tenantId, planId },
+      success_url: `${origin}/planos?billing=success&plan=${planId}`,
+      cancel_url: `${origin}/planos?billing=cancel`,
+      metadata: { planId, flow: "signup" },
       subscription_data: {
-        metadata: { tenantId, planId },
+        metadata: { planId },
       },
+      // Force email collection for new signups
+      customer_creation: "always",
     });
 
     return NextResponse.json({ url: session.url });
