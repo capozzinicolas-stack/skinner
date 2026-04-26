@@ -40,6 +40,36 @@ function isPublicPath(pathname: string): boolean {
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  const hostname = req.headers.get("host") ?? "";
+
+  // ── Subdomain routing ──────────────────────────────────────────────
+  // admin.skinner.lat → redirect to /login (then /admin after auth)
+  // app.skinner.lat   → redirect to /login (then /dashboard after auth)
+  const isAdminSubdomain = hostname.startsWith("admin.");
+  const isAppSubdomain = hostname.startsWith("app.");
+
+  if (isAdminSubdomain || isAppSubdomain) {
+    // On subdomains, only allow /login, /api/*, /admin, /dashboard paths
+    // Redirect root and marketing pages to /login
+    if (pathname === "/" || pathname === "/como-funciona" || pathname === "/planos"
+      || pathname === "/segmentos" || pathname === "/contato" || pathname === "/demo"
+      || pathname === "/laboratorios" || pathname === "/clinicas" || pathname === "/farmacias"
+      || pathname === "/privacidade" || pathname === "/termos") {
+      const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+      if (token) {
+        // Already logged in — redirect to their panel
+        if (isAdminSubdomain && token.role === "skinner_admin") {
+          return NextResponse.redirect(new URL("/admin", req.url));
+        }
+        if (isAppSubdomain && token.tenantId) {
+          return NextResponse.redirect(new URL("/dashboard", req.url));
+        }
+      }
+      return NextResponse.redirect(new URL("/login", req.url));
+    }
+  }
+
+  // ── Standard routing ───────────────────────────────────────────────
 
   // Allow all public paths without any auth check
   if (isPublicPath(pathname)) {
