@@ -18,7 +18,7 @@ export default function MarketingLayout({
       <header className="sticky top-0 z-50 bg-blanc-casse/85 backdrop-blur-sm border-b border-sable/30">
         <div className="max-w-[1200px] mx-auto px-8 py-[18px] flex items-center justify-between gap-8">
           <Link href="/" className="flex items-center gap-2.5">
-            <img src="/brand/logo-primary.png" alt="Skinner" className="h-14 object-contain" />
+            <img src="/brand/logo-primary.png" alt="Skinner" className="h-28 object-contain" />
           </Link>
           <nav className="hidden md:flex items-center gap-7">
             {navLinks.map((link) => (
@@ -54,7 +54,7 @@ export default function MarketingLayout({
       <footer className="bg-carbone text-blanc-casse pt-20 pb-6">
         <div className="max-w-[1200px] mx-auto px-8 grid grid-cols-1 md:grid-cols-5 gap-12">
           <div className="md:col-span-1">
-            <img src="/brand/logo-primary.png" alt="Skinner" className="h-8 object-contain brightness-0 invert" />
+            <img src="/brand/logo-primary.png" alt="Skinner" className="h-16 object-contain brightness-0 invert" />
             <p className="font-serif italic text-lg text-blanc-casse mt-4 mb-1">
               A pele e dados.<br />Nos lemos.
             </p>

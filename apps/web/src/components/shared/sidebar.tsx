@@ -24,7 +24,7 @@ export function Sidebar({
   return (
     <aside className="w-64 bg-white border-r border-sable/20 flex flex-col h-screen sticky top-0">
       <div className="p-6 border-b border-sable/20">
-        <img src="/brand/logo-primary.png" alt="Skinner" className="h-[72px] object-contain mb-1" />
+        <img src="/brand/logo-primary.png" alt="Skinner" className="h-36 object-contain mb-1" />
         {subtitle && (
           <p className="text-[10px] text-pierre tracking-skinners uppercase font-light mt-2">
             {subtitle}
