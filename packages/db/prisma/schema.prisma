@@ -442,6 +442,12 @@ model SkinCondition {
   severity2Desc String? // Moderate description
   severity3Desc String? // Severe description
 
+  // Visual instruction sent to Gemini when generating post-treatment projection.
+  // Use {intensity} as placeholder for the percentage improvement (50% at week 8, 80% at week 12).
+  // Editable via /admin so new conditions added through the panel propagate automatically
+  // to the projection pipeline without code changes.
+  visualEditPrompt String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

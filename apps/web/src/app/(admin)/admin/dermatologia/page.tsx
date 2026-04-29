@@ -9,6 +9,7 @@ const categoryLabels: Record<string, string> = {
   aging: "Envelhecimento",
   barrier: "Barreira",
   sensitivity: "Sensibilidade",
+  structural: "Estrutural",
 };
 
 export default function DermatologyPage() {
@@ -21,6 +22,12 @@ export default function DermatologyPage() {
       utils.dermatology.listConditions.invalidate();
       setShowConditionForm(false);
       resetConditionForm();
+    },
+  });
+  const updateCondition = trpc.dermatology.updateCondition.useMutation({
+    onSuccess: () => {
+      utils.dermatology.listConditions.invalidate();
+      setEditingId(null);
     },
   });
   const deleteCondition = trpc.dermatology.deleteCondition.useMutation({
@@ -40,11 +47,14 @@ export default function DermatologyPage() {
   const [tab, setTab] = useState<"conditions" | "ingredients">("conditions");
   const [showConditionForm, setShowConditionForm] = useState(false);
   const [showIngredientForm, setShowIngredientForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editVisualPrompt, setEditVisualPrompt] = useState("");
 
   const [conditionForm, setConditionForm] = useState({
     name: "", displayName: "", description: "", category: "inflammatory",
     commonIngredients: "", avoidIngredients: "",
     severity1Desc: "", severity2Desc: "", severity3Desc: "",
+    visualEditPrompt: "",
   });
   const [ingredientForm, setIngredientForm] = useState({
     name: "", displayName: "", description: "", category: "",
@@ -56,6 +66,7 @@ export default function DermatologyPage() {
       name: "", displayName: "", description: "", category: "inflammatory",
       commonIngredients: "", avoidIngredients: "",
       severity1Desc: "", severity2Desc: "", severity3Desc: "",
+      visualEditPrompt: "",
     });
   }
   function resetIngredientForm() {
@@ -126,6 +137,7 @@ export default function DermatologyPage() {
                   severity1Desc: conditionForm.severity1Desc || undefined,
                   severity2Desc: conditionForm.severity2Desc || undefined,
                   severity3Desc: conditionForm.severity3Desc || undefined,
+                  visualEditPrompt: conditionForm.visualEditPrompt || undefined,
                 });
               }}
               className="mb-6 p-6 bg-white rounded-xl border shadow-sm space-y-4"
@@ -217,6 +229,21 @@ export default function DermatologyPage() {
                   />
                 </div>
               </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Prompt visual para Gemini (geração de imagem pós-tratamento)
+                </label>
+                <textarea
+                  value={conditionForm.visualEditPrompt}
+                  onChange={(e) => setConditionForm((f) => ({ ...f, visualEditPrompt: e.target.value }))}
+                  rows={3}
+                  placeholder="Reduce visible {nome da condição} by approximately {intensity}% (descrição visual em inglês). Use {intensity} como placeholder do percentual de melhora."
+                  className="w-full px-3 py-2 border rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-sable"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Em inglês. Use <code className="bg-gray-100 px-1">{"{intensity}"}</code> — substituído por 50 (semana 8) ou 80 (semana 12) em runtime. Se vazio, o sistema gera um prompt automático a partir do nome e descrição.
+                </p>
+              </div>
               <button
                 type="submit"
                 disabled={createCondition.isPending}
@@ -235,14 +262,23 @@ export default function DermatologyPage() {
             <div className="space-y-3">
               {conditions.data.map((c) => (
                 <div key={c.id} className="p-4 bg-white rounded-xl border shadow-sm">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="font-semibold text-gray-900">{c.displayName}</h3>
                         <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
                           {categoryLabels[c.category] ?? c.category}
                         </span>
                         <span className="text-xs text-gray-400 font-mono">{c.name}</span>
+                        {c.visualEditPrompt ? (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            ✓ Prompt visual
+                          </span>
+                        ) : (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                            Sem prompt visual (usa fallback)
+                          </span>
+                        )}
                       </div>
                       <p className="text-sm text-gray-500 mt-1">{c.description}</p>
                       {c.commonIngredients && (
@@ -255,16 +291,74 @@ export default function DermatologyPage() {
                           Evitar: {safeParseArray(c.avoidIngredients).join(", ")}
                         </p>
                       )}
+
+                      {editingId === c.id ? (
+                        <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            Prompt visual para Gemini
+                          </label>
+                          <textarea
+                            value={editVisualPrompt}
+                            onChange={(e) => setEditVisualPrompt(e.target.value)}
+                            rows={4}
+                            placeholder="Reduce visible {condition} by approximately {intensity}% (...)"
+                            className="w-full px-3 py-2 border rounded-lg text-xs font-mono focus:outline-none focus:ring-2 focus:ring-sable"
+                          />
+                          <p className="mt-1 text-[11px] text-gray-500">
+                            Use <code className="bg-gray-200 px-1">{"{intensity}"}</code> como placeholder. Em runtime vira 50 (semana 8) ou 80 (semana 12).
+                          </p>
+                          <div className="mt-2 flex gap-2">
+                            <button
+                              onClick={() =>
+                                updateCondition.mutate({
+                                  id: c.id,
+                                  visualEditPrompt: editVisualPrompt.trim() || null,
+                                })
+                              }
+                              disabled={updateCondition.isPending}
+                              className="px-3 py-1.5 bg-carbone text-blanc-casse text-xs font-medium hover:bg-terre disabled:opacity-50"
+                            >
+                              {updateCondition.isPending ? "Salvando..." : "Salvar"}
+                            </button>
+                            <button
+                              onClick={() => setEditingId(null)}
+                              className="px-3 py-1.5 border border-sable text-terre text-xs font-medium hover:bg-gray-50"
+                            >
+                              Cancelar
+                            </button>
+                          </div>
+                          {updateCondition.error && (
+                            <p className="text-xs text-red-600 mt-1">{updateCondition.error.message}</p>
+                          )}
+                        </div>
+                      ) : (
+                        c.visualEditPrompt && (
+                          <p className="mt-2 text-[11px] text-gray-600 font-mono bg-gray-50 px-2 py-1 rounded border border-gray-100 break-words">
+                            {c.visualEditPrompt}
+                          </p>
+                        )
+                      )}
                     </div>
-                    <button
-                      onClick={() => {
-                        if (confirm(`Deletar "${c.displayName}"?`))
-                          deleteCondition.mutate({ id: c.id });
-                      }}
-                      className="text-xs text-red-600 hover:underline"
-                    >
-                      Deletar
-                    </button>
+                    <div className="flex flex-col gap-2 shrink-0">
+                      <button
+                        onClick={() => {
+                          setEditingId(c.id);
+                          setEditVisualPrompt(c.visualEditPrompt ?? "");
+                        }}
+                        className="text-xs text-carbone hover:underline"
+                      >
+                        Editar prompt visual
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm(`Deletar "${c.displayName}"?`))
+                            deleteCondition.mutate({ id: c.id });
+                        }}
+                        className="text-xs text-red-600 hover:underline"
+                      >
+                        Deletar
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

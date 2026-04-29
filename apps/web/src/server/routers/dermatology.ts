@@ -19,6 +19,7 @@ export const dermatologyRouter = router({
           "aging",
           "barrier",
           "sensitivity",
+          "structural",
         ]),
         commonIngredients: z.string().optional(),
         avoidIngredients: z.string().optional(),
@@ -27,6 +28,7 @@ export const dermatologyRouter = router({
         severity1Desc: z.string().optional(),
         severity2Desc: z.string().optional(),
         severity3Desc: z.string().optional(),
+        visualEditPrompt: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -39,6 +41,9 @@ export const dermatologyRouter = router({
         id: z.string(),
         displayName: z.string().min(2).optional(),
         description: z.string().optional(),
+        category: z
+          .enum(["inflammatory", "pigmentation", "aging", "barrier", "sensitivity", "structural"])
+          .optional(),
         commonIngredients: z.string().optional(),
         avoidIngredients: z.string().optional(),
         baseRoutine: z.string().optional(),
@@ -46,6 +51,7 @@ export const dermatologyRouter = router({
         severity1Desc: z.string().optional(),
         severity2Desc: z.string().optional(),
         severity3Desc: z.string().optional(),
+        visualEditPrompt: z.string().nullable().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {

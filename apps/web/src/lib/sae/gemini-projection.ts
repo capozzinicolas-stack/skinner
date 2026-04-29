@@ -50,37 +50,36 @@ The improvements must be visually obvious and impactful while remaining believab
 
 Return only the edited image.`;
 
+/**
+ * Builds the visual edit instructions sent to Gemini for each detected condition.
+ *
+ * Resolution order for the visual prompt of each condition:
+ *   1. SkinCondition.visualEditPrompt from DB (editable via /admin)
+ *   2. SkinCondition.displayName + description from DB (auto-built generic prompt)
+ *   3. Generic fallback: "Improve {name} by approximately {intensity}%"
+ *
+ * This keeps the system data-driven: any condition added/edited in /admin (or via the
+ * questionnaire flow) propagates here automatically, no code change needed.
+ */
 function buildConditionEdits(
   conditions: { name: string; severity: number }[],
-  reductionPct: number
+  reductionPct: number,
+  conditionsKB: Map<string, { visualEditPrompt: string | null; displayName: string; description: string }>
 ): string {
-  return conditions.map((c) => {
-    const intensity = reductionPct;
-    switch (c.name) {
-      case "acne":
-        return `Reduce visible acne lesions, pimples, and blemishes by approximately ${intensity}% (fade redness, smooth papules, clear skin)`;
-      case "hyperpigmentation":
-        return `Lighten dark spots, melasma, and hyperpigmentation by approximately ${intensity}% (significantly more even tone)`;
-      case "aging":
-        return `Soften fine lines and wrinkles by approximately ${intensity}% (noticeably smoother, firmer skin)`;
-      case "dehydration":
-        return `Increase skin hydration and plumpness by approximately ${intensity}% (visibly hydrated, dewy appearance)`;
-      case "sensitivity":
-        return `Reduce visible redness and irritation by approximately ${intensity}% (calmer, even-toned skin)`;
-      case "rosacea":
-        return `Reduce facial redness and visible capillaries by approximately ${intensity}% (significantly calmer complexion)`;
-      case "pores":
-        return `Minimize visible pore size by approximately ${intensity}% (refined, smooth texture)`;
-      case "dullness":
-        return `Increase skin luminosity and radiance by approximately ${intensity}% (visibly brighter, healthy glow)`;
-      case "dark_circles":
-        return `Lighten under-eye dark circles by approximately ${intensity}% (refreshed, rested appearance)`;
-      case "oiliness":
-        return `Reduce visible oily shine by approximately ${intensity}% (balanced, matte finish)`;
-      default:
-        return `Improve ${c.name} by approximately ${intensity}%`;
-    }
-  }).join(".\n");
+  const intensity = reductionPct;
+  return conditions
+    .map((c) => {
+      const kb = conditionsKB.get(c.name);
+      if (kb?.visualEditPrompt) {
+        return kb.visualEditPrompt.replace(/\{intensity\}/g, String(intensity));
+      }
+      if (kb) {
+        // Auto-built prompt from KB metadata when admin hasn't authored a visualEditPrompt yet.
+        return `Improve the visible signs of ${kb.displayName.toLowerCase()} by approximately ${intensity}% (clinical context: ${kb.description.split(".")[0]})`;
+      }
+      return `Improve ${c.name} by approximately ${intensity}%`;
+    })
+    .join(".\n");
 }
 
 function buildProductsSection(products?: ProjectionProduct[]): string {
@@ -104,6 +103,7 @@ function buildPrompt(
   weeks: 8 | 12,
   conditions: { name: string; severity: number }[],
   objective: string,
+  conditionsKB: Map<string, { visualEditPrompt: string | null; displayName: string; description: string }>,
   products?: ProjectionProduct[]
 ): string {
   const reductionPct = weeks === 8 ? 50 : 80;
@@ -111,7 +111,7 @@ function buildPrompt(
     ? "moderate but clearly visible improvement"
     : "significant and dramatic improvement";
 
-  const conditionEdits = buildConditionEdits(conditions, reductionPct);
+  const conditionEdits = buildConditionEdits(conditions, reductionPct, conditionsKB);
   const conditionsList = conditions.map((c) => `${c.name} (severity ${c.severity}/3)`).join(", ");
   const productsSection = buildProductsSection(products);
 
@@ -168,14 +168,23 @@ export async function generateProjections(
   });
   const template = platformConfig?.projectionPromptTemplate || DEFAULT_PROMPT_TEMPLATE;
 
+  // Load condition KB once and index by name. Visual edit prompts authored via /admin
+  // (or seed) flow into Gemini through this map, no code change required for new conditions.
+  const kbRows = await db.skinCondition.findMany({
+    select: { name: true, visualEditPrompt: true, displayName: true, description: true },
+  });
+  const conditionsKB = new Map(
+    kbRows.map((r) => [r.name, { visualEditPrompt: r.visualEditPrompt, displayName: r.displayName, description: r.description }])
+  );
+
   const [week8, week12] = await Promise.all([
     generateProjection(
       input.photoBase64,
-      buildPrompt(template, 8, input.conditions, input.primaryObjective, input.products)
+      buildPrompt(template, 8, input.conditions, input.primaryObjective, conditionsKB, input.products)
     ),
     generateProjection(
       input.photoBase64,
-      buildPrompt(template, 12, input.conditions, input.primaryObjective, input.products)
+      buildPrompt(template, 12, input.conditions, input.primaryObjective, conditionsKB, input.products)
     ),
   ]);
 

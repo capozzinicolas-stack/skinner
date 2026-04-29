@@ -27,6 +27,9 @@ interface SkinConditionSeed {
   severity1Desc: string;
   severity2Desc: string;
   severity3Desc: string;
+  // Visual prompt sent to Gemini for post-treatment projection.
+  // {intensity} is replaced with the percentage improvement (50 or 80).
+  visualEditPrompt?: string;
 }
 
 interface IngredientSeed {
@@ -475,6 +478,50 @@ const skinConditions: SkinConditionSeed[] = [
       "Rugas moderadas em repouso, sulcos nasolabiais visíveis, perda de firmeza na região mandibular, manchas de envelhecimento discretas.",
     severity3Desc:
       "Rugas profundas, flacidez significativa, sulcos profundos, perda volumétrica marcante. Dermato-cosméticos como adjuvantes; procedimentos médicos (toxina botulínica, preenchimento, laser) para resultados mais expressivos.",
+  },
+
+  {
+    name: "sagging",
+    displayName: "Flacidez (Ptose Cutânea)",
+    description:
+      "Perda de firmeza e elasticidade da pele decorrente da degradação progressiva das fibras de colágeno (tipos I e III) e elastina na derme, associada à diminuição do ácido hialurônico endógeno e à involução dos compartimentos de gordura facial profunda (compartimentos de Rohrich). Manifesta-se como descolamento dos tecidos da face média, perda de definição do contorno mandibular (jowls), ptose malar, formação de sulcos nasolabiais e bandas platismais no pescoço. Diferencia-se das rugas por afetar volume e estrutura tridimensional, não apenas a superfície da pele. Acelerada por fotoenvelhecimento, perda de peso significativa, gravidade, tabagismo, glicação e estresse oxidativo. Avaliada clinicamente pela mobilidade tecidual, definição do ângulo cervicomental e classificação de ptose malar (Pessa, Mendelson).",
+    category: "structural",
+    commonIngredients: JSON.stringify([
+      "Retinol / Tretinoína (estimula síntese de colágeno)",
+      "Peptídeos de Sinalização (Matrixyl 3000, Argireline)",
+      "Peptídeos de Cobre (GHK-Cu)",
+      "DMAE (Dimetilaminoetanol)",
+      "Vitamina C (cofator da síntese de colágeno)",
+      "Bakuchiol (alternativa biocompatível ao retinol)",
+      "Cafeína (efeito tensor temporário)",
+      "Ácido Hialurônico (multi-peso molecular)",
+      "Niacinamida",
+      "Resveratrol",
+      "Coenzima Q10",
+      "Ginkgo Biloba (microcirculação)",
+    ]),
+    avoidIngredients: JSON.stringify([
+      "Álcool desnaturado em alta concentração (resseca e agrava atrofia)",
+      "Esfoliantes muito agressivos sem hidratação compensatória",
+      "Exposição solar sem proteção (fotoenvelhecimento acelerado)",
+    ]),
+    baseRoutine: JSON.stringify({
+      am: ["limpeza suave", "antioxidante (Vitamina C ou Resveratrol)", "hidratante com peptídeos", "protetor solar FPS 50+"],
+      pm: ["limpeza dupla se uso de FPS", "retinóide ou bakuchiol", "creme firmador com peptídeos", "hidratante com ceramidas"],
+    }),
+    alertSigns: JSON.stringify([
+      "Flacidez severa com ptose palpebral afetando visão (avaliação médica)",
+      "Perda de volume facial muito rápida sem causa aparente (descartar lipodistrofia metabólica)",
+      "Expectativas irrealistas — cosméticos retardam e melhoram, mas não substituem procedimentos como ultrassom microfocado, radiofrequência, fios de PDO ou cirurgia para flacidez moderada a grave",
+    ]),
+    severity1Desc:
+      "Flacidez leve: perda inicial de definição do contorno mandibular, leve descolamento da face média perceptível em movimentos. Pele ainda responde bem a estímulos. Comum a partir dos 30 anos.",
+    severity2Desc:
+      "Flacidez moderada: jowls (papada lateral) visíveis, sulcos nasolabiais marcados, ptose malar evidente, início de bandas platismais no pescoço. Necessita rotina consistente com ativos firmadores e considerar procedimentos não invasivos (radiofrequência, ultrassom microfocado).",
+    severity3Desc:
+      "Flacidez significativa: descolamento marcante dos tecidos faciais, jowls pronunciados, ângulo cervicomental indefinido, ptose malar e palpebral, bandas platismais espessas. Dermato-cosméticos como adjuvantes; procedimentos médicos (HIFU, fios de sustentação, lifting cirúrgico) são indicados para resultados mais expressivos.",
+    visualEditPrompt:
+      "Lift and tighten facial skin, especially in jawline, jowls, neck, and lower face by approximately {intensity}% (visibly firmer contours, more defined jawline, reduced sagging and ptosis, tighter mandibular line, lifted midface)",
   },
 
   // ── BARREIRA / HIDRATAÇÃO ─────────────────────────────────────────────────

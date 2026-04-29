@@ -239,6 +239,10 @@ async function main() {
   console.log(`✅ Services: ${services.length} created`);
 
   // 6. Create base skin conditions
+  // These map to the simple IDs used in the questionnaire (concerns, primary_objective).
+  // visualEditPrompt is sent verbatim to Gemini for the post-treatment projection.
+  // {intensity} is replaced with the % improvement at runtime (50% at week 8, 80% at week 12).
+  // To add a new condition that propagates everywhere, add it here OR via /admin.
   const conditions = [
     {
       name: "acne",
@@ -261,6 +265,8 @@ async function main() {
       severity1Desc: "Comedões e pápulas ocasionais",
       severity2Desc: "Pápulas e pústulas frequentes em áreas amplas",
       severity3Desc: "Nódulos e cistos profundos — requer acompanhamento dermatológico",
+      visualEditPrompt:
+        "Reduce visible acne lesions, pimples, and blemishes by approximately {intensity}% (fade redness, smooth papules, clear skin)",
     },
     {
       name: "hyperpigmentation",
@@ -279,6 +285,8 @@ async function main() {
       severity1Desc: "Manchas leves e pontuais",
       severity2Desc: "Manchas moderadas em múltiplas áreas",
       severity3Desc: "Hiperpigmentação extensa e profunda",
+      visualEditPrompt:
+        "Lighten dark spots, melasma, and hyperpigmentation by approximately {intensity}% (significantly more even tone)",
     },
     {
       name: "aging",
@@ -297,6 +305,8 @@ async function main() {
       severity1Desc: "Linhas finas ao redor dos olhos",
       severity2Desc: "Rugas moderadas e perda de firmeza inicial",
       severity3Desc: "Rugas profundas e flacidez significativa",
+      visualEditPrompt:
+        "Soften fine lines and wrinkles by approximately {intensity}% (noticeably smoother, firmer skin)",
     },
     {
       name: "dehydration",
@@ -318,6 +328,8 @@ async function main() {
       severity1Desc: "Opacidade leve e desconforto ocasional",
       severity2Desc: "Pele repuxada e descamação leve",
       severity3Desc: "Descamação intensa e barreira comprometida",
+      visualEditPrompt:
+        "Increase skin hydration and plumpness by approximately {intensity}% (visibly hydrated, dewy appearance)",
     },
     {
       name: "sensitivity",
@@ -341,6 +353,8 @@ async function main() {
       severity1Desc: "Vermelhidão ocasional com produtos novos",
       severity2Desc: "Reatividade frequente, vermelhidão persistente",
       severity3Desc: "Possível rosácea — requer avaliação dermatológica",
+      visualEditPrompt:
+        "Reduce visible redness and irritation by approximately {intensity}% (calmer, even-toned skin)",
     },
     {
       name: "rosacea",
@@ -364,17 +378,124 @@ async function main() {
       severity1Desc: "Vermelhidão leve no centro do rosto",
       severity2Desc: "Vermelhidão persistente com pápulas",
       severity3Desc: "Vasos visíveis e alterações texturais — requer dermatologista",
+      visualEditPrompt:
+        "Reduce facial redness and visible capillaries by approximately {intensity}% (significantly calmer complexion)",
+    },
+    {
+      name: "pores",
+      displayName: "Poros Dilatados",
+      description:
+        "Poros visivelmente dilatados, especialmente na zona T (testa, nariz e queixo). Mais comuns em peles oleosas.",
+      category: "structural",
+      commonIngredients: JSON.stringify([
+        "Niacinamida",
+        "Ácido Salicílico",
+        "Retinol",
+        "Argila",
+      ]),
+      avoidIngredients: JSON.stringify(["Óleos comedogênicos"]),
+      severity1Desc: "Poros levemente visíveis na zona T",
+      severity2Desc: "Poros dilatados em múltiplas áreas",
+      severity3Desc: "Poros muito dilatados com textura irregular",
+      visualEditPrompt:
+        "Minimize visible pore size by approximately {intensity}% (refined, smooth texture)",
+    },
+    {
+      name: "dullness",
+      displayName: "Opacidade",
+      description:
+        "Pele sem luminosidade com acúmulo de células mortas e tonalidade irregular.",
+      category: "structural",
+      commonIngredients: JSON.stringify([
+        "Vitamina C",
+        "AHA",
+        "Niacinamida",
+        "Ácido Glicólico",
+      ]),
+      avoidIngredients: JSON.stringify([]),
+      severity1Desc: "Leve falta de luminosidade",
+      severity2Desc: "Pele opaca com tom irregular",
+      severity3Desc: "Acúmulo significativo de células mortas",
+      visualEditPrompt:
+        "Increase skin luminosity and radiance by approximately {intensity}% (visibly brighter, healthy glow)",
+    },
+    {
+      name: "dark_circles",
+      displayName: "Olheiras",
+      description:
+        "Hiperpigmentação periorbital de origem vascular, pigmentar ou estrutural.",
+      category: "pigmentation",
+      commonIngredients: JSON.stringify([
+        "Cafeína",
+        "Vitamina K",
+        "Vitamina C",
+        "Retinol",
+        "Peptídeos",
+      ]),
+      avoidIngredients: JSON.stringify([]),
+      severity1Desc: "Olheiras leves",
+      severity2Desc: "Olheiras moderadas com componente vascular",
+      severity3Desc: "Olheiras pronunciadas com perda de volume periorbital",
+      visualEditPrompt:
+        "Lighten under-eye dark circles by approximately {intensity}% (refreshed, rested appearance)",
+    },
+    {
+      name: "oiliness",
+      displayName: "Oleosidade Excessiva",
+      description:
+        "Produção sebácea elevada, especialmente na zona T. Causa brilho excessivo e contribui para acne.",
+      category: "structural",
+      commonIngredients: JSON.stringify([
+        "Niacinamida",
+        "Ácido Salicílico",
+        "Argila",
+        "Zinco",
+      ]),
+      avoidIngredients: JSON.stringify([
+        "Óleos pesados",
+        "Manteigas oclusivas",
+      ]),
+      severity1Desc: "Oleosidade leve na zona T",
+      severity2Desc: "Oleosidade frequente em todo o rosto",
+      severity3Desc: "Seborreia significativa com brilho persistente",
+      visualEditPrompt:
+        "Reduce visible oily shine by approximately {intensity}% (balanced, matte finish)",
+    },
+    {
+      name: "sagging",
+      displayName: "Flacidez",
+      description:
+        "Perda de firmeza e elasticidade da pele com descolamento de tecidos faciais e perda de definição do contorno mandibular.",
+      category: "structural",
+      commonIngredients: JSON.stringify([
+        "Retinol",
+        "Peptídeos de Sinalização",
+        "DMAE",
+        "Vitamina C",
+        "Ácido Hialurônico",
+        "Bakuchiol",
+        "Cafeína",
+      ]),
+      avoidIngredients: JSON.stringify([
+        "Álcool desnaturado em alta concentração",
+        "Exposição solar sem proteção",
+      ]),
+      severity1Desc: "Perda inicial de firmeza no contorno mandibular",
+      severity2Desc: "Jowls visíveis e ptose malar evidente",
+      severity3Desc: "Flacidez significativa com descolamento marcante dos tecidos",
+      visualEditPrompt:
+        "Lift and tighten facial skin, especially in jawline, jowls, neck, and lower face by approximately {intensity}% (visibly firmer contours, more defined jawline, reduced sagging and ptosis, tighter mandibular line, lifted midface)",
     },
   ];
 
   for (const condition of conditions) {
     await prisma.skinCondition.upsert({
       where: { name: condition.name },
-      update: {},
+      update: condition,
       create: condition,
     });
   }
-  console.log(`✅ Skin conditions: ${conditions.length} created`);
+  console.log(`✅ Skin conditions: ${conditions.length} upserted`);
 
   // 7. Create base ingredients
   const ingredients = [

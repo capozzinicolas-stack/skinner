@@ -1,12 +1,24 @@
 import type { AnalysisInput, AnalysisOutput, ZoneAnnotation } from "./types";
+import { db } from "@skinner/db";
 
 /**
  * Mock analyzer that simulates Claude API responses.
  * Replace with real Claude call when API key is available.
+ *
+ * Conditions reported by the mock are derived from the questionnaire concerns.
+ * The descriptions/severities come from a built-in baseline map AND the live KB,
+ * so any condition added to the panel admin (and seeded into SkinCondition) is
+ * picked up automatically without changing this file.
  */
 export async function mockAnalyze(input: AnalysisInput): Promise<AnalysisOutput> {
   // Simulate API latency
   await new Promise((r) => setTimeout(r, 2000 + Math.random() * 1000));
+
+  // Pull KB once for any condition not in the hardcoded baseline below.
+  const kbRows = await db.skinCondition.findMany({
+    select: { name: true, displayName: true, severity1Desc: true, severity2Desc: true, description: true },
+  });
+  const kbByName = new Map(kbRows.map((r) => [r.name, r]));
 
   const q = input.questionnaire;
   const concerns = (Array.isArray(q.concerns) ? q.concerns : []) as string[];
@@ -58,15 +70,29 @@ export async function mockAnalyze(input: AnalysisInput): Promise<AnalysisOutput>
       severity: skinType === "oily" ? 2 : 1,
       description: "Produção sebácea elevada na zona T. Brilho excessivo notável na testa e nariz.",
     },
+    sagging: {
+      severity: ageRange === "45-54" || ageRange === "55+" ? 2 : 1,
+      description: "Perda de firmeza visível na região mandibular e contorno facial. Sinais iniciais de ptose tecidual e flacidez cutânea, com diminuição da definição do jawline e leve descolamento dos tecidos da face média.",
+    },
   };
 
+  // For each concern from the questionnaire, prefer the rich hardcoded mock entry,
+  // otherwise synthesize from the KB so newly-added conditions are still reported.
   const conditions = concerns
-    .filter((c) => conditionMap[c])
-    .map((c) => ({
-      name: c,
-      severity: conditionMap[c].severity,
-      description: conditionMap[c].description,
-    }));
+    .map((c) => {
+      if (conditionMap[c]) {
+        return { name: c, severity: conditionMap[c].severity, description: conditionMap[c].description };
+      }
+      const kb = kbByName.get(c);
+      if (kb) {
+        const severity = ageRange === "55+" ? 2 : 1;
+        const description =
+          (severity === 2 ? kb.severity2Desc : kb.severity1Desc) ?? kb.description;
+        return { name: c, severity, description };
+      }
+      return null;
+    })
+    .filter((x): x is { name: string; severity: number; description: string } => x !== null);
 
   // If no concerns selected, add a default mild one
   if (conditions.length === 0) {
@@ -129,6 +155,7 @@ export async function mockAnalyze(input: AnalysisInput): Promise<AnalysisOutput>
   const hasSensitivity = concerns.includes("sensitivity") || concerns.includes("rosacea");
   const hasAging = concerns.includes("aging");
   const hasPores = concerns.includes("pores");
+  const hasSagging = concerns.includes("sagging");
 
   const zone_annotations: ZoneAnnotation[] = [
     // Forehead: attention for oiliness/acne, good otherwise
@@ -199,17 +226,19 @@ export async function mockAnalyze(input: AnalysisInput): Promise<AnalysisOutput>
         : "Região mentual sem lesões ativas ou alterações relevantes.",
       related_conditions: hasAcne ? ["acne"] : [],
     },
-    // Jawline: attention for aging/acne, good otherwise
+    // Jawline: concern for sagging, attention for aging/acne, good otherwise
     {
       zone: "jawline",
-      status: hasAging || hasAcne ? "attention" : "good",
-      title: hasAging ? "Perda de contorno" : hasAcne ? "Lesões no contorno" : "Contorno definido",
-      observation: hasAging
+      status: hasSagging ? "concern" : hasAging || hasAcne ? "attention" : "good",
+      title: hasSagging ? "Flacidez mandibular" : hasAging ? "Perda de contorno" : hasAcne ? "Lesões no contorno" : "Contorno definido",
+      observation: hasSagging
+        ? "Perda significativa de firmeza no contorno mandibular. Ptose tecidual visível com diminuição da definição do jawline e leve descolamento dos tecidos da face média."
+        : hasAging
         ? "Leve perda de definição mandibular. Diminuição da firmeza ao longo do contorno facial."
         : hasAcne
         ? "Lesões esparsas ao longo da linha mandibular. Associação com acne hormonal possível."
         : "Linha mandibular bem definida sem alterações relevantes.",
-      related_conditions: hasAging ? ["aging"] : hasAcne ? ["acne"] : [],
+      related_conditions: hasSagging ? ["sagging"] : hasAging ? ["aging"] : hasAcne ? ["acne"] : [],
     },
   ];
 
