@@ -68,6 +68,13 @@ model TenantConfig {
   // "technical": full clinical terminology — for B2B clinics that prefer medical credibility.
   analysisTone       String  @default("humanized")
 
+  // Cross-tenant benchmark opt-in. When true, this tenant's anonymized aggregate
+  // metrics (counts only — never individual records) contribute to the platform-wide
+  // average AND this tenant can view the platform benchmark in their dashboard.
+  // Off by default (privacy-first). Min 3 opt-in tenants required to expose any
+  // benchmark to avoid de-anonymization risk.
+  benchmarkOptIn     Boolean @default(false)
+
   // Delivery config
   emailEnabled     Boolean @default(true)
   whatsappEnabled  Boolean @default(false)

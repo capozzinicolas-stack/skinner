@@ -34,6 +34,8 @@ function getPlanRestriction(plan: PlanId, field: string): string | null {
 type AnalysisFormState = {
   // Tone of the patient-facing analysis output
   analysisTone: "humanized" | "technical";
+  // Cross-tenant benchmark opt-in
+  benchmarkOptIn: boolean;
   // Questionnaire
   questionAllergiesEnabled: boolean;
   questionSunscreenEnabled: boolean;
@@ -79,6 +81,7 @@ type AnalysisFormState = {
 
 const DEFAULT_FORM: AnalysisFormState = {
   analysisTone: "humanized",
+  benchmarkOptIn: false,
   questionAllergiesEnabled: true,
   questionSunscreenEnabled: true,
   questionPregnantEnabled: true,
@@ -737,6 +740,7 @@ export default function AnaliseConfigPage() {
     if (!cfg) return;
     setForm({
       analysisTone: ((cfg.analysisTone as string) === "technical" ? "technical" : "humanized") as "humanized" | "technical",
+      benchmarkOptIn: (cfg.benchmarkOptIn as boolean) ?? false,
       questionAllergiesEnabled: (cfg.questionAllergiesEnabled as boolean) ?? true,
       questionSunscreenEnabled: (cfg.questionSunscreenEnabled as boolean) ?? true,
       questionPregnantEnabled: (cfg.questionPregnantEnabled as boolean) ?? true,
@@ -792,6 +796,7 @@ export default function AnaliseConfigPage() {
 
     updateMutation.mutate({
       analysisTone: form.analysisTone,
+      benchmarkOptIn: form.benchmarkOptIn,
       questionAllergiesEnabled: form.questionAllergiesEnabled,
       questionSunscreenEnabled: form.questionSunscreenEnabled,
       questionPregnantEnabled: form.questionPregnantEnabled,
@@ -1193,6 +1198,37 @@ export default function AnaliseConfigPage() {
                     plano de cuidado, observacoes por zona e sinais de alerta.
                     Nao afeta o motor de recomendacao nem a precisao do diagnostico.
                   </p>
+                </div>
+              </div>
+            </Section>
+
+            {/* Benchmark cross-tenant opt-in */}
+            <Section
+              title="Benchmark da plataforma"
+              description="Compare seus indicadores com a media de outros clientes Skinner."
+            >
+              <div className="p-5 bg-white border border-sable/20">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <p className="text-sm text-carbone font-medium mb-1">
+                      Participar do benchmark anonimo
+                    </p>
+                    <p className="text-xs text-pierre font-light leading-relaxed">
+                      Ao ativar, sua taxa de conversao, taxa de conclusao e ticket medio
+                      sao agregados anonimamente com os de outros tenants opt-in. Voce
+                      passa a ver a media da plataforma no seu dashboard. Nenhum
+                      cliente jamais ve os dados individuais de outro — apenas a media
+                      agregada. Minimo de 3 tenants opt-in para que qualquer numero
+                      seja exibido.
+                    </p>
+                    <p className="text-[11px] text-pierre font-light mt-2 italic">
+                      Voce pode desativar a qualquer momento. Off por padrao.
+                    </p>
+                  </div>
+                  <Toggle
+                    checked={form.benchmarkOptIn}
+                    onChange={(v) => set("benchmarkOptIn", v)}
+                  />
                 </div>
               </div>
             </Section>

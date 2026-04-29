@@ -131,6 +131,15 @@
 - Sections rendered: ROI overview, plan usage bar, monthly trend (6m), geo distribution (region + top cities), patient profile (skin type / age / objective), top conditions + barrier, skin-type discrepancy index, top products + catalog gaps, **conversion lift por perfil** (compares each segment's conversion rate vs the tenant baseline; min 3 patients per segment), **sazonalidade** (12-month heatmap of top conditions), engagement (PDF download / email rate).
 - Pre-aggregates server-side; UI consumes pre-computed numbers + simple horizontal bars + CSS heatmap (no chart lib).
 - **Export CSV** button in the header pulls `dashboardRouter.exportSnapshot` and builds a multi-section CSV (summary + per-analysis detail + catalog) client-side. UTF-8 BOM included so Excel reads accents correctly. File name: `skinner-dashboard-{YYYY-MM-DD}-{days}d.csv`.
+- **Brazil tile map**: pure inline SVG, no external lib. Each state is a fixed-grid cell (NYT/FT-style abstraction — geographic accuracy traded for legibility and bundle size). Color intensity scales with the state's analysis count. Adding a state requires editing `BR_GRID` in `dashboard/page.tsx`.
+- **Personas**: heuristic clustering by `(sex × ageRange × topConcern × skinType)`. Top-6 buckets with ≥2 patients each are surfaced. We avoid k-means/ML clustering because the resulting clusters would be opaque to a B2B operator — heuristic personas stay interpretable and actionable.
+
+### Cross-tenant Benchmark (privacy-first)
+- `TenantConfig.benchmarkOptIn Boolean @default(false)` — off by default. Toggle in `/dashboard/analise` → "Benchmark da plataforma".
+- `dashboardRouter.platformBenchmark` returns aggregated averages (completion rate, conversion rate, avg ticket) across **opt-in tenants only**. Requires **min 3 contributing tenants with data in the period** to expose any number — protects against de-anonymization in small pools.
+- Returns `{ optedIn, eligible, contributingTenants, avgCompletionRate, avgConversionRate, avgTicket }`.
+- UI shows 3 side-by-side comparison cards (Você vs Plataforma) with delta colored green/pierre/terre.
+- Never exposes per-tenant rows. Never exposes raw data. Cross-tenant queries explicitly filter by `benchmarkOptIn: true`.
 
 ### Geo capture (LGPD-friendly)
 - `Analysis.clientCountry/clientRegion/clientCity` are auto-populated from request headers when an analysis is saved (`getClientGeo` in `apps/web/src/lib/rate-limit.ts`).

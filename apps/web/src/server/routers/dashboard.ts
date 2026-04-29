@@ -580,6 +580,209 @@ export const dashboardRouter = router({
     }),
 
   /**
+   * Patient personas — heuristic clustering by (sex × ageRange × top concern × skinType).
+   * We do NOT use real ML clustering because the resulting clusters would be opaque
+   * and useless to a B2B operator. Heuristic personas are interpretable and actionable.
+   *
+   * Returns up to 6 dominant personas, each with: count, conversion rate, avg ticket,
+   * top product recommended, top condition severity.
+   */
+  personas: tenantProcedure.input(periodInput).query(async ({ ctx, input }) => {
+    const since = new Date(Date.now() - input.days * 86_400_000);
+    const tenantId = ctx.tenantId;
+
+    const analyses = await ctx.db.analysis.findMany({
+      where: { tenantId, status: "completed", createdAt: { gte: since } },
+      select: {
+        id: true,
+        skinType: true,
+        clientAge: true,
+        questionnaireData: true,
+        conditions: true,
+        recommendations: {
+          select: {
+            rank: true,
+            product: { select: { id: true, name: true } },
+            conversions: { where: { type: "purchase" }, select: { saleValue: true } },
+          },
+        },
+      },
+    });
+
+    // Build a persona key per analysis: "sex|ageBucket|topConcern|skinType"
+    type Bucket = {
+      key: string;
+      sex: string;
+      age: string;
+      concern: string;
+      skinType: string;
+      analyses: typeof analyses;
+    };
+    const buckets = new Map<string, Bucket>();
+    for (const a of analyses) {
+      const q = safeParseObject(a.questionnaireData);
+      const sex = (typeof q.sex === "string" ? q.sex : "any").toLowerCase();
+      const conditions = safeParseArray(a.conditions) as Array<{ name?: string; severity?: number }>;
+      const topConcern =
+        conditions.sort((x, y) => (y.severity ?? 0) - (x.severity ?? 0))[0]?.name ?? "geral";
+      const age = a.clientAge ?? "todas";
+      const skinType = a.skinType ?? "indef";
+      const key = `${sex}|${age}|${topConcern}|${skinType}`;
+      const cur = buckets.get(key);
+      if (cur) cur.analyses.push(a);
+      else buckets.set(key, { key, sex, age, concern: topConcern, skinType, analyses: [a] });
+    }
+
+    const personas = Array.from(buckets.values())
+      .filter((b) => b.analyses.length >= 2) // require minimum sample to call it a "persona"
+      .map((b) => {
+        const total = b.analyses.length;
+        const conversions = b.analyses.flatMap((a) => a.recommendations.flatMap((r) => r.conversions));
+        const converted = b.analyses.filter((a) =>
+          a.recommendations.some((r) => r.conversions.length > 0)
+        ).length;
+        const revenue = conversions.reduce((s, c) => s + (c.saleValue ?? 0), 0);
+
+        // Top product across this persona's analyses (by recommendation count)
+        const productTally = new Map<string, { name: string; count: number }>();
+        for (const a of b.analyses) {
+          for (const r of a.recommendations) {
+            if (!r.product) continue;
+            const cur = productTally.get(r.product.id) ?? { name: r.product.name, count: 0 };
+            cur.count += 1;
+            productTally.set(r.product.id, cur);
+          }
+        }
+        const topProduct = Array.from(productTally.values()).sort((x, y) => y.count - x.count)[0] ?? null;
+
+        return {
+          key: b.key,
+          sex: b.sex,
+          ageRange: b.age,
+          topConcern: b.concern,
+          skinType: b.skinType,
+          patients: total,
+          converted,
+          conversionRate: total > 0 ? converted / total : 0,
+          avgTicket: converted > 0 ? revenue / converted : 0,
+          revenue,
+          topProductName: topProduct?.name ?? null,
+        };
+      })
+      .sort((a, b) => b.patients - a.patients)
+      .slice(0, 6);
+
+    return personas;
+  }),
+
+  /**
+   * Geographic distribution by Brazilian state (UF code).
+   * Returns one row per state present in the data, with count.
+   * UI uses this to render an inline SVG tile map of Brazil.
+   */
+  geoBrazilMap: tenantProcedure.input(periodInput).query(async ({ ctx, input }) => {
+    const since = new Date(Date.now() - input.days * 86_400_000);
+    const grouped = await ctx.db.analysis.groupBy({
+      by: ["clientRegion"],
+      where: {
+        tenantId: ctx.tenantId,
+        clientCountry: "BR",
+        createdAt: { gte: since },
+      },
+      _count: { _all: true },
+    });
+    return grouped
+      .filter((g) => g.clientRegion)
+      .map((g) => ({ uf: g.clientRegion!.toUpperCase(), count: g._count._all }));
+  }),
+
+  /**
+   * Platform-wide benchmark (across all opt-in tenants).
+   *
+   * Privacy guardrails:
+   *   - Only tenants with TenantConfig.benchmarkOptIn = true contribute.
+   *   - Min 3 contributing tenants required to expose any number (otherwise we
+   *     could de-anonymize by subtracting yourself from a pool of 2).
+   *   - Returns ONLY aggregate averages — never per-tenant rows.
+   *
+   * If the calling tenant has not opted in, returns { optedIn: false, eligible: false }.
+   */
+  platformBenchmark: tenantProcedure.input(periodInput).query(async ({ ctx, input }) => {
+    const since = new Date(Date.now() - input.days * 86_400_000);
+    const myConfig = await ctx.db.tenantConfig.findUnique({
+      where: { tenantId: ctx.tenantId },
+      select: { benchmarkOptIn: true },
+    });
+    if (!myConfig?.benchmarkOptIn) {
+      return { optedIn: false, eligible: false as const };
+    }
+
+    const optInTenants = await ctx.db.tenantConfig.findMany({
+      where: { benchmarkOptIn: true },
+      select: { tenantId: true },
+    });
+    const tenantIds = optInTenants.map((t) => t.tenantId);
+    const MIN_TENANTS = 3;
+    if (tenantIds.length < MIN_TENANTS) {
+      return {
+        optedIn: true,
+        eligible: false as const,
+        contributingTenants: tenantIds.length,
+        minTenants: MIN_TENANTS,
+      };
+    }
+
+    // For each opt-in tenant, compute completion rate, conversion rate, avg ticket.
+    // Then average those across tenants.
+    const perTenant = await Promise.all(
+      tenantIds.map(async (tid) => {
+        const [started, completed, conversions] = await Promise.all([
+          ctx.db.analysis.count({ where: { tenantId: tid, createdAt: { gte: since } } }),
+          ctx.db.analysis.count({
+            where: { tenantId: tid, status: "completed", createdAt: { gte: since } },
+          }),
+          ctx.db.conversion.findMany({
+            where: {
+              recommendation: { analysis: { tenantId: tid } },
+              type: "purchase",
+              createdAt: { gte: since },
+            },
+            select: { saleValue: true },
+          }),
+        ]);
+        const revenue = conversions.reduce((s, c) => s + (c.saleValue ?? 0), 0);
+        return {
+          completionRate: started > 0 ? completed / started : 0,
+          conversionRate: completed > 0 ? conversions.length / completed : 0,
+          avgTicket: conversions.length > 0 ? revenue / conversions.length : 0,
+          analysesPerTenant: completed,
+        };
+      })
+    );
+
+    // Filter out tenants with no data in period to avoid skewing the average
+    const active = perTenant.filter((t) => t.analysesPerTenant > 0);
+    if (active.length < MIN_TENANTS) {
+      return {
+        optedIn: true,
+        eligible: false as const,
+        contributingTenants: active.length,
+        minTenants: MIN_TENANTS,
+      };
+    }
+    const avg = (arr: number[]) => arr.reduce((s, v) => s + v, 0) / arr.length;
+    return {
+      optedIn: true,
+      eligible: true as const,
+      contributingTenants: active.length,
+      avgCompletionRate: avg(active.map((t) => t.completionRate)),
+      avgConversionRate: avg(active.map((t) => t.conversionRate)),
+      avgTicket: avg(active.map((t) => t.avgTicket)),
+      avgAnalysesPerTenant: avg(active.map((t) => t.analysesPerTenant)),
+    };
+  }),
+
+  /**
    * Returns ALL the dashboard data in one CSV-friendly snapshot for export.
    * Used by the "Export CSV" button. Includes overview KPIs + every distribution
    * + top conditions + top products + catalog gaps. Intentionally returns plain

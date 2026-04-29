@@ -208,6 +208,233 @@ function downloadCsv(snapshot: ExportSnapshot, days: number) {
   URL.revokeObjectURL(url);
 }
 
+// ─── Brazil tile map ─────────────────────────────────────────────────────────────
+//
+// Tile map of Brazil — each state rendered as a fixed-grid SVG cell. Coordinates
+// are an approximation, not cartographically precise: this is a visualization
+// pattern (popularized by NYT and Financial Times) that prioritizes legibility
+// over geographic accuracy. Color intensity scales with the state's count.
+//
+// No external lib — pure SVG. Adding/removing states requires editing the BR_GRID.
+
+const BR_GRID: Record<string, { col: number; row: number; label: string }> = {
+  // North
+  RR: { col: 2, row: 0, label: "RR" },
+  AP: { col: 4, row: 0, label: "AP" },
+  AM: { col: 1, row: 1, label: "AM" },
+  PA: { col: 3, row: 1, label: "PA" },
+  MA: { col: 4, row: 1, label: "MA" },
+  AC: { col: 0, row: 2, label: "AC" },
+  RO: { col: 1, row: 2, label: "RO" },
+  TO: { col: 3, row: 2, label: "TO" },
+  PI: { col: 4, row: 2, label: "PI" },
+  CE: { col: 5, row: 1, label: "CE" },
+  RN: { col: 6, row: 1, label: "RN" },
+  PB: { col: 6, row: 2, label: "PB" },
+  PE: { col: 5, row: 2, label: "PE" },
+  AL: { col: 6, row: 3, label: "AL" },
+  SE: { col: 5, row: 3, label: "SE" },
+  BA: { col: 4, row: 3, label: "BA" },
+  // Center-West
+  MT: { col: 2, row: 3, label: "MT" },
+  GO: { col: 3, row: 3, label: "GO" },
+  DF: { col: 3, row: 4, label: "DF" },
+  MS: { col: 2, row: 4, label: "MS" },
+  // Southeast
+  MG: { col: 3, row: 5, label: "MG" },
+  ES: { col: 4, row: 5, label: "ES" },
+  RJ: { col: 4, row: 6, label: "RJ" },
+  SP: { col: 3, row: 6, label: "SP" },
+  // South
+  PR: { col: 3, row: 7, label: "PR" },
+  SC: { col: 3, row: 8, label: "SC" },
+  RS: { col: 2, row: 8, label: "RS" },
+};
+
+function BrazilTileMap({ data }: { data: Array<{ uf: string; count: number }> }) {
+  const counts = new Map(data.map((d) => [d.uf, d.count]));
+  const max = Math.max(...data.map((d) => d.count), 1);
+  const cell = 40;
+  const gap = 4;
+  const cols = 7;
+  const rows = 9;
+  const width = cols * (cell + gap);
+  const height = rows * (cell + gap);
+
+  function intensityClass(count: number): string {
+    if (count === 0) return "fill-sable/15";
+    const ratio = count / max;
+    if (ratio < 0.25) return "fill-sable/40";
+    if (ratio < 0.5) return "fill-sable";
+    if (ratio < 0.75) return "fill-terre/70";
+    return "fill-carbone";
+  }
+  function textColor(count: number): string {
+    return count > 0 && count / max >= 0.5 ? "fill-blanc-casse" : "fill-carbone";
+  }
+
+  return (
+    <div className="flex flex-col items-center">
+      <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
+        {Object.entries(BR_GRID).map(([uf, pos]) => {
+          const x = pos.col * (cell + gap);
+          const y = pos.row * (cell + gap);
+          const count = counts.get(uf) ?? 0;
+          return (
+            <g key={uf}>
+              <title>{`${uf}: ${count} ${count === 1 ? "análise" : "análises"}`}</title>
+              <rect
+                x={x}
+                y={y}
+                width={cell}
+                height={cell}
+                className={intensityClass(count)}
+              />
+              <text
+                x={x + cell / 2}
+                y={y + cell / 2 - 2}
+                textAnchor="middle"
+                className={`${textColor(count)} text-[9px] font-light uppercase tracking-wider`}
+              >
+                {pos.label}
+              </text>
+              <text
+                x={x + cell / 2}
+                y={y + cell / 2 + 10}
+                textAnchor="middle"
+                className={`${textColor(count)} text-[10px] font-medium`}
+              >
+                {count > 0 ? count : ""}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+      <div className="flex items-center gap-3 mt-4 text-[10px] text-pierre font-light uppercase tracking-wider">
+        <span>Menos</span>
+        <span className="w-4 h-3 inline-block bg-sable/40" />
+        <span className="w-4 h-3 inline-block bg-sable" />
+        <span className="w-4 h-3 inline-block bg-terre/70" />
+        <span className="w-4 h-3 inline-block bg-carbone" />
+        <span>Mais</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Persona card ────────────────────────────────────────────────────────────────
+
+const SEX_LABEL: Record<string, string> = {
+  female: "Feminino",
+  male: "Masculino",
+  any: "Indefinido",
+  other: "Outro",
+};
+
+function PersonaCard({
+  persona,
+  rank,
+}: {
+  persona: {
+    sex: string;
+    ageRange: string;
+    topConcern: string;
+    skinType: string;
+    patients: number;
+    converted: number;
+    conversionRate: number;
+    avgTicket: number;
+    revenue: number;
+    topProductName: string | null;
+  };
+  rank: number;
+}) {
+  const concernLabel =
+    (conditionLabels[persona.topConcern] ?? persona.topConcern).charAt(0).toUpperCase() +
+    (conditionLabels[persona.topConcern] ?? persona.topConcern).slice(1);
+  const skinLabel = tr(skinTypeLabels, persona.skinType) || "—";
+  return (
+    <div className="p-5 bg-white border border-sable/20">
+      <div className="flex items-baseline justify-between mb-3">
+        <p className="text-[10px] text-pierre uppercase tracking-wider font-light">
+          Persona #{rank}
+        </p>
+        <span className="text-xs text-pierre font-light">
+          {fmtInt(persona.patients)} pacientes
+        </span>
+      </div>
+      <h3 className="font-serif text-base text-carbone mb-1">
+        {SEX_LABEL[persona.sex] ?? persona.sex} {persona.ageRange}
+      </h3>
+      <p className="text-xs text-pierre font-light mb-4">
+        Pele <span className="text-carbone">{skinLabel}</span> ·{" "}
+        Concern principal <span className="text-carbone">{concernLabel}</span>
+      </p>
+      <div className="grid grid-cols-2 gap-3 text-xs">
+        <div>
+          <p className="text-[10px] text-pierre uppercase tracking-wider font-light">Conversão</p>
+          <p className="text-sm text-carbone font-light mt-1">
+            {fmtPct(persona.conversionRate, 0)}{" "}
+            <span className="text-pierre">({fmtInt(persona.converted)})</span>
+          </p>
+        </div>
+        <div>
+          <p className="text-[10px] text-pierre uppercase tracking-wider font-light">Ticket médio</p>
+          <p className="text-sm text-carbone font-light mt-1">
+            {persona.avgTicket > 0 ? fmtCurrency(persona.avgTicket) : "—"}
+          </p>
+        </div>
+      </div>
+      {persona.topProductName && (
+        <p className="text-[11px] text-pierre font-light mt-3 border-t border-sable/15 pt-2 truncate">
+          Top produto: <span className="text-carbone">{persona.topProductName}</span>
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ─── Benchmark callout ───────────────────────────────────────────────────────────
+
+function BenchmarkComparison({
+  myValue,
+  platformValue,
+  label,
+  format,
+}: {
+  myValue: number;
+  platformValue: number;
+  label: string;
+  format: "pct" | "currency";
+}) {
+  const formatFn = format === "pct" ? (v: number) => fmtPct(v, 1) : fmtCurrency;
+  const delta = platformValue > 0 ? (myValue - platformValue) / platformValue : 0;
+  const isAbove = myValue > platformValue;
+  const color = Math.abs(delta) < 0.05 ? "text-pierre" : isAbove ? "text-green-700" : "text-terre";
+  return (
+    <div className="p-4 bg-white border border-sable/20">
+      <p className="text-[10px] text-pierre uppercase tracking-wider font-light">{label}</p>
+      <div className="flex items-baseline justify-between mt-2">
+        <div>
+          <p className="text-lg font-serif text-carbone">{formatFn(myValue)}</p>
+          <p className="text-[10px] text-pierre font-light">Você</p>
+        </div>
+        <div className="text-right">
+          <p className="text-sm text-pierre font-light">{formatFn(platformValue)}</p>
+          <p className="text-[10px] text-pierre font-light">Plataforma</p>
+        </div>
+      </div>
+      <p className={`text-xs font-light mt-2 ${color}`}>
+        {Math.abs(delta) < 0.05
+          ? "Em linha com a média"
+          : isAbove
+          ? `+${(delta * 100).toFixed(0)}% acima da média`
+          : `${(delta * 100).toFixed(0)}% abaixo da média`}
+      </p>
+    </div>
+  );
+}
+
 // ─── Conversion lift card ────────────────────────────────────────────────────────
 
 function LiftCard({
@@ -359,6 +586,9 @@ export default function TenantDashboard() {
   const engagement = trpc.dashboard.engagementMetrics.useQuery({ days });
   const conversionLift = trpc.dashboard.conversionLiftByProfile.useQuery({ days });
   const seasonality = trpc.dashboard.seasonalityByCondition.useQuery({ months: 12, topConditions: 5 });
+  const personas = trpc.dashboard.personas.useQuery({ days });
+  const geoMap = trpc.dashboard.geoBrazilMap.useQuery({ days });
+  const benchmark = trpc.dashboard.platformBenchmark.useQuery({ days });
 
   const utils = trpc.useUtils();
   const [exporting, setExporting] = useState(false);
@@ -515,6 +745,15 @@ export default function TenantDashboard() {
           <SectionTitle subtitle="De onde vêm seus pacientes (capturado automaticamente)">
             Distribuição geográfica
           </SectionTitle>
+          {/* Brazil tile map */}
+          {geoMap.data && geoMap.data.length > 0 && (
+            <div className="p-5 bg-white border border-sable/20 mb-4">
+              <p className="text-[10px] text-pierre uppercase tracking-wider font-light mb-4 text-center">
+                Mapa do Brasil — análises por estado
+              </p>
+              <BrazilTileMap data={geoMap.data} />
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="p-5 bg-white border border-sable/20">
               <p className="text-[10px] text-pierre uppercase tracking-wider font-light mb-4">
@@ -640,6 +879,20 @@ export default function TenantDashboard() {
               )}
             </div>
           </div>
+
+          {/* PERSONAS */}
+          {personas.data && personas.data.length > 0 && (
+            <>
+              <SectionTitle subtitle="Perfis dominantes do seu público — use para campanhas, estoque e comunicação">
+                Personas dominantes
+              </SectionTitle>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {personas.data.map((p, i) => (
+                  <PersonaCard key={p.key} persona={p} rank={i + 1} />
+                ))}
+              </div>
+            </>
+          )}
 
           {/* CONDITIONS + BARRIER */}
           <SectionTitle subtitle="O que a IA está detectando na pele dos seus pacientes">
@@ -832,6 +1085,62 @@ export default function TenantDashboard() {
               <div className="p-5 bg-white border border-sable/20 overflow-x-auto">
                 <SeasonalityHeatmap months={seasonality.data.months} series={seasonality.data.series} />
               </div>
+            </>
+          )}
+
+          {/* BENCHMARK PLATAFORMA */}
+          {benchmark.data && (
+            <>
+              <SectionTitle subtitle="Compare seus indicadores com a média de outros clientes Skinner (anônimo, agregado)">
+                Benchmark da plataforma
+              </SectionTitle>
+              {!benchmark.data.optedIn ? (
+                <div className="p-5 bg-ivoire border border-sable/30">
+                  <p className="text-sm text-terre font-light leading-relaxed">
+                    Você ainda não está participando do benchmark. Ative em{" "}
+                    <a href="/dashboard/analise" className="underline text-carbone">
+                      Configuração da análise → Benchmark da plataforma
+                    </a>{" "}
+                    para comparar seus números com a média anônima dos demais clientes.
+                  </p>
+                </div>
+              ) : !benchmark.data.eligible ? (
+                <div className="p-5 bg-ivoire border border-sable/30">
+                  <p className="text-sm text-terre font-light leading-relaxed">
+                    Você está participando do benchmark, mas ainda não temos clientes
+                    suficientes opt-in para gerar números agregados confiáveis (
+                    {benchmark.data.contributingTenants ?? 0} de {benchmark.data.minTenants ?? 3} mínimos).
+                    Conforme mais clientes ativarem, os indicadores aparecerão aqui automaticamente.
+                  </p>
+                </div>
+              ) : data ? (
+                <>
+                  <p className="text-xs text-pierre font-light mb-3">
+                    Baseado em <span className="text-carbone">{benchmark.data.contributingTenants}</span>{" "}
+                    clientes opt-in (média agregada — nenhum cliente individual exposto).
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <BenchmarkComparison
+                      label="Taxa de conclusão"
+                      myValue={data.completionRate}
+                      platformValue={benchmark.data.avgCompletionRate}
+                      format="pct"
+                    />
+                    <BenchmarkComparison
+                      label="Taxa de conversão"
+                      myValue={data.conversionRate}
+                      platformValue={benchmark.data.avgConversionRate}
+                      format="pct"
+                    />
+                    <BenchmarkComparison
+                      label="Ticket médio"
+                      myValue={data.avgTicket}
+                      platformValue={benchmark.data.avgTicket}
+                      format="currency"
+                    />
+                  </div>
+                </>
+              ) : null}
             </>
           )}
 

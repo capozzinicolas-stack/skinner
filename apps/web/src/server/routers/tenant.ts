@@ -248,6 +248,8 @@ export const tenantRouter = router({
       z.object({
         // Analysis tone — controls how patient-facing fields are written
         analysisTone: z.enum(["humanized", "technical"]).optional(),
+        // Cross-tenant benchmark opt-in (privacy-first; off by default)
+        benchmarkOptIn: z.boolean().optional(),
         // Questionnaire toggles
         questionAllergiesEnabled: z.boolean().optional(),
         questionSunscreenEnabled: z.boolean().optional(),
