@@ -108,6 +108,13 @@
 - "Seu cuidado em 3 fases" / "Começando" / "Avançando" / "Mantendo" instead of "Plano de Ação" / "Fase 1/2/3".
 - "Quando consultar um dermatologista" instead of "Sinais de Alerta".
 
+### Results page layout (responsive widths)
+- Container in `results-screen.tsx`: `max-w-lg md:max-w-2xl lg:max-w-3xl xl:max-w-4xl` (mobile-first, widens at md/lg/xl breakpoints) so desktop uses available width without stretching mobile.
+- Mapa Facial + Radar Chart: rendered side-by-side on `lg+` via `grid-cols-1 lg:grid-cols-2`.
+- Conditions, Recommended Products, Recommended Services: `grid-cols-1 md:grid-cols-2 gap-3` — 2 columns on tablets and up.
+- Skin projection (3 photos atual/8wk/12wk): grid stays at `grid-cols-1 md:grid-cols-3` but uses `gap-4 md:gap-5 lg:gap-6` and slightly larger typography (`lg:text-lg`, `lg:text-sm`) at desktop so descriptions don't get cramped.
+- Mobile (<768px) layout is unchanged — single column everywhere.
+
 ### Skin Projection (Gemini)
 - Generates 2 images: 8 weeks (-50%) and 12 weeks (-80%) improvement
 - Uses Gemini 2.5 Flash Image model (~$0.12 per call, rate limited to 3/hour/IP)

@@ -166,7 +166,7 @@ export function SkinProjection({
 
       {state.status === "success" && (
         <div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5 lg:gap-6 mb-5">
             {/* Current photo */}
             <div className="bg-white border border-sable/20">
               <div
@@ -179,14 +179,14 @@ export function SkinProjection({
                   className="w-full h-full object-cover"
                 />
               </div>
-              <div className="p-4">
-                <div className="flex items-baseline justify-between mb-2">
-                  <h4 className="font-serif text-base text-carbone">Atual</h4>
-                  <span className="text-[10px] text-pierre uppercase tracking-wider font-light">
+              <div className="p-4 lg:p-5">
+                <div className="flex items-baseline justify-between mb-2 gap-2">
+                  <h4 className="font-serif text-base lg:text-lg text-carbone">Atual</h4>
+                  <span className="text-[10px] text-pierre uppercase tracking-wider font-light whitespace-nowrap">
                     Estado inicial
                   </span>
                 </div>
-                <p className="text-xs text-pierre font-light leading-relaxed">
+                <p className="text-xs lg:text-sm text-pierre font-light leading-relaxed">
                   {conditions.length > 0
                     ? `Estado atual com ${conditions.map((c) => getConditionLabel(c.name).toLowerCase()).join(", ")}.`
                     : "Linha de base do diagnostico."}
@@ -215,14 +215,14 @@ export function SkinProjection({
                   <span className="text-xs font-light tracking-wide">-50%</span>
                 </div>
               </div>
-              <div className="p-4">
-                <div className="flex items-baseline justify-between mb-2">
-                  <h4 className="font-serif text-base text-carbone">8 semanas</h4>
-                  <span className="text-[10px] text-pierre uppercase tracking-wider font-light">
+              <div className="p-4 lg:p-5">
+                <div className="flex items-baseline justify-between mb-2 gap-2">
+                  <h4 className="font-serif text-base lg:text-lg text-carbone">8 semanas</h4>
+                  <span className="text-[10px] text-pierre uppercase tracking-wider font-light whitespace-nowrap">
                     Fase intermediaria
                   </span>
                 </div>
-                <p className="text-xs text-pierre font-light leading-relaxed">
+                <p className="text-xs lg:text-sm text-pierre font-light leading-relaxed">
                   Reducao visivel das condicoes identificadas. Pele com maior luminosidade,
                   textura mais refinada e tom mais uniforme.
                 </p>
@@ -250,14 +250,14 @@ export function SkinProjection({
                   <span className="text-xs font-light tracking-wide">-80%</span>
                 </div>
               </div>
-              <div className="p-4">
-                <div className="flex items-baseline justify-between mb-2">
-                  <h4 className="font-serif text-base text-carbone">12 semanas</h4>
-                  <span className="text-[10px] text-pierre uppercase tracking-wider font-light">
+              <div className="p-4 lg:p-5">
+                <div className="flex items-baseline justify-between mb-2 gap-2">
+                  <h4 className="font-serif text-base lg:text-lg text-carbone">12 semanas</h4>
+                  <span className="text-[10px] text-pierre uppercase tracking-wider font-light whitespace-nowrap">
                     Resultado consolidado
                   </span>
                 </div>
-                <p className="text-xs text-pierre font-light leading-relaxed">
+                <p className="text-xs lg:text-sm text-pierre font-light leading-relaxed">
                   Transformacao significativa com tratamento consistente. Pele equilibrada,
                   saudavel e visivelmente rejuvenescida.
                 </p>

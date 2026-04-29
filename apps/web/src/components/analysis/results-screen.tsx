@@ -452,7 +452,7 @@ export function ResultsScreen({
     analysis.zone_annotations.length > 0;
 
   return (
-    <div className="w-full max-w-lg mx-auto px-4 pb-12">
+    <div className="w-full max-w-lg md:max-w-2xl lg:max-w-3xl xl:max-w-4xl mx-auto px-4 pb-12">
       {/* Custom top message */}
       {topMessage && (
         <div className="mb-6 p-4 bg-ivoire border border-sable/20">
@@ -491,23 +491,25 @@ export function ResultsScreen({
         </div>
       )}
 
-      {/* Mapa Facial — annotated photo overlay */}
-      {hasAnnotations && (
-        <div className="mb-8">
-          <p className="text-[10px] text-pierre uppercase tracking-wider font-light mb-3">
-            Mapa Facial
-          </p>
-          <AnnotatedPhoto
-            photoBase64={photoBase64!}
-            annotations={analysis.zone_annotations}
-          />
-        </div>
-      )}
-
-      {/* Radar chart */}
-      {analysis.zone_annotations && analysis.zone_annotations.length > 0 && (
-        <div className="mb-8 p-5 bg-white border border-sable/20">
-          <SkinRadarChart annotations={analysis.zone_annotations} />
+      {/* Mapa Facial + Radar — side by side on desktop, stacked on mobile */}
+      {(hasAnnotations || (analysis.zone_annotations && analysis.zone_annotations.length > 0)) && (
+        <div className="mb-8 grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+          {hasAnnotations && (
+            <div>
+              <p className="text-[10px] text-pierre uppercase tracking-wider font-light mb-3">
+                Mapa Facial
+              </p>
+              <AnnotatedPhoto
+                photoBase64={photoBase64!}
+                annotations={analysis.zone_annotations}
+              />
+            </div>
+          )}
+          {analysis.zone_annotations && analysis.zone_annotations.length > 0 && (
+            <div className="p-5 bg-white border border-sable/20">
+              <SkinRadarChart annotations={analysis.zone_annotations} />
+            </div>
+          )}
         </div>
       )}
 
@@ -553,7 +555,7 @@ export function ResultsScreen({
           <h3 className="font-serif text-lg text-carbone mb-4">
             O que observamos na sua pele
           </h3>
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {analysis.conditions.map((condition) => (
               <div key={condition.name} className="p-5 bg-white border border-sable/20">
                 <div className="flex items-center justify-between mb-2">
@@ -621,7 +623,7 @@ export function ResultsScreen({
           <h3 className="font-serif text-lg text-carbone mb-4">
             Produtos Recomendados
           </h3>
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {productRecs.map((rec, idx) => (
               <ProductCard
                 key={rec.productId}
@@ -648,7 +650,7 @@ export function ResultsScreen({
           <h3 className="font-serif text-lg text-carbone mb-4">
             Tratamentos Recomendados
           </h3>
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {serviceRecs.map((rec, idx) => (
               <ServiceCard
                 key={rec.productId}
