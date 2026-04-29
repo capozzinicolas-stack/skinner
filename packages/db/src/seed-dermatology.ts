@@ -92,6 +92,8 @@ const skinConditions: SkinConditionSeed[] = [
       "Acne moderada: 20 a 100 comedões, 15 a 50 pápulas/pústulas, presença de até 5 nódulos. Distribuição em face e possivelmente tronco. Possível hiperpigmentação pós-inflamatória.",
     severity3Desc:
       "Acne grave (nódulo-cística ou conglobata): mais de 5 nódulos/cistos, lesões confluentes, drenagem de pus, risco elevado de cicatrizes permanentes. Requer avaliação dermatológica urgente, considerando isotretinoína oral.",
+    visualEditPrompt:
+      "Reduce visible acne lesions, papules, pustules, and comedones across the face by approximately {intensity}% (calmed redness around active spots, smoother papule areas, fewer visible blackheads and whiteheads on nose and chin, clearer overall complexion). Preserve any existing scars and natural skin tone.",
   },
 
   {
@@ -175,6 +177,8 @@ const skinConditions: SkinConditionSeed[] = [
       "Placas eritematosas com escamas oleosas em face e/ou couro cabeludo, prurido moderado, episódios recorrentes mensais.",
     severity3Desc:
       "Eritema intenso, escamas abundantes, acometimento de múltiplas regiões, prurido constante. Considerar diagnóstico diferencial com psoríase e encaminhar ao dermatologista.",
+    visualEditPrompt:
+      "Reduce seborrheic dermatitis by approximately {intensity}% (fade greasy yellow-white scales and erythematous patches in the nasolabial folds, eyebrows, glabella and around the ears, calm the underlying erythema, smooth flaky surface texture without altering eyebrow shape).",
   },
 
   {
@@ -218,6 +222,8 @@ const skinConditions: SkinConditionSeed[] = [
       "Áreas eritematosas frequentes, prurido moderado a intenso, escoriações, inicio de liquenificação. Qualidade de sono afetada.",
     severity3Desc:
       "Eczema extenso, prurido intratável, liquenificação difusa, risco de infecção bacteriana ou viral secundária. Requer corticosteroide tópico prescrito e acompanhamento imunológico/dermatológico.",
+    visualEditPrompt:
+      "Reduce visible signs of atopic dermatitis by approximately {intensity}% (fade red and lichenified patches especially around cheeks, eyelid creases, and folds, smooth dry and scaly areas, calm visible inflammation while preserving the natural skin tone and texture). Do not alter eyes or expression.",
   },
 
   {
@@ -258,6 +264,8 @@ const skinConditions: SkinConditionSeed[] = [
       "Eritema moderado, edema, vesículas, prurido intenso. Pode persistir por 1-2 semanas. Comprometimento de área ampla.",
     severity3Desc:
       "Bolhas, ulcerações, edema significativo ou reação generalizada. Risco de infecção secundária. Necessita avaliação médica e possível corticoterapia sistêmica.",
+    visualEditPrompt:
+      "Reduce contact dermatitis appearance by approximately {intensity}% (fade well-defined red or eczematous patches localized to the affected zone, smooth visible scaling, restore even tone and texture matching the surrounding healthy skin, no halo effect at the borders).",
   },
 
   {
@@ -292,6 +300,8 @@ const skinConditions: SkinConditionSeed[] = [
       "Pápulas e pústulas confluentes, eritema difuso perioral e perinasal, desconforto moderado.",
     severity3Desc:
       "Erupção extensa, incluindo região periocular, pústulas numerosas, possível descamação. Requer antibiótico prescrito.",
+    visualEditPrompt:
+      "Reduce perioral dermatitis by approximately {intensity}% (fade small red papules and pustules around the mouth, nasolabial folds and lateral nose, calm the surrounding diffuse redness, preserve the characteristic narrow clear zone immediately adjacent to the lip border).",
   },
 
   // ── PIGMENTAÇÃO ───────────────────────────────────────────────────────────
@@ -333,6 +343,8 @@ const skinConditions: SkinConditionSeed[] = [
       "Manchas moderadas, coalescentes, distribuição malar ou centrofacial, tonalidade castanho-médio. Padrão misto (epidérmico-dérmico). Resposta parcial.",
     severity3Desc:
       "Hiperpigmentação extensa, tonalidade escura, padrão dérmico predominante. Resistente a tratamentos tópicos convencionais. Considerar procedimentos (peel, laser fracionado, microagulhamento com ativos) por dermatologista.",
+    visualEditPrompt:
+      "Lighten melasma patches by approximately {intensity}% (fade the symmetric brown patches across forehead, malar cheeks, upper lip and mandibular area, more uniform overall facial tone, preserve the person's natural complexion and Fitzpatrick phototype). Do not lighten skin overall.",
   },
 
   {
@@ -370,6 +382,8 @@ const skinConditions: SkinConditionSeed[] = [
       "Manchas moderadas, múltiplas, tonalidade castanho-escura, distribuição ampla. Padrão misto. Regridem em 6-12 meses com tratamento consistente.",
     severity3Desc:
       "Hiperpigmentação extensa, tonalidade escura ou acinzentada, padrão dérmico, muito resistente. Considerar encaminhamento para procedimentos e otimização do tratamento sistêmico.",
+    visualEditPrompt:
+      "Lighten post-inflammatory hyperpigmentation by approximately {intensity}% (fade brown and dark marks left after acne and inflammation, more even tone in previously hyperpigmented zones especially on cheeks and jawline, preserve the natural Fitzpatrick skin phototype of the person).",
   },
 
   {
@@ -405,6 +419,8 @@ const skinConditions: SkinConditionSeed[] = [
       "Múltiplas manchas avermelhadas cobrindo áreas amplas da face, persistentes por mais de 3 meses.",
     severity3Desc:
       "Eritema difuso persistente por mais de 6 meses, com possível evolução para telangiectasias. Considerar laser vascular (Nd:YAG, IPL) com dermatologista.",
+    visualEditPrompt:
+      "Fade post-inflammatory erythema by approximately {intensity}% (reduce the pink and red residual marks left by healed acne lesions, return to the natural surrounding skin tone in those exact spots, no change to active acne lesions or true atrophic scars).",
   },
 
   // ── ENVELHECIMENTO ────────────────────────────────────────────────────────
@@ -443,6 +459,8 @@ const skinConditions: SkinConditionSeed[] = [
       "Rugas moderadas, múltiplos léntigos solares, telangiectasias, perda de firmeza inicial. Coloração irregular difusa.",
     severity3Desc:
       "Elastose actínica avançada, rugas profundas, léntigos extensos, telangiectasias confluentes, textura grosseira. Possíveis queratoses actínicas. Acompanhamento dermatológico anual obrigatório.",
+    visualEditPrompt:
+      "Reduce visible photoaging by approximately {intensity}% (fade solar lentigines and sun spots on cheeks and forehead, soften deep wrinkles and crow's feet, smooth coarse leathery texture, reduce the yellowish photodamaged tone toward a healthier hue, lightly fade visible telangiectasias on cheeks and nose).",
   },
 
   {
@@ -478,6 +496,8 @@ const skinConditions: SkinConditionSeed[] = [
       "Rugas moderadas em repouso, sulcos nasolabiais visíveis, perda de firmeza na região mandibular, manchas de envelhecimento discretas.",
     severity3Desc:
       "Rugas profundas, flacidez significativa, sulcos profundos, perda volumétrica marcante. Dermato-cosméticos como adjuvantes; procedimentos médicos (toxina botulínica, preenchimento, laser) para resultados mais expressivos.",
+    visualEditPrompt:
+      "Soften signs of chronological aging by approximately {intensity}% (reduce fine expression lines around eyes, mouth and forehead, slightly improve skin firmness along the jawline and cheeks, restore subtle volume to the midface, soften dryness lines, preserve the natural age character and identity of the person).",
   },
 
   {
@@ -561,6 +581,8 @@ const skinConditions: SkinConditionSeed[] = [
       "Repuxamento frequente, linhas superficiais visíveis, aspecto 'enrugado' com expressões. Descamação fina.",
     severity3Desc:
       "Descamação intensa, fissuras, barreira gravemente comprometida, sensação de ardência com produtos. Necessita rotina intensiva de barreira.",
+    visualEditPrompt:
+      "Restore visible skin hydration by approximately {intensity}% (plump up superficial dehydration lines especially under eyes and on cheeks, fade the dull and flat appearance, smooth fine flaking, give a healthy and naturally hydrated subtle glow without making the skin look oily or wet).",
   },
 
   {
@@ -601,6 +623,8 @@ const skinConditions: SkinConditionSeed[] = [
       "Vermelhidão, ardência frequente, descamação, prurido. TEWL aumentada. Requer simplificação completa da rotina por 4-6 semanas.",
     severity3Desc:
       "Pele reagindo a praticamente tudo, fissuras, possível infecção secundária, intolerância extrema. Requer intervenção médica e possivelmente corticoide prescrito para controle da inflamação.",
+    visualEditPrompt:
+      "Restore the visible signs of a healthy skin barrier by approximately {intensity}% (reduce diffuse facial redness and reactive flushing on cheeks and nose, smooth out rough or flaky-looking patches, even out the complexion with a subtle natural moisture, no greasy or shiny artificial look).",
   },
 
   // ── SENSIBILIDADE ─────────────────────────────────────────────────────────
@@ -645,6 +669,8 @@ const skinConditions: SkinConditionSeed[] = [
       "Reatividade frequente, vermelhidão episódica, dificuldade de usar mais de 5-6 produtos sem reação. Rotina muito restrita.",
     severity3Desc:
       "Hipersensibilidade a praticamente tudo, incluindo produtos muito básicos. Suspeita de rosácea ou eczema — avaliação dermatológica.",
+    visualEditPrompt:
+      "Calm visibly sensitive skin by approximately {intensity}% (reduce reactive flushing and diffuse pinkness on cheeks and nose, smooth small areas of irritation, restore an even comfortable tone without losing the natural complexion or making the face look uniformly pale).",
   },
 
   // ── ESTRUTURAL / TEXTURA ──────────────────────────────────────────────────
@@ -680,6 +706,8 @@ const skinConditions: SkinConditionSeed[] = [
       "Pápulas eritematosas em áreas amplas (braços e coxas), textura muito rugosa, aparência cosmética significativa.",
     severity3Desc:
       "Inflamação intensa, eritema difuso, possível onicocriptose (ceratose de placa). Casos muito extensos ou dolorosos requerem avaliação.",
+    visualEditPrompt:
+      "Reduce keratosis pilaris appearance by approximately {intensity}% (smooth the small keratotic bumps and goosebump-like texture on cheeks or affected facial areas, calm associated mild redness, refined surface texture without altering facial structure).",
   },
 
   {
@@ -709,6 +737,8 @@ const skinConditions: SkinConditionSeed[] = [
       "Lesões múltiplas (6-20) em face, especialmente pálpebras, bochechas e nariz.",
     severity3Desc:
       "Mília disseminada, múltiplas lesões em face e outras áreas. Requer extração por profissional.",
+    visualEditPrompt:
+      "Reduce visible milia by approximately {intensity}% (fade the tiny pearly white cysts under thin skin, especially around the eyelids, upper cheeks and nasal bridge, smoother surface texture). Do not alter eye shape, gaze or expression.",
   },
 
   {
@@ -740,6 +770,8 @@ const skinConditions: SkinConditionSeed[] = [
       "Poros claramente visíveis em nariz e bochechas, comedões frequentes, oleosidade moderada.",
     severity3Desc:
       "Poros muito dilatados e visíveis em toda a face, associados a oleosidade intensa e acne. Podem indicar fotoenvelhecimento avançado.",
+    visualEditPrompt:
+      "Refine visibly dilated pores by approximately {intensity}% (smaller and less prominent pore openings on nose, central cheeks and chin, smoother skin surface, more refined texture without making the skin look unnaturally airbrushed or filtered).",
   },
 
   {
@@ -773,6 +805,8 @@ const skinConditions: SkinConditionSeed[] = [
       "Olheiras moderadas, visíveis mesmo com descanso adequado. Componente pigmentar e/ou vascular significativo.",
     severity3Desc:
       "Olheiras profundas com componente estrutural (sulco lacrimal ou herniação gordurosa). Tópicos têm efeito limitado — avaliar procedimentos médicos.",
+    visualEditPrompt:
+      "Lighten under-eye dark circles by approximately {intensity}% (fade the brown pigment and the visible bluish vascular hue, brighter and more rested periorbital appearance, subtle volume restoration in the tear trough). Do not alter eye shape, gaze, eyelid contour or expression.",
   },
 
   {
@@ -806,6 +840,8 @@ const skinConditions: SkinConditionSeed[] = [
       "Brilho intenso que aparece dentro de 2-3 horas do skincare. Poros dilatados em toda a face, acne comedoniana frequente.",
     severity3Desc:
       "Oleosidade intensa e refratária, acne associada, poros muito dilatados. Possível componente hormonal — investigar.",
+    visualEditPrompt:
+      "Reduce excessive oiliness and seborrhea by approximately {intensity}% (less visible shine in the T-zone — forehead, nose and chin — refined matte finish on cheeks, balanced healthy look without making the skin appear dry, stripped, or powdery).",
   },
 
   {
@@ -839,6 +875,8 @@ const skinConditions: SkinConditionSeed[] = [
       "Pele marcadamente opaca, textura irregular visível, hiperpigmentação difusa, aspecto 'cansado'.",
     severity3Desc:
       "Textura muito irregular, opacidade intensa, hiperpigmentação difusa, rugas superficiais. Exige abordagem multiativa.",
+    visualEditPrompt:
+      "Restore skin radiance and texture uniformity by approximately {intensity}% (fade the dull and flat appearance, smooth uneven micro-texture across cheeks and forehead, brighter and more luminous complexion with a natural healthy glow, more even surface without an airbrushed plastic look).",
   },
 ];
 
