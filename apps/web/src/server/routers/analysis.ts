@@ -5,7 +5,7 @@ import { mockAnalyze } from "@/lib/sae/mock-analyzer";
 import { claudeAnalyze } from "@/lib/sae/claude-analyzer";
 import { matchProducts } from "@/lib/sae/matcher";
 import type { AnalysisInput, FullAnalysisResult } from "@/lib/sae/types";
-import { analysisLimiter, getClientIp } from "@/lib/rate-limit";
+import { analysisLimiter, getClientIp, getClientGeo } from "@/lib/rate-limit";
 
 export const analysisRouter = router({
   run: publicProcedure
@@ -81,6 +81,11 @@ export const analysisRouter = router({
 
       const latencyMs = Date.now() - startTime;
 
+      // Capture LGPD-friendly geo (city/region/country only, never raw IP) for B2B analytics.
+      const geo = ctx.headers
+        ? getClientGeo(ctx.headers)
+        : { country: null, region: null, city: null };
+
       // 5. Save to database
       const analysis = await ctx.db.analysis.create({
         data: {
@@ -88,6 +93,9 @@ export const analysisRouter = router({
           clientEmail: input.clientEmail,
           clientName: input.clientName,
           clientAge: (input.questionnaire.age_range as string) ?? null,
+          clientCountry: geo.country,
+          clientRegion: geo.region,
+          clientCity: geo.city,
           questionnaireData: JSON.stringify(input.questionnaire),
           status: "completed",
           skinType: analysisOutput.skin_type,

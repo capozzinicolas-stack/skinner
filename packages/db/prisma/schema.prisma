@@ -231,6 +231,14 @@ model Analysis {
   clientName  String?
   clientAge   String? // age range
 
+  // Geo (auto-captured from request IP via Vercel/Cloudflare headers — LGPD-friendly:
+  // city/region/country only, never the raw IP). Used by the B2B analytics dashboard
+  // to slice metrics by region. All fields are optional — if headers are missing,
+  // they stay null and analytics groups them as "Desconhecido".
+  clientCountry String? // ISO-2 (e.g. "BR")
+  clientRegion  String? // state/region (e.g. "SP", "RJ")
+  clientCity    String?
+
   // Questionnaire answers
   questionnaireData String // JSON
 

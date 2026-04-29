@@ -88,3 +88,42 @@ export function getClientIp(headers: Headers): string {
     "unknown"
   );
 }
+
+/**
+ * Extract LGPD-friendly geo data from request headers (city/region/country only —
+ * never the raw IP). Vercel and Cloudflare populate these automatically:
+ *   - x-vercel-ip-country / cf-ipcountry      → ISO-2 country
+ *   - x-vercel-ip-country-region / cf-region  → state or region code
+ *   - x-vercel-ip-city / cf-ipcity            → city name (URL-encoded)
+ * Returns nulls when running locally or behind a proxy without geo enrichment.
+ */
+export function getClientGeo(headers: Headers): {
+  country: string | null;
+  region: string | null;
+  city: string | null;
+} {
+  const decode = (v: string | null): string | null => {
+    if (!v) return null;
+    try {
+      return decodeURIComponent(v);
+    } catch {
+      return v;
+    }
+  };
+  const country =
+    headers.get("x-vercel-ip-country") ?? headers.get("cf-ipcountry") ?? null;
+  const region =
+    headers.get("x-vercel-ip-country-region") ??
+    headers.get("cf-region-code") ??
+    headers.get("cf-region") ??
+    null;
+  const city =
+    decode(headers.get("x-vercel-ip-city")) ??
+    decode(headers.get("cf-ipcity")) ??
+    null;
+  return {
+    country: country?.toUpperCase() || null,
+    region: region?.toUpperCase() || null,
+    city: city || null,
+  };
+}

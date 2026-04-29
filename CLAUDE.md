@@ -125,6 +125,18 @@
 - Skin projection (3 photos atual/8wk/12wk): grid stays at `grid-cols-1 md:grid-cols-3` but uses `gap-4 md:gap-5 lg:gap-6` and slightly larger typography (`lg:text-lg`, `lg:text-sm`) at desktop so descriptions don't get cramped.
 - Mobile (<768px) layout is unchanged — single column everywhere.
 
+### B2B Analytics Dashboard
+- Page: `/dashboard` (`apps/web/src/app/(dashboard)/dashboard/page.tsx`).
+- Backend: `dashboardRouter` (`apps/web/src/server/routers/dashboard.ts`) — all queries scoped to `ctx.tenantId` via `tenantProcedure`. Period filter accepts `days` 1–365.
+- Sections rendered: ROI overview, plan usage bar, monthly trend (6m), geo distribution (region + top cities), patient profile (skin type / age / objective), top conditions + barrier, skin-type discrepancy index, top products + catalog gaps, engagement (PDF download / email rate).
+- Pre-aggregates server-side; UI consumes pre-computed numbers + simple horizontal bars (no chart lib).
+
+### Geo capture (LGPD-friendly)
+- `Analysis.clientCountry/clientRegion/clientCity` are auto-populated from request headers when an analysis is saved (`getClientGeo` in `apps/web/src/lib/rate-limit.ts`).
+- Vercel headers used: `x-vercel-ip-country`, `x-vercel-ip-country-region`, `x-vercel-ip-city`. Cloudflare equivalents (`cf-ipcountry`, `cf-region-code`, `cf-ipcity`) used as fallback.
+- We never persist the raw IP — only city/region/country. Missing headers → fields stay null and analytics groups them as "Desconhecido".
+- City names are URL-decoded (Vercel encodes them).
+
 ### Skin Projection (Gemini)
 - Generates 2 images: 8 weeks (-50%) and 12 weeks (-80%) improvement
 - Uses Gemini 2.5 Flash Image model (~$0.12 per call, rate limited to 3/hour/IP)
