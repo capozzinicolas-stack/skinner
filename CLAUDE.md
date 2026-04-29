@@ -128,8 +128,9 @@
 ### B2B Analytics Dashboard
 - Page: `/dashboard` (`apps/web/src/app/(dashboard)/dashboard/page.tsx`).
 - Backend: `dashboardRouter` (`apps/web/src/server/routers/dashboard.ts`) — all queries scoped to `ctx.tenantId` via `tenantProcedure`. Period filter accepts `days` 1–365.
-- Sections rendered: ROI overview, plan usage bar, monthly trend (6m), geo distribution (region + top cities), patient profile (skin type / age / objective), top conditions + barrier, skin-type discrepancy index, top products + catalog gaps, engagement (PDF download / email rate).
-- Pre-aggregates server-side; UI consumes pre-computed numbers + simple horizontal bars (no chart lib).
+- Sections rendered: ROI overview, plan usage bar, monthly trend (6m), geo distribution (region + top cities), patient profile (skin type / age / objective), top conditions + barrier, skin-type discrepancy index, top products + catalog gaps, **conversion lift por perfil** (compares each segment's conversion rate vs the tenant baseline; min 3 patients per segment), **sazonalidade** (12-month heatmap of top conditions), engagement (PDF download / email rate).
+- Pre-aggregates server-side; UI consumes pre-computed numbers + simple horizontal bars + CSS heatmap (no chart lib).
+- **Export CSV** button in the header pulls `dashboardRouter.exportSnapshot` and builds a multi-section CSV (summary + per-analysis detail + catalog) client-side. UTF-8 BOM included so Excel reads accents correctly. File name: `skinner-dashboard-{YYYY-MM-DD}-{days}d.csv`.
 
 ### Geo capture (LGPD-friendly)
 - `Analysis.clientCountry/clientRegion/clientCity` are auto-populated from request headers when an analysis is saved (`getClientGeo` in `apps/web/src/lib/rate-limit.ts`).

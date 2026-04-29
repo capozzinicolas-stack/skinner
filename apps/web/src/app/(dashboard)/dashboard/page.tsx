@@ -97,6 +97,248 @@ function LowSampleNotice({ sample, threshold = 30 }: { sample: number; threshold
   );
 }
 
+// CSV-escape: wrap in double-quotes and double any inner quotes.
+function csvCell(v: unknown): string {
+  if (v == null) return "";
+  const s = String(v);
+  if (/[",\n;]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+
+function csvRow(cells: unknown[]): string {
+  return cells.map(csvCell).join(",");
+}
+
+type ExportSnapshot = {
+  generatedAt: string;
+  periodDays: number;
+  summary: {
+    analysesStarted: number;
+    analysesCompleted: number;
+    conversions: number;
+    revenue: number;
+    completionRate: number;
+    conversionRate: number;
+  };
+  analyses: Array<{
+    date: string;
+    skinType: string;
+    ageRange: string;
+    primaryObjective: string;
+    country: string;
+    region: string;
+    city: string;
+    barrierStatus: string;
+    conditions: string;
+  }>;
+  catalog: Array<{
+    name: string;
+    sku: string;
+    type: string | null;
+    stepRoutine: string | null;
+    price: number | null;
+  }>;
+};
+
+/**
+ * Builds a multi-section CSV (summary header + per-analysis detail + catalog snapshot)
+ * and triggers a browser download. No external lib — pure string + Blob.
+ */
+function downloadCsv(snapshot: ExportSnapshot, days: number) {
+  const lines: string[] = [];
+  lines.push(`# Skinner Dashboard Export`);
+  lines.push(`# Generated at,${snapshot.generatedAt}`);
+  lines.push(`# Period (days),${days}`);
+  lines.push("");
+  lines.push("## Summary");
+  lines.push(csvRow(["Metric", "Value"]));
+  lines.push(csvRow(["Analyses started", snapshot.summary.analysesStarted]));
+  lines.push(csvRow(["Analyses completed", snapshot.summary.analysesCompleted]));
+  lines.push(csvRow(["Conversions (purchases)", snapshot.summary.conversions]));
+  lines.push(csvRow(["Revenue (BRL)", snapshot.summary.revenue.toFixed(2)]));
+  lines.push(csvRow(["Completion rate", (snapshot.summary.completionRate * 100).toFixed(2) + "%"]));
+  lines.push(csvRow(["Conversion rate", (snapshot.summary.conversionRate * 100).toFixed(2) + "%"]));
+  lines.push("");
+  lines.push("## Analyses (per row)");
+  lines.push(
+    csvRow([
+      "date",
+      "skinType",
+      "ageRange",
+      "primaryObjective",
+      "country",
+      "region",
+      "city",
+      "barrierStatus",
+      "conditions",
+    ])
+  );
+  for (const a of snapshot.analyses) {
+    lines.push(
+      csvRow([
+        a.date,
+        a.skinType,
+        a.ageRange,
+        a.primaryObjective,
+        a.country,
+        a.region,
+        a.city,
+        a.barrierStatus,
+        a.conditions,
+      ])
+    );
+  }
+  lines.push("");
+  lines.push("## Catalog snapshot");
+  lines.push(csvRow(["name", "sku", "type", "stepRoutine", "price"]));
+  for (const p of snapshot.catalog) {
+    lines.push(csvRow([p.name, p.sku, p.type ?? "", p.stepRoutine ?? "", p.price ?? ""]));
+  }
+
+  const csv = "﻿" + lines.join("\n"); // BOM so Excel reads UTF-8 correctly
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  const stamp = new Date().toISOString().slice(0, 10);
+  a.download = `skinner-dashboard-${stamp}-${days}d.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ─── Conversion lift card ────────────────────────────────────────────────────────
+
+function LiftCard({
+  title,
+  rows,
+  labelMap,
+}: {
+  title: string;
+  rows: Array<{ key: string; patients: number; converted: number; rate: number; lift: number }>;
+  labelMap?: Record<string, string>;
+}) {
+  return (
+    <div className="p-5 bg-white border border-sable/20">
+      <p className="text-[10px] text-pierre uppercase tracking-wider font-light mb-4">
+        {title}
+      </p>
+      {rows.length === 0 ? (
+        <p className="text-xs text-pierre font-light">
+          Sem segmentos com amostra suficiente (mínimo 3 pacientes).
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {rows.map((r) => {
+            const label = labelMap
+              ? (labelMap[r.key] ?? r.key).charAt(0).toUpperCase() + (labelMap[r.key] ?? r.key).slice(1)
+              : r.key;
+            const isPositive = r.lift >= 1;
+            const liftColor = r.lift >= 1.3
+              ? "text-green-700"
+              : r.lift >= 1
+              ? "text-carbone"
+              : r.lift >= 0.7
+              ? "text-pierre"
+              : "text-terre";
+            const liftPrefix = isPositive ? "+" : "";
+            const liftDelta = ((r.lift - 1) * 100).toFixed(0);
+            return (
+              <div key={r.key} className="border-b border-sable/10 pb-2">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-sm text-carbone font-light truncate">{label}</span>
+                  <span className={`text-xs font-light whitespace-nowrap ${liftColor}`}>
+                    {r.lift.toFixed(2)}x
+                    <span className="ml-1">({liftPrefix}{liftDelta}%)</span>
+                  </span>
+                </div>
+                <div className="flex items-baseline justify-between text-[10px] text-pierre font-light mt-1">
+                  <span>
+                    {fmtInt(r.converted)} / {fmtInt(r.patients)} converteram
+                  </span>
+                  <span>{fmtPct(r.rate, 1)}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Seasonality heatmap ─────────────────────────────────────────────────────────
+
+function SeasonalityHeatmap({
+  months,
+  series,
+}: {
+  months: string[];
+  series: Array<{ condition: string; values: number[]; peak: number; peakMonth: string | null }>;
+}) {
+  const monthLabel = (m: string) => `${m.slice(5)}/${m.slice(2, 4)}`;
+  return (
+    <div className="min-w-[640px]">
+      <table className="w-full border-collapse">
+        <thead>
+          <tr>
+            <th className="text-left text-[10px] text-pierre uppercase tracking-wider font-light pb-2">
+              Condição
+            </th>
+            {months.map((m) => (
+              <th
+                key={m}
+                className="text-center text-[10px] text-pierre uppercase tracking-wider font-light pb-2 px-1"
+              >
+                {monthLabel(m)}
+              </th>
+            ))}
+            <th className="text-right text-[10px] text-pierre uppercase tracking-wider font-light pb-2 pl-2">
+              Pico
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {series.map((s) => (
+            <tr key={s.condition} className="border-t border-sable/10">
+              <td className="text-sm text-carbone font-light py-2 pr-2">
+                {(conditionLabels[s.condition] ?? s.condition).charAt(0).toUpperCase() +
+                  (conditionLabels[s.condition] ?? s.condition).slice(1)}
+              </td>
+              {s.values.map((v, i) => {
+                const intensity = s.peak > 0 ? v / s.peak : 0;
+                const bg =
+                  intensity === 0
+                    ? "bg-sable/10"
+                    : intensity < 0.34
+                    ? "bg-sable/40"
+                    : intensity < 0.67
+                    ? "bg-terre/60"
+                    : "bg-carbone";
+                const textColor = intensity > 0.5 ? "text-blanc-casse" : "text-carbone";
+                return (
+                  <td key={i} className="px-0.5 py-1">
+                    <div className={`${bg} ${textColor} text-center text-[10px] font-light py-1.5`}>
+                      {v > 0 ? v : ""}
+                    </div>
+                  </td>
+                );
+              })}
+              <td className="text-right text-xs text-pierre font-light pl-2">
+                {s.peakMonth ? monthLabel(s.peakMonth) : "—"}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="text-[10px] text-pierre font-light mt-3 italic">
+        Cada célula mostra o número de pacientes com essa condição naquele mês. Cor mais escura = mais casos.
+      </p>
+    </div>
+  );
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────────
 
 export default function TenantDashboard() {
@@ -115,6 +357,20 @@ export default function TenantDashboard() {
   const topProducts = trpc.dashboard.topProducts.useQuery({ days, limit: 8 });
   const gaps = trpc.dashboard.catalogGaps.useQuery({ days });
   const engagement = trpc.dashboard.engagementMetrics.useQuery({ days });
+  const conversionLift = trpc.dashboard.conversionLiftByProfile.useQuery({ days });
+  const seasonality = trpc.dashboard.seasonalityByCondition.useQuery({ months: 12, topConditions: 5 });
+
+  const utils = trpc.useUtils();
+  const [exporting, setExporting] = useState(false);
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const snapshot = await utils.dashboard.exportSnapshot.fetch({ days });
+      downloadCsv(snapshot, days);
+    } finally {
+      setExporting(false);
+    }
+  }
 
   const data = overview.data;
 
@@ -128,20 +384,29 @@ export default function TenantDashboard() {
             Visão estratégica do seu negócio.
           </p>
         </div>
-        <div className="flex gap-1 border border-sable/40">
-          {PERIOD_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => setDays(opt.value)}
-              className={`px-3 py-1.5 text-xs font-light tracking-wide ${
-                days === opt.value
-                  ? "bg-carbone text-blanc-casse"
-                  : "bg-white text-pierre hover:bg-ivoire"
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
+        <div className="flex items-center gap-3">
+          <div className="flex gap-1 border border-sable/40">
+            {PERIOD_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setDays(opt.value)}
+                className={`px-3 py-1.5 text-xs font-light tracking-wide ${
+                  days === opt.value
+                    ? "bg-carbone text-blanc-casse"
+                    : "bg-white text-pierre hover:bg-ivoire"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={handleExport}
+            disabled={exporting}
+            className="px-4 py-1.5 border border-sable text-terre text-xs font-light tracking-wide hover:bg-ivoire transition-colors disabled:opacity-50 disabled:cursor-wait"
+          >
+            {exporting ? "Exportando..." : "Exportar CSV"}
+          </button>
         </div>
       </div>
 
@@ -516,6 +781,59 @@ export default function TenantDashboard() {
               )}
             </div>
           </div>
+
+          {/* CONVERSION LIFT POR PERFIL */}
+          {conversionLift.data && conversionLift.data.baseline.totalPatients > 0 && (
+            <>
+              <SectionTitle subtitle="Quais perfis convertem mais que a média — útil para segmentar campanhas">
+                Conversão por perfil
+              </SectionTitle>
+              <div className="p-5 bg-white border border-sable/20 mb-4">
+                <p className="text-xs text-pierre font-light">
+                  Linha de base do tenant:{" "}
+                  <span className="text-carbone">
+                    {fmtPct(conversionLift.data.baseline.rate, 1)}
+                  </span>{" "}
+                  ({fmtInt(conversionLift.data.baseline.converted)} de{" "}
+                  {fmtInt(conversionLift.data.baseline.totalPatients)} pacientes converteram).
+                  Lift = quanto cada segmento converte vs essa média (1.50x = 50% acima).
+                </p>
+                <LowSampleNotice sample={conversionLift.data.baseline.totalPatients} threshold={50} />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <LiftCard
+                  title="Por tipo de pele"
+                  rows={conversionLift.data.bySkinType.slice(0, 5)}
+                  labelMap={skinTypeLabels}
+                />
+                <LiftCard
+                  title="Por faixa etária"
+                  rows={conversionLift.data.byAgeRange.slice(0, 5)}
+                />
+                <LiftCard
+                  title="Por objetivo"
+                  rows={conversionLift.data.byObjective.slice(0, 5)}
+                  labelMap={objectiveLabels}
+                />
+                <LiftCard
+                  title="Por região"
+                  rows={conversionLift.data.byRegion.slice(0, 5)}
+                />
+              </div>
+            </>
+          )}
+
+          {/* SAZONALIDADE */}
+          {seasonality.data && seasonality.data.series.length > 0 && (
+            <>
+              <SectionTitle subtitle="Como cada condição varia ao longo do ano — antecipe campanhas e estoque">
+                Sazonalidade das condições
+              </SectionTitle>
+              <div className="p-5 bg-white border border-sable/20 overflow-x-auto">
+                <SeasonalityHeatmap months={seasonality.data.months} series={seasonality.data.series} />
+              </div>
+            </>
+          )}
 
           {/* ENGAGEMENT */}
           {engagement.data && (

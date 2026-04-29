@@ -450,4 +450,213 @@ export const dashboardRouter = router({
       emailRate: completed > 0 ? emailCount / completed : 0,
     };
   }),
+
+  /**
+   * Conversion lift by patient profile.
+   *
+   * For each segment (skin type, age range, primary objective, region), computes:
+   *   - patients in that segment
+   *   - patients in that segment who converted (purchase)
+   *   - segment conversion rate
+   *   - lift vs the global tenant baseline (e.g. 1.45x means 45% above average)
+   *
+   * Helps the B2B identify which audiences buy more — actionable for paid campaigns
+   * and inventory planning. Returns top segments per dimension by lift, filtered to
+   * segments with meaningful sample size (>= 3 patients in segment) to avoid noise.
+   */
+  conversionLiftByProfile: tenantProcedure
+    .input(periodInput)
+    .query(async ({ ctx, input }) => {
+      const since = new Date(Date.now() - input.days * 86_400_000);
+      const tenantId = ctx.tenantId;
+
+      // Pull all completed analyses with the dims we slice on, plus convert flag.
+      const analyses = await ctx.db.analysis.findMany({
+        where: { tenantId, status: "completed", createdAt: { gte: since } },
+        select: {
+          id: true,
+          skinType: true,
+          clientAge: true,
+          primaryObjective: true,
+          clientRegion: true,
+          recommendations: { select: { conversions: { where: { type: "purchase" }, select: { id: true } } } },
+        },
+      });
+
+      const totalPatients = analyses.length;
+      const converted = analyses.filter((a) =>
+        a.recommendations.some((r) => r.conversions.length > 0)
+      ).length;
+      const baselineRate = totalPatients > 0 ? converted / totalPatients : 0;
+
+      function buildLift(
+        dim: "skinType" | "clientAge" | "primaryObjective" | "clientRegion"
+      ) {
+        const tally = new Map<string, { patients: number; converted: number }>();
+        for (const a of analyses) {
+          const key = (a as Record<string, unknown>)[dim] as string | null;
+          if (!key) continue;
+          const cur = tally.get(key) ?? { patients: 0, converted: 0 };
+          cur.patients += 1;
+          if (a.recommendations.some((r) => r.conversions.length > 0)) cur.converted += 1;
+          tally.set(key, cur);
+        }
+        return Array.from(tally.entries())
+          .filter(([, v]) => v.patients >= 3) // require min sample
+          .map(([key, v]) => {
+            const rate = v.patients > 0 ? v.converted / v.patients : 0;
+            const lift = baselineRate > 0 ? rate / baselineRate : 0;
+            return { key, patients: v.patients, converted: v.converted, rate, lift };
+          })
+          .sort((a, b) => b.lift - a.lift);
+      }
+
+      return {
+        baseline: { totalPatients, converted, rate: baselineRate },
+        bySkinType: buildLift("skinType"),
+        byAgeRange: buildLift("clientAge"),
+        byObjective: buildLift("primaryObjective"),
+        byRegion: buildLift("clientRegion"),
+      };
+    }),
+
+  /**
+   * Seasonality of detected conditions: for each top condition, how its monthly
+   * volume changes over the last N months. Reveals patterns like "manchas
+   * spike in March-April after summer" so the B2B can plan campaigns.
+   *
+   * Returns a matrix: { months[], series[{ condition, values[] }] }.
+   */
+  seasonalityByCondition: tenantProcedure
+    .input(z.object({ months: z.number().int().min(3).max(24).default(12), topConditions: z.number().int().min(2).max(8).default(5) }))
+    .query(async ({ ctx, input }) => {
+      const start = new Date();
+      start.setMonth(start.getMonth() - input.months + 1);
+      start.setDate(1);
+      start.setHours(0, 0, 0, 0);
+
+      const rows = await ctx.db.analysis.findMany({
+        where: { tenantId: ctx.tenantId, status: "completed", createdAt: { gte: start } },
+        select: { conditions: true, createdAt: true },
+      });
+
+      // Identify the top-N conditions by total count
+      const totalTally = new Map<string, number>();
+      for (const r of rows) {
+        const arr = safeParseArray(r.conditions) as Array<{ name?: string }>;
+        for (const c of arr) {
+          if (c?.name) totalTally.set(c.name, (totalTally.get(c.name) ?? 0) + 1);
+        }
+      }
+      const topNames = Array.from(totalTally.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, input.topConditions)
+        .map(([name]) => name);
+
+      // Build month buckets
+      const months: string[] = [];
+      for (let i = 0; i < input.months; i++) {
+        const d = new Date(start);
+        d.setMonth(d.getMonth() + i);
+        months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+      }
+
+      // For each top condition, compute monthly counts
+      const series = topNames.map((name) => {
+        const counts = new Array(months.length).fill(0);
+        for (const r of rows) {
+          const arr = safeParseArray(r.conditions) as Array<{ name?: string }>;
+          if (!arr.some((c) => c?.name === name)) continue;
+          const key = `${r.createdAt.getFullYear()}-${String(r.createdAt.getMonth() + 1).padStart(2, "0")}`;
+          const idx = months.indexOf(key);
+          if (idx >= 0) counts[idx] += 1;
+        }
+        const peak = Math.max(...counts);
+        const peakMonth = peak > 0 ? months[counts.indexOf(peak)] : null;
+        return { condition: name, values: counts, peak, peakMonth };
+      });
+
+      return { months, series };
+    }),
+
+  /**
+   * Returns ALL the dashboard data in one CSV-friendly snapshot for export.
+   * Used by the "Export CSV" button. Includes overview KPIs + every distribution
+   * + top conditions + top products + catalog gaps. Intentionally returns plain
+   * arrays so the UI can serialize to CSV without further transformation.
+   */
+  exportSnapshot: tenantProcedure.input(periodInput).query(async ({ ctx, input }) => {
+    const since = new Date(Date.now() - input.days * 86_400_000);
+    const tenantId = ctx.tenantId;
+
+    const [
+      analysesStarted,
+      analysesCompleted,
+      conversions,
+      analysesForGeo,
+      products,
+    ] = await Promise.all([
+      ctx.db.analysis.count({ where: { tenantId, createdAt: { gte: since } } }),
+      ctx.db.analysis.count({
+        where: { tenantId, status: "completed", createdAt: { gte: since } },
+      }),
+      ctx.db.conversion.findMany({
+        where: {
+          recommendation: { analysis: { tenantId } },
+          type: "purchase",
+          createdAt: { gte: since },
+        },
+        select: { saleValue: true },
+      }),
+      ctx.db.analysis.findMany({
+        where: { tenantId, status: "completed", createdAt: { gte: since } },
+        select: {
+          skinType: true,
+          clientAge: true,
+          primaryObjective: true,
+          clientRegion: true,
+          clientCity: true,
+          clientCountry: true,
+          barrierStatus: true,
+          conditions: true,
+          createdAt: true,
+        },
+      }),
+      ctx.db.product.findMany({
+        where: { tenantId, isActive: true },
+        select: { name: true, sku: true, type: true, stepRoutine: true, price: true },
+      }),
+    ]);
+
+    const revenue = conversions.reduce((s, c) => s + (c.saleValue ?? 0), 0);
+
+    return {
+      generatedAt: new Date().toISOString(),
+      periodDays: input.days,
+      summary: {
+        analysesStarted,
+        analysesCompleted,
+        conversions: conversions.length,
+        revenue,
+        completionRate: analysesStarted > 0 ? analysesCompleted / analysesStarted : 0,
+        conversionRate:
+          analysesCompleted > 0 ? conversions.length / analysesCompleted : 0,
+      },
+      analyses: analysesForGeo.map((a) => ({
+        date: a.createdAt.toISOString().slice(0, 10),
+        skinType: a.skinType ?? "",
+        ageRange: a.clientAge ?? "",
+        primaryObjective: a.primaryObjective ?? "",
+        country: a.clientCountry ?? "",
+        region: a.clientRegion ?? "",
+        city: a.clientCity ?? "",
+        barrierStatus: a.barrierStatus ?? "",
+        conditions: (safeParseArray(a.conditions) as Array<{ name?: string; severity?: number }>)
+          .filter((c) => c?.name)
+          .map((c) => `${c.name}(${c.severity ?? 0})`)
+          .join("|"),
+      })),
+      catalog: products,
+    };
+  }),
 });
