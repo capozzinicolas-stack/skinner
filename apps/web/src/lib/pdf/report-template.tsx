@@ -8,22 +8,29 @@ import {
   Font,
 } from "@react-pdf/renderer";
 
-// Register Skinners brand fonts
+// Register Skinner brand fonts.
+// We use full TTF files from the @fontsource jsdelivr CDN (not woff2 subsets) because:
+//   1. fontkit (used by @react-pdf) handles TTFs more reliably than woff2 in some cases
+//   2. The TTF files include the full latin range (with all Portuguese accents),
+//      avoiding "Offset is outside the bounds of the DataView" errors when subsets miss glyphs
+//   3. Italic variants must be registered explicitly — react-pdf does not synthesize italics
 Font.register({
   family: "Poppins",
   fonts: [
-    { src: "https://fonts.gstatic.com/s/poppins/v22/pxiByp8kv8JHgFVrLGT9Z1JlFd2JQEl8qw.woff2", fontWeight: 300 },
-    { src: "https://fonts.gstatic.com/s/poppins/v22/pxiEyp8kv8JHgFVrJJfecg.woff2", fontWeight: 400 },
-    { src: "https://fonts.gstatic.com/s/poppins/v22/pxiByp8kv8JHgFVrLEj6Z1JlFd2JQEl8qw.woff2", fontWeight: 600 },
+    { src: "https://cdn.jsdelivr.net/fontsource/fonts/poppins@latest/latin-300-normal.ttf", fontWeight: 300 },
+    { src: "https://cdn.jsdelivr.net/fontsource/fonts/poppins@latest/latin-400-normal.ttf", fontWeight: 400 },
+    { src: "https://cdn.jsdelivr.net/fontsource/fonts/poppins@latest/latin-600-normal.ttf", fontWeight: 600 },
+    { src: "https://cdn.jsdelivr.net/fontsource/fonts/poppins@latest/latin-300-italic.ttf", fontWeight: 300, fontStyle: "italic" },
+    { src: "https://cdn.jsdelivr.net/fontsource/fonts/poppins@latest/latin-400-italic.ttf", fontWeight: 400, fontStyle: "italic" },
   ],
 });
 
 Font.register({
   family: "Lora",
   fonts: [
-    { src: "https://fonts.gstatic.com/s/lora/v35/0QI6MX1D_JOuGQbT0gvTJPa787weuxJBkq0.woff2", fontWeight: 400 },
-    { src: "https://fonts.gstatic.com/s/lora/v35/0QI6MX1D_JOuGQbT0gvTJPa787z5vBJBkq0.woff2", fontWeight: 700 },
-    { src: "https://fonts.gstatic.com/s/lora/v35/0QI8MX1D_JOuMw_hLdO6T2wV9KnW-MoFoq92nA.woff2", fontWeight: 400, fontStyle: "italic" },
+    { src: "https://cdn.jsdelivr.net/fontsource/fonts/lora@latest/latin-400-normal.ttf", fontWeight: 400 },
+    { src: "https://cdn.jsdelivr.net/fontsource/fonts/lora@latest/latin-700-normal.ttf", fontWeight: 700 },
+    { src: "https://cdn.jsdelivr.net/fontsource/fonts/lora@latest/latin-400-italic.ttf", fontWeight: 400, fontStyle: "italic" },
   ],
 });
 
@@ -412,7 +419,15 @@ export function SkinReport({ data }: { data: ReportData }) {
                   {rec.sku}
                 </Text>
                 <Text style={s.productReason}>{rec.reason}</Text>
-                <Text style={{ ...s.productReason, fontStyle: "italic", marginTop: 2 }}>
+                <Text
+                  style={{
+                    ...s.productReason,
+                    fontFamily: "Lora",
+                    fontStyle: "italic",
+                    fontWeight: 400,
+                    marginTop: 2,
+                  }}
+                >
                   {rec.howToUse}
                 </Text>
               </View>
@@ -423,7 +438,15 @@ export function SkinReport({ data }: { data: ReportData }) {
           {data.disclaimer && (
             <>
               <View style={s.divider} />
-              <Text style={{ fontSize: 7, color: colors.pierre, fontStyle: "italic", fontWeight: 300 }}>
+              <Text
+                style={{
+                  fontSize: 7,
+                  color: colors.pierre,
+                  fontFamily: "Lora",
+                  fontStyle: "italic",
+                  fontWeight: 400,
+                }}
+              >
                 {data.disclaimer}
               </Text>
             </>

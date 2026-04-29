@@ -108,6 +108,16 @@
 - "Seu cuidado em 3 fases" / "Começando" / "Avançando" / "Mantendo" instead of "Plano de Ação" / "Fase 1/2/3".
 - "Quando consultar um dermatologista" instead of "Sinais de Alerta".
 
+### PDF Report Generation
+- Endpoint: `GET /api/report/[analysisId]` — uses `@react-pdf/renderer` Node runtime (NOT Edge).
+- Template: `apps/web/src/lib/pdf/report-template.tsx` (`SkinReport` export).
+- Brand fonts (Poppins + Lora) registered via `Font.register` from **@fontsource jsdelivr CDN as TTFs** (NOT Google Fonts woff2 subsets — those caused `RangeError: Offset is outside the bounds of the DataView` because the `latin` subset is missing some Portuguese glyphs).
+- TTF URLs format: `https://cdn.jsdelivr.net/fontsource/fonts/{family}@latest/latin-{weight}-{style}.ttf`. The `latin` (full) variants include all Portuguese accents (ã, õ, ç, etc.).
+- All used `(family, weight, fontStyle)` combinations MUST be registered explicitly — react-pdf does not synthesize italics or weights from regular variants. Currently registered:
+  - Poppins: 300 normal, 400 normal, 600 normal, 300 italic, 400 italic
+  - Lora: 400 normal, 700 normal, 400 italic
+- If you add a new style combo to the template, register it here too or rendering fails server-side with 500 (caught by the route handler and returned as `{"error":"Erro ao gerar relatorio"}`).
+
 ### Results page layout (responsive widths)
 - Container in `results-screen.tsx`: `max-w-lg md:max-w-2xl lg:max-w-3xl xl:max-w-4xl` (mobile-first, widens at md/lg/xl breakpoints) so desktop uses available width without stretching mobile.
 - Mapa Facial + Radar Chart: rendered side-by-side on `lg+` via `grid-cols-1 lg:grid-cols-2`.
