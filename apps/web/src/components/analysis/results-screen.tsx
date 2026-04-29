@@ -5,32 +5,36 @@ import type { FullAnalysisResult, MatchedProduct } from "@/lib/sae/types";
 import { AnnotatedPhoto } from "@/components/analysis/annotated-photo";
 import { SkinRadarChart } from "@/components/analysis/skin-radar-chart";
 import { SkinProjection } from "@/components/analysis/skin-projection";
+import {
+  skinTypeLabels as skinTypeLabelsRaw,
+  conditionLabels as conditionLabelsRaw,
+  barrierStatusLabels,
+} from "@/lib/sae/labels";
 
-const skinTypeLabels: Record<string, string> = {
-  oily: "Oleosa",
-  dry: "Seca",
-  combination: "Mista",
-  normal: "Normal",
-  sensitive: "Sensivel",
-};
+// Local capitalized variants for display headings (labels.ts uses lowercase for inline use)
+const skinTypeLabels: Record<string, string> = Object.fromEntries(
+  Object.entries(skinTypeLabelsRaw).map(([k, v]) => [k, v.charAt(0).toUpperCase() + v.slice(1)])
+);
+const conditionLabels: Record<string, string> = Object.fromEntries(
+  Object.entries(conditionLabelsRaw).map(([k, v]) => [k, v.charAt(0).toUpperCase() + v.slice(1)])
+);
 
-const conditionLabels: Record<string, string> = {
-  acne: "Acne",
-  hyperpigmentation: "Hiperpigmentacao",
-  aging: "Envelhecimento",
-  dehydration: "Desidratacao",
-  sensitivity: "Sensibilidade",
-  rosacea: "Rosacea",
-  pores: "Poros dilatados",
-  dullness: "Opacidade",
-  dark_circles: "Olheiras",
-  oiliness: "Oleosidade",
-};
-
-const barrierLabels: Record<string, { label: string; color: string }> = {
-  healthy: { label: "Saudavel", color: "bg-ivoire text-terre" },
-  compromised: { label: "Comprometida", color: "bg-ivoire text-terre border-sable" },
-  needs_attention: { label: "Atencao necessaria", color: "bg-ivoire text-terre border-sable" },
+const barrierLabels: Record<string, { label: string; color: string; explanation: string }> = {
+  healthy: {
+    label: barrierStatusLabels.healthy.short,
+    explanation: barrierStatusLabels.healthy.explanation,
+    color: "bg-ivoire text-terre",
+  },
+  compromised: {
+    label: barrierStatusLabels.compromised.short,
+    explanation: barrierStatusLabels.compromised.explanation,
+    color: "bg-ivoire text-terre border-sable",
+  },
+  needs_attention: {
+    label: barrierStatusLabels.needs_attention.short,
+    explanation: barrierStatusLabels.needs_attention.explanation,
+    color: "bg-ivoire text-terre border-sable",
+  },
 };
 
 const severityLabels = ["", "Leve", "Moderado", "Severo"];
@@ -530,11 +534,16 @@ export function ResultsScreen({
       {showBarrier && (
         <div className="mb-6 p-5 bg-white border border-sable/20">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-pierre uppercase tracking-wider font-light">Barreira cutanea</span>
+            <span className="text-xs text-pierre uppercase tracking-wider font-light">Estado da sua pele</span>
             <span className={`text-xs px-3 py-1 ${barrier.color}`}>
               {barrier.label}
             </span>
           </div>
+          {barrier.explanation && (
+            <p className="text-xs text-pierre font-light mt-2 leading-relaxed">
+              {barrier.explanation}
+            </p>
+          )}
         </div>
       )}
 
@@ -542,7 +551,7 @@ export function ResultsScreen({
       {showConditions && (
         <div className="mb-8">
           <h3 className="font-serif text-lg text-carbone mb-4">
-            Condicoes identificadas
+            O que observamos na sua pele
           </h3>
           <div className="space-y-3">
             {analysis.conditions.map((condition) => (
@@ -583,15 +592,15 @@ export function ResultsScreen({
             onClick={() => setShowPlan(!showPlan)}
             className="w-full flex items-center justify-between p-5 bg-white border border-sable/20 hover:bg-ivoire transition-colors"
           >
-            <span className="font-serif text-lg text-carbone">Plano de Acao</span>
+            <span className="font-serif text-lg text-carbone">Seu cuidado em 3 fases</span>
             <span className="text-pierre text-xs">{showPlan ? "fechar" : "abrir"}</span>
           </button>
           {showPlan && (
             <div className="mt-px space-y-px">
               {[
-                { phase: "Fase 1", period: "Semanas 1-2", text: analysis.action_plan.phase1 },
-                { phase: "Fase 2", period: "Semanas 3-8", text: analysis.action_plan.phase2 },
-                { phase: "Fase 3", period: "Mes 3+", text: analysis.action_plan.phase3 },
+                { phase: "Comecando", period: "Semanas 1-2", text: analysis.action_plan.phase1 },
+                { phase: "Avancando", period: "Semanas 3-8", text: analysis.action_plan.phase2 },
+                { phase: "Mantendo", period: "Mes 3+", text: analysis.action_plan.phase3 },
               ].map(({ phase, period, text }) => (
                 <div key={phase} className="p-5 bg-white border border-sable/20">
                   <div className="flex items-center gap-3 mb-2">
@@ -695,7 +704,7 @@ export function ResultsScreen({
       {showAlertSigns && analysis.alert_signs.length > 0 && (
         <div className="mb-8 p-5 bg-ivoire border border-sable/30">
           <h4 className="text-xs text-terre uppercase tracking-wider mb-3">
-            Sinais de Alerta
+            Quando consultar um dermatologista
           </h4>
           <ul className="space-y-1">
             {analysis.alert_signs.map((sign, i) => (

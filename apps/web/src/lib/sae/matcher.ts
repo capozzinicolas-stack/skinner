@@ -1,5 +1,12 @@
 import type { AnalysisOutput, MatchedProduct } from "./types";
 import { db } from "@skinner/db";
+import {
+  conditionLabels,
+  skinTypeLabels,
+  objectiveLabels,
+  trList,
+  tr,
+} from "./labels";
 
 /**
  * Match analysis results to products from the tenant's catalog.
@@ -86,21 +93,21 @@ export async function matchProducts(
 
     const matchScore = Math.round((concernScore + skinTypeMatch + objectiveMatch + severityScore + ingredientScore) * 100) / 100;
 
-    // Generate reason
+    // Generate reason in patient-friendly Portuguese (translates raw IDs via labels.ts)
     const reasons: string[] = [];
     const matchedConcerns = detectedConcerns.filter((c) => concernTags.includes(c));
     if (matchedConcerns.length > 0) {
-      reasons.push(`Trata: ${matchedConcerns.join(", ")}`);
+      reasons.push(`Trata: ${trList(conditionLabels, matchedConcerns)}`);
     }
     if (skinTypeMatch > 0) {
-      reasons.push(`Compativel com pele ${analysis.skin_type}`);
+      reasons.push(`Indicado para pele ${tr(skinTypeLabels, analysis.skin_type)}`);
     }
     if (objectiveMatch > 0) {
-      reasons.push(`Alinhado ao objetivo: ${analysis.primary_objective}`);
+      reasons.push(`Alinhado com seu objetivo: ${tr(objectiveLabels, analysis.primary_objective)}`);
     }
     if (ingredientMatches > 0) {
       const matchedIngs = activeIngs.filter((ing) => recommendedIngredients.has(ing));
-      reasons.push(`Ingredientes ativos recomendados: ${matchedIngs.join(", ")}`);
+      reasons.push(`Ingredientes que ajudam: ${matchedIngs.join(", ")}`);
     }
 
     // Generate how to use

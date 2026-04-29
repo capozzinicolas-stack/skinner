@@ -32,6 +32,8 @@ function getPlanRestriction(plan: PlanId, field: string): string | null {
 // ─── Score calculation ────────────────────────────────────────────────────────
 
 type AnalysisFormState = {
+  // Tone of the patient-facing analysis output
+  analysisTone: "humanized" | "technical";
   // Questionnaire
   questionAllergiesEnabled: boolean;
   questionSunscreenEnabled: boolean;
@@ -76,6 +78,7 @@ type AnalysisFormState = {
 };
 
 const DEFAULT_FORM: AnalysisFormState = {
+  analysisTone: "humanized",
   questionAllergiesEnabled: true,
   questionSunscreenEnabled: true,
   questionPregnantEnabled: true,
@@ -733,6 +736,7 @@ export default function AnaliseConfigPage() {
   useEffect(() => {
     if (!cfg) return;
     setForm({
+      analysisTone: ((cfg.analysisTone as string) === "technical" ? "technical" : "humanized") as "humanized" | "technical",
       questionAllergiesEnabled: (cfg.questionAllergiesEnabled as boolean) ?? true,
       questionSunscreenEnabled: (cfg.questionSunscreenEnabled as boolean) ?? true,
       questionPregnantEnabled: (cfg.questionPregnantEnabled as boolean) ?? true,
@@ -787,6 +791,7 @@ export default function AnaliseConfigPage() {
       form.maxServiceRecs !== "" ? parseInt(form.maxServiceRecs) : null;
 
     updateMutation.mutate({
+      analysisTone: form.analysisTone,
       questionAllergiesEnabled: form.questionAllergiesEnabled,
       questionSunscreenEnabled: form.questionSunscreenEnabled,
       questionPregnantEnabled: form.questionPregnantEnabled,
@@ -1128,6 +1133,69 @@ export default function AnaliseConfigPage() {
               </p>
               <div className="h-px bg-sable/20 mt-2" />
             </div>
+
+            {/* Tom da analise */}
+            <Section
+              title="Tom da analise"
+              description="Define como a IA escreve o resultado para o paciente."
+            >
+              <div className="p-5 bg-white border border-sable/20 space-y-4">
+                <div>
+                  <label className="block text-xs text-pierre uppercase tracking-wider font-light mb-3">
+                    Linguagem do diagnostico
+                  </label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => set("analysisTone", "humanized")}
+                      className={`text-left p-4 border transition-colors ${
+                        form.analysisTone === "humanized"
+                          ? "border-carbone bg-ivoire"
+                          : "border-sable/30 bg-white hover:border-sable"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-carbone font-medium">Humanizada</span>
+                        {form.analysisTone === "humanized" && (
+                          <span className="text-[10px] text-carbone uppercase tracking-wider">Ativa</span>
+                        )}
+                      </div>
+                      <p className="text-xs text-pierre font-light leading-relaxed">
+                        Linguagem clara e acolhedora, como uma esteticista experiente conversando
+                        com a cliente. Termos tecnicos sao traduzidos automaticamente
+                        ("comedoes" vira "cravos pretos e brancos"). Recomendado para B2C.
+                      </p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => set("analysisTone", "technical")}
+                      className={`text-left p-4 border transition-colors ${
+                        form.analysisTone === "technical"
+                          ? "border-carbone bg-ivoire"
+                          : "border-sable/30 bg-white hover:border-sable"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-carbone font-medium">Tecnica</span>
+                        {form.analysisTone === "technical" && (
+                          <span className="text-[10px] text-carbone uppercase tracking-wider">Ativa</span>
+                        )}
+                      </div>
+                      <p className="text-xs text-pierre font-light leading-relaxed">
+                        Terminologia clinica completa para reforcar credibilidade medica.
+                        Indicado para clinicas dermatologicas e centros que preferem
+                        manter linguagem profissional no diagnostico.
+                      </p>
+                    </button>
+                  </div>
+                  <p className="text-xs text-pierre font-light mt-3">
+                    Esta configuracao afeta os campos: resumo, descricao das condicoes,
+                    plano de cuidado, observacoes por zona e sinais de alerta.
+                    Nao afeta o motor de recomendacao nem a precisao do diagnostico.
+                  </p>
+                </div>
+              </div>
+            </Section>
 
             {/* Results text */}
             <Section

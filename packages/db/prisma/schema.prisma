@@ -63,6 +63,10 @@ model TenantConfig {
   maxQuestions       Int     @default(7)
   restrictedConditions String? // JSON array of conditions to exclude
   customPromptSuffix String? // Extra instructions for Claude
+  // Tone of the patient-facing analysis output.
+  // "humanized" (default): warm, accessible language; clinical jargon translated automatically.
+  // "technical": full clinical terminology — for B2B clinics that prefer medical credibility.
+  analysisTone       String  @default("humanized")
 
   // Delivery config
   emailEnabled     Boolean @default(true)

@@ -87,6 +87,27 @@
 - Prompt hierarchy: base prompt → KB (conditions + ingredients) → rules → global rules → global restricted → tenant rules → tenant restricted
 - Admin can view full prompt preview, KB as injected, and recent analysis raw responses
 
+### Analysis Tone (per-tenant)
+- `TenantConfig.analysisTone` controls how patient-facing fields are written by Claude.
+- Values: `"humanized"` (default) or `"technical"`.
+- `humanized`: Claude translates clinical jargon automatically ("comedões" → "cravos pretos e brancos", "telangiectasias" → "vasinhos visíveis", "ptose" → "perda de firmeza", etc.). Tone: warm, accessible, like an experienced aesthetician talking to her client. Recommended for B2C.
+- `technical`: full clinical terminology preserved. For dermatology clinics that prefer medical credibility.
+- Affects only patient-facing fields: `summary`, `conditions[].description`, `skin_type_discrepancy`, `action_plan.phaseN`, `timeline.weeksN`, `alert_signs`, `zone_annotations[].observation`. Does NOT affect `analysis.conditions[].name` (which still uses KB IDs for matcher) nor any DB fields.
+- Editable via `/dashboard/analise` → "Tom da analise" section (per-tenant, B2B-controlled).
+- Implementation: prompt block injected into `claude-analyzer.ts` `systemPrompt` based on `tenantConfig.analysisTone`.
+
+### Patient-Facing Labels (centralized)
+- All Portuguese translations of condition names, skin types, objectives, step routines, barrier statuses live in `apps/web/src/lib/sae/labels.ts`.
+- `matcher.ts` reasons use `tr()` and `trList()` helpers to translate raw IDs (e.g. "Trata: acne, manchas" instead of "Trata: acne, hyperpigmentation").
+- `results-screen.tsx` imports from labels.ts and capitalizes for display headings.
+- Adding a new condition or objective: add a row in `labels.ts` and it appears translated everywhere.
+
+### Patient-friendly UI labels in results-screen
+- "Estado da sua pele" instead of "Barreira cutânea" (with explanatory sentence below).
+- "O que observamos na sua pele" instead of "Condições identificadas".
+- "Seu cuidado em 3 fases" / "Começando" / "Avançando" / "Mantendo" instead of "Plano de Ação" / "Fase 1/2/3".
+- "Quando consultar um dermatologista" instead of "Sinais de Alerta".
+
 ### Skin Projection (Gemini)
 - Generates 2 images: 8 weeks (-50%) and 12 weeks (-80%) improvement
 - Uses Gemini 2.5 Flash Image model (~$0.12 per call, rate limited to 3/hour/IP)
