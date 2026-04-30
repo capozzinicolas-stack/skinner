@@ -224,6 +224,20 @@
 - **`charge.refunded`**: tenant.status = `paused` immediately. Full refund → subscription.status = `canceled` AND best-effort cancel in Stripe to stop further billing. Partial refund → keeps subscription, admin must re-activate manually. Logs a `refund` UsageEvent.
 - **`invoice.paid` recovery**: if the subscription was previously `past_due` and a payment finally succeeds, both subscription and tenant are restored to `active` automatically.
 
+### Webhook signup atomicity
+- `checkout.session.completed` (new signup branch) creates Tenant + User + Subscription inside a single `db.$transaction`. A partial failure rolls everything back so we never end up with an orphan user pointing to a half-created tenant. Stripe `subscriptions.update` (metadata write-back) and the Resend welcome email run AFTER the commit because they are external side effects we don't want rolled back if a transient error happens later.
+
+## Tenant lifecycle and auth invariants
+
+- **`tenantProcedure` middleware (`apps/web/src/server/trpc.ts`) validates the tenant on every request.** It fetches `{ id, status }` for `ctx.tenantId` (cached 30s in-memory, process-local, resets on cold start) and:
+  - Tenant missing → throws `UNAUTHORIZED` ("Tenant no longer exists"). The browser's tRPC client catches this and triggers a NextAuth `signOut` so the zombie JWT (tenant deleted while session was open) self-resolves to a clean re-auth at `/login`.
+  - Tenant `status = "deleted"` → also `UNAUTHORIZED`, same logout flow.
+  - Tenant `status = "paused"` → throws `FORBIDDEN` with a Portuguese message ("Sua conta esta pausada..."). The client does **not** auto-logout because the user might recover (admin re-activates, refund disputed). Page-level UI is responsible for surfacing the error.
+  - Tenant `status = "active"` → request proceeds normally.
+- **Why this matters:** before this guard, every tRPC handler that ran `tenant.findUniqueOrThrow` would throw a 500 when the tenant was missing, leaving the user with broken pages and no recovery. Endpoints that used `findMany` would silently return empty arrays, which is even more confusing.
+- **Cache invalidation:** the 30s TTL means a paused/deleted tenant takes up to 30s to lock out all open sessions. Acceptable for an MVP. If we ever need instant invalidation, add an admin endpoint that clears the entry by `tenantId`.
+- **Client-side (`apps/web/src/lib/trpc/provider.tsx`):** `QueryCache` and `MutationCache` share an `onError` handler that triggers `signOut({ callbackUrl: "/login" })` on `UNAUTHORIZED`. A module-level `signOutInFlight` flag prevents multiple parallel batched queries from each calling signOut. React Query is also configured to NOT retry `UNAUTHORIZED` or `FORBIDDEN` (they will not self-heal).
+
 ## Conventions
 
 - All user-facing text in Portuguese (Brazilian)
