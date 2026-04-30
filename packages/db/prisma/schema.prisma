@@ -172,6 +172,11 @@ model User {
   password String // hashed
   role     String @default("b2b_viewer") // skinner_admin, b2b_admin, b2b_analyst, b2b_viewer
 
+  // Null = user has never rotated their password (still using temp one from
+  // welcome email, or seed). Frontend shows a banner asking them to change it
+  // until this is set. Updated by user.changePassword.
+  passwordChangedAt DateTime?
+
   tenantId String?
   tenant   Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 

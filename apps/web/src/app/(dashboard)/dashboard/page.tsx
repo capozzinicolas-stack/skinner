@@ -589,6 +589,7 @@ export default function TenantDashboard() {
   const personas = trpc.dashboard.personas.useQuery({ days });
   const geoMap = trpc.dashboard.geoBrazilMap.useQuery({ days });
   const benchmark = trpc.dashboard.platformBenchmark.useQuery({ days });
+  const me = trpc.user.me.useQuery();
 
   const utils = trpc.useUtils();
   const [exporting, setExporting] = useState(false);
@@ -639,6 +640,27 @@ export default function TenantDashboard() {
           </button>
         </div>
       </div>
+
+      {/* Temp-password banner: shown until the user rotates their password.
+          Disappears as soon as user.changePassword stamps passwordChangedAt. */}
+      {me.data && me.data.passwordChangedAt === null && (
+        <div className="mt-6 px-5 py-4 bg-ivoire border border-sable flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <p className="text-sm text-carbone font-light">
+              Voce ainda esta usando uma senha temporaria.
+            </p>
+            <p className="text-xs text-pierre font-light mt-1">
+              Por seguranca, recomendamos altera-la agora em Minha Conta.
+            </p>
+          </div>
+          <a
+            href="/dashboard/conta"
+            className="px-4 py-2 bg-carbone text-blanc-casse text-xs font-light tracking-wide whitespace-nowrap"
+          >
+            Alterar senha
+          </a>
+        </div>
+      )}
 
       {overview.isLoading && <p className="text-pierre mt-8 font-light">Carregando...</p>}
 

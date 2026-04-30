@@ -132,15 +132,46 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   // without billing context. Stripe metadata + welcome email run AFTER the
   // commit because they are external side effects we don't want to roll back.
   const skipSetupFee = session.metadata?.skipSetupFee === "true";
+
+  // Custom plan negotiations (admin-generated link) inject negotiated limits
+  // via session metadata. When present, they override the tier defaults from
+  // PLANS so the tenant gets exactly what was sold. planId stays "enterprise"
+  // for these (see lib/billing/custom-checkout.ts for rationale). When absent,
+  // we fall through to the standard PLANS-based limits.
+  const customAnalysisLimit = session.metadata?.customAnalysisLimit
+    ? parseInt(session.metadata.customAnalysisLimit, 10)
+    : null;
+  const customCommissionRate = session.metadata?.customCommissionRate
+    ? parseFloat(session.metadata.customCommissionRate)
+    : null;
+  const isCustomPlan =
+    customAnalysisLimit !== null && !Number.isNaN(customAnalysisLimit);
+
+  const tenantLimits = isCustomPlan
+    ? {
+        analysisLimit: customAnalysisLimit!,
+        commissionRate:
+          customCommissionRate !== null && !Number.isNaN(customCommissionRate)
+            ? customCommissionRate
+            : planConfig.commissionRate,
+        // Custom plans sell a fixed monthly volume; overage billing is
+        // intentionally disabled so we don't surprise the customer with
+        // line items beyond what was negotiated.
+        excessCostPerAnalysis: 0,
+      }
+    : {
+        analysisLimit: planConfig.analysisLimit,
+        commissionRate: planConfig.commissionRate,
+        excessCostPerAnalysis: planConfig.excessCostPerAnalysis,
+      };
+
   const tenant = await db.$transaction(async (tx) => {
     const created = await tx.tenant.create({
       data: {
         name: customerName,
         slug,
         plan: planId,
-        analysisLimit: planConfig.analysisLimit,
-        commissionRate: planConfig.commissionRate,
-        excessCostPerAnalysis: planConfig.excessCostPerAnalysis,
+        ...tenantLimits,
         skipSetupFee,
         tenantConfig: { create: {} },
       },

@@ -11,6 +11,7 @@ const dashboardNav = [
   { label: "Integracoes", href: "/dashboard/integracao", icon: "◧" },
   { label: "Usuarios", href: "/dashboard/usuarios", icon: "☺" },
   { label: "Faturamento", href: "/dashboard/faturamento", icon: "∴" },
+  { label: "Minha Conta", href: "/dashboard/conta", icon: "✦" },
 ];
 
 export default function DashboardLayout({

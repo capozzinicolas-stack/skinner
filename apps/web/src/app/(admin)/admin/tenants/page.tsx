@@ -56,12 +56,20 @@ export default function TenantsPage() {
             Gerencie clientes B2B da plataforma.
           </p>
         </div>
-        <button
-          onClick={() => setShowCreate(!showCreate)}
-          className="px-4 py-2 bg-carbone text-blanc-casse text-sm font-light tracking-wide"
-        >
-          {showCreate ? "Cancelar" : "Novo Tenant"}
-        </button>
+        <div className="flex gap-2">
+          <Link
+            href="/admin/tenants/novo-custom"
+            className="px-4 py-2 border border-sable text-terre text-sm font-light tracking-wide hover:bg-ivoire"
+          >
+            Novo Plano Custom
+          </Link>
+          <button
+            onClick={() => setShowCreate(!showCreate)}
+            className="px-4 py-2 bg-carbone text-blanc-casse text-sm font-light tracking-wide"
+          >
+            {showCreate ? "Cancelar" : "Novo Tenant"}
+          </button>
+        </div>
       </div>
 
       {showCreate && (

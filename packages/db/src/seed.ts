@@ -15,6 +15,8 @@ async function main() {
       name: "Admin Skinner",
       password: hashSync("admin123", 10),
       role: "skinner_admin",
+      // Seed users do not show the temp-password banner.
+      passwordChangedAt: new Date(),
     },
   });
   console.log(`✅ Admin: ${admin.email}`);
@@ -56,6 +58,8 @@ async function main() {
       password: hashSync("demo123", 10),
       role: "b2b_admin",
       tenantId: tenant.id,
+      // Seed users do not show the temp-password banner.
+      passwordChangedAt: new Date(),
     },
   });
   console.log(`✅ B2B User: ${b2bUser.email}`);
