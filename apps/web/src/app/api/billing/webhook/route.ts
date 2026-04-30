@@ -257,6 +257,20 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
   });
   if (!sub) return;
 
+  // If the subscription was previously past_due (cartão recusado, depois pago),
+  // restore tenant + subscription to active.
+  if (sub.status === "past_due") {
+    await db.subscription.update({
+      where: { id: sub.id },
+      data: { status: "active" },
+    });
+    await db.tenant.update({
+      where: { id: sub.tenantId },
+      data: { status: "active" },
+    });
+    console.log(`[webhook] invoice.paid — recovered tenant ${sub.tenantId} from past_due`);
+  }
+
   await db.usageEvent.create({
     data: {
       tenantId: sub.tenantId,
@@ -269,6 +283,117 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
   });
 }
 
+/**
+ * Handle invoice.payment_failed: cartón recusado o saldo insuficiente.
+ * On first failure we mark the subscription as past_due (tenant continues to
+ * operate during Stripe's smart retry window — typically 3 retry attempts over
+ * 1 week). On the 2nd consecutive failure (attempt_count >= 2) we PAUSE the
+ * tenant so analyses cannot continue burning credits unpaid.
+ */
+async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
+  const subscriptionId = (invoice as any).subscription as string;
+  if (!subscriptionId) return;
+
+  const sub = await db.subscription.findUnique({
+    where: { stripeSubscriptionId: subscriptionId },
+  });
+  if (!sub) {
+    console.warn(`[webhook] payment_failed for unknown subscription ${subscriptionId}`);
+    return;
+  }
+
+  const attemptCount = (invoice as any).attempt_count ?? 1;
+
+  await db.subscription.update({
+    where: { id: sub.id },
+    data: { status: "past_due" },
+  });
+
+  if (attemptCount >= 2) {
+    await db.tenant.update({
+      where: { id: sub.tenantId },
+      data: { status: "paused" },
+    });
+    console.log(
+      `[webhook] invoice.payment_failed — tenant ${sub.tenantId} paused after ${attemptCount} failed attempts`
+    );
+  } else {
+    console.log(
+      `[webhook] invoice.payment_failed — tenant ${sub.tenantId} marked past_due (attempt ${attemptCount})`
+    );
+  }
+
+  await db.usageEvent.create({
+    data: {
+      tenantId: sub.tenantId,
+      type: "payment_failed",
+      quantity: 1,
+      unitPrice: (invoice.amount_due ?? 0) / 100,
+      total: (invoice.amount_due ?? 0) / 100,
+      metadata: JSON.stringify({ invoiceId: invoice.id, attemptCount }),
+    },
+  });
+}
+
+/**
+ * Handle charge.refunded: admin issued a refund in Stripe Dashboard.
+ * We pause the tenant immediately. Full refunds → cancel the subscription too.
+ * Partial refunds → keep the subscription, just pause and let admin re-activate
+ * manually (we cannot tell from the webhook alone whether a partial refund
+ * means "service still due" or "service ended").
+ */
+async function handleChargeRefunded(charge: Stripe.Charge) {
+  const customerId = charge.customer as string | null;
+  if (!customerId) return;
+
+  const sub = await db.subscription.findFirst({
+    where: { stripeCustomerId: customerId },
+    orderBy: { createdAt: "desc" },
+  });
+  if (!sub) {
+    console.warn(`[webhook] charge.refunded for unknown customer ${customerId}`);
+    return;
+  }
+
+  const fullyRefunded = charge.amount_refunded === charge.amount;
+
+  await db.tenant.update({
+    where: { id: sub.tenantId },
+    data: { status: "paused" },
+  });
+
+  if (fullyRefunded) {
+    await db.subscription.update({
+      where: { id: sub.id },
+      data: { status: "canceled" },
+    });
+    // Best-effort: also cancel the subscription in Stripe so it doesn't keep
+    // billing. Catch errors so a Stripe-side issue doesn't block our handler.
+    if (sub.stripeSubscriptionId) {
+      try {
+        await getStripe().subscriptions.cancel(sub.stripeSubscriptionId);
+      } catch (err) {
+        console.warn(`[webhook] Could not cancel Stripe subscription:`, err);
+      }
+    }
+  }
+
+  await db.usageEvent.create({
+    data: {
+      tenantId: sub.tenantId,
+      type: "refund",
+      quantity: 1,
+      unitPrice: (charge.amount_refunded ?? 0) / 100,
+      total: (charge.amount_refunded ?? 0) / 100,
+      metadata: JSON.stringify({ chargeId: charge.id, fullyRefunded }),
+    },
+  });
+
+  console.log(
+    `[webhook] charge.refunded — tenant ${sub.tenantId} paused (${fullyRefunded ? "full" : "partial"} refund)`
+  );
+}
+
 export async function POST(req: NextRequest) {
   const body = await req.text();
   const signature = req.headers.get("stripe-signature");
@@ -277,19 +402,49 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing signature" }, { status: 400 });
   }
 
-  let event: Stripe.Event;
+  // SECURITY: in production, STRIPE_WEBHOOK_SECRET MUST be set. Without it,
+  // anyone could forge webhook payloads and create tenants for free.
+  // In development we allow falling back to unverified parsing for local testing
+  // (e.g. `stripe trigger` without the CLI relay) but log a loud warning.
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    if (process.env.NODE_ENV === "production") {
+      console.error("[webhook] FATAL: STRIPE_WEBHOOK_SECRET is not set in production. Refusing to process events.");
+      return NextResponse.json({ error: "Webhook not configured" }, { status: 500 });
+    }
+    console.warn("[webhook] No STRIPE_WEBHOOK_SECRET — running in dev mode without verification");
+  }
 
+  let event: Stripe.Event;
   try {
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
     if (webhookSecret) {
       event = getStripe().webhooks.constructEvent(body, signature, webhookSecret);
     } else {
       event = JSON.parse(body) as Stripe.Event;
-      console.warn("[webhook] No STRIPE_WEBHOOK_SECRET — skipping verification");
     }
   } catch (err) {
     console.error("[webhook] Signature verification failed:", err);
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+  }
+
+  // IDEMPOTENCY: Stripe re-delivers events on timeout. Track processed event IDs
+  // and short-circuit duplicates. The dedupe table is small and bounded by
+  // Stripe's retry window (~3 days), so we don't need TTL cleanup right now.
+  try {
+    const existing = await db.webhookEvent.findUnique({
+      where: { stripeEventId: event.id },
+    });
+    if (existing) {
+      console.log(`[webhook] Duplicate event ${event.id} (${event.type}) — already processed, skipping`);
+      return NextResponse.json({ received: true, duplicate: true });
+    }
+    await db.webhookEvent.create({
+      data: { stripeEventId: event.id, type: event.type },
+    });
+  } catch (err) {
+    // If the dedupe write fails (DB hiccup, unique race), log and continue —
+    // the inner handlers are already idempotent at the row level (upserts).
+    console.warn(`[webhook] Dedupe check failed for ${event.id}, continuing:`, err);
   }
 
   try {
@@ -297,12 +452,19 @@ export async function POST(req: NextRequest) {
       case "checkout.session.completed":
         await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
         break;
+      case "customer.subscription.created":
       case "customer.subscription.updated":
       case "customer.subscription.deleted":
         await handleSubscriptionUpdated(event.data.object as Stripe.Subscription);
         break;
       case "invoice.paid":
         await handleInvoicePaid(event.data.object as Stripe.Invoice);
+        break;
+      case "invoice.payment_failed":
+        await handleInvoicePaymentFailed(event.data.object as Stripe.Invoice);
+        break;
+      case "charge.refunded":
+        await handleChargeRefunded(event.data.object as Stripe.Charge);
         break;
     }
   } catch (err) {

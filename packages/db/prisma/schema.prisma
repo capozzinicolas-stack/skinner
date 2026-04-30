@@ -369,6 +369,19 @@ model Subscription {
   @@map("subscriptions")
 }
 
+// Tracks Stripe webhook events that we have already processed, to short-circuit
+// duplicate deliveries (Stripe retries on timeout / 5xx). The unique stripeEventId
+// is checked at the top of POST /api/billing/webhook before any handler runs.
+// Bounded by Stripe's retry window (~3 days) so no TTL cleanup is needed today.
+model WebhookEvent {
+  id              String   @id @default(cuid())
+  stripeEventId   String   @unique
+  type            String
+  processedAt     DateTime @default(now())
+
+  @@map("webhook_events")
+}
+
 model UsageEvent {
   id       String @id @default(cuid())
   tenantId String

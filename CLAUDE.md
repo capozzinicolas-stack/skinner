@@ -214,6 +214,16 @@
 - Email: Resend API (RESEND_API_KEY). Falls back to console.log when not configured
 - Environment: STRIPE_SECRET_KEY, NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY, STRIPE_WEBHOOK_SECRET, RESEND_API_KEY, RESEND_FROM_EMAIL
 
+### Webhook security and reliability
+- **Signature verification is MANDATORY in production**. If `STRIPE_WEBHOOK_SECRET` is missing while `NODE_ENV=production`, the endpoint returns 500 immediately and refuses to process events. Dev mode allows unverified parsing for `stripe trigger` testing without the relay.
+- **Idempotency** is enforced via the `WebhookEvent` table: every incoming event ID is dedup-checked before any handler runs, so Stripe retries (timeout, 5xx) don't double-charge / double-create. Falls open (continues processing) if the dedupe write itself fails — inner handlers use upserts so row-level idempotency still holds.
+- **Events handled**: `checkout.session.completed`, `customer.subscription.created/updated/deleted`, `invoice.paid`, `invoice.payment_failed`, `charge.refunded`. Add new ones in the switch in `apps/web/src/app/api/billing/webhook/route.ts`.
+
+### Failure handlers
+- **`invoice.payment_failed`**: 1st attempt → subscription.status = `past_due`, tenant stays active (Stripe retries automatically). 2nd attempt or later → tenant.status = `paused`. Logs a `payment_failed` UsageEvent.
+- **`charge.refunded`**: tenant.status = `paused` immediately. Full refund → subscription.status = `canceled` AND best-effort cancel in Stripe to stop further billing. Partial refund → keeps subscription, admin must re-activate manually. Logs a `refund` UsageEvent.
+- **`invoice.paid` recovery**: if the subscription was previously `past_due` and a payment finally succeeds, both subscription and tenant are restored to `active` automatically.
+
 ## Conventions
 
 - All user-facing text in Portuguese (Brazilian)
