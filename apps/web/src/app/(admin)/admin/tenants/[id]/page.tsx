@@ -6,8 +6,8 @@ import { useParams } from "next/navigation";
 import { trpc } from "@/lib/trpc/client";
 
 const planLabels: Record<string, string> = {
-  starter: "Starter",
   growth: "Growth",
+  pro: "Pro",
   enterprise: "Enterprise",
 };
 
@@ -140,7 +140,7 @@ export default function TenantDetailPage() {
   });
 
   const [showPlanModal, setShowPlanModal] = useState(false);
-  const [newPlan, setNewPlan] = useState<"starter" | "growth" | "enterprise">("starter");
+  const [newPlan, setNewPlan] = useState<"growth" | "pro" | "enterprise">("growth");
   const [configSaved, setConfigSaved] = useState(false);
   const [adminNotes, setAdminNotes] = useState("");
 
@@ -334,7 +334,7 @@ export default function TenantDetailPage() {
 
                 <button
                   onClick={() => {
-                    setNewPlan(d.tenant.plan as "starter" | "growth" | "enterprise");
+                    setNewPlan(d.tenant.plan as "growth" | "pro" | "enterprise");
                     setShowPlanModal(true);
                   }}
                   className="w-full px-4 py-2 border border-sable/30 text-sm text-carbone font-light hover:bg-ivoire/40 text-left"
@@ -397,7 +397,7 @@ export default function TenantDetailPage() {
                   Alterar plano
                 </h2>
                 <div className="space-y-3 mb-6">
-                  {(["starter", "growth", "enterprise"] as const).map((p) => (
+                  {(["growth", "pro", "enterprise"] as const).map((p) => (
                     <label
                       key={p}
                       className={`flex items-center gap-3 p-3 border cursor-pointer ${

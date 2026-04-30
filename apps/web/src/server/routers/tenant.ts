@@ -152,13 +152,13 @@ export const tenantRouter = router({
       z.object({
         name: z.string().min(2),
         slug: z.string().min(2).regex(/^[a-z0-9-]+$/),
-        plan: z.enum(["starter", "growth", "enterprise"]).default("starter"),
+        plan: z.enum(["growth", "pro", "enterprise"]).default("growth"),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const limits = {
-        starter: { analysisLimit: 200, commissionRate: 0.03, excessCostPerAnalysis: 3.5 },
-        growth: { analysisLimit: 1000, commissionRate: 0.02, excessCostPerAnalysis: 2.0 },
+        growth: { analysisLimit: 200, commissionRate: 0.03, excessCostPerAnalysis: 3.5 },
+        pro: { analysisLimit: 1000, commissionRate: 0.02, excessCostPerAnalysis: 2.0 },
         enterprise: { analysisLimit: 999999, commissionRate: 0.01, excessCostPerAnalysis: 0 },
       };
 
@@ -176,7 +176,7 @@ export const tenantRouter = router({
       z.object({
         id: z.string(),
         name: z.string().min(2).optional(),
-        plan: z.enum(["starter", "growth", "enterprise"]).optional(),
+        plan: z.enum(["growth", "pro", "enterprise"]).optional(),
         status: z.enum(["active", "paused", "deleted"]).optional(),
       })
     )
@@ -185,8 +185,8 @@ export const tenantRouter = router({
 
       const planLimits = plan
         ? {
-            starter: { analysisLimit: 200, commissionRate: 0.03, excessCostPerAnalysis: 3.5 },
-            growth: { analysisLimit: 1000, commissionRate: 0.02, excessCostPerAnalysis: 2.0 },
+            growth: { analysisLimit: 200, commissionRate: 0.03, excessCostPerAnalysis: 3.5 },
+            pro: { analysisLimit: 1000, commissionRate: 0.02, excessCostPerAnalysis: 2.0 },
             enterprise: { analysisLimit: 999999, commissionRate: 0.01, excessCostPerAnalysis: 0 },
           }[plan]
         : {};

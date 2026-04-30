@@ -198,11 +198,18 @@
 - Checkout: `POST /api/billing/checkout` → creates Stripe Checkout Session → redirects to Stripe
 - Portal: `POST /api/billing/portal` → creates Stripe Customer Portal session
 - Webhook: `POST /api/billing/webhook` → receives checkout.session.completed, subscription.updated/deleted, invoice.paid
-- Price IDs: starter=price_1TQH3RPTPxVx2t2Rg4i8jPOZ, growth=price_1TQH7WPTPxVx2t2RQkmaIDRY
-- Enterprise plan has no Stripe price (custom pricing, handled manually)
-- Self-service signup flow: /planos → Stripe Checkout (no auth needed) → webhook creates tenant + user + subscription
+- **Plan IDs (renamed Apr-2026)**: previously `starter`/`growth`, now `growth`/`pro`. The internal plan keys, the Stripe products, the public site, the admin UI and the DB are all consistent on the new names.
+  - `growth` → recurring `price_1TRwEKAFYuZWxKCyOL5onvKK` (R$ 490/mo, 200 analyses, 3% commission)
+  - `pro` → recurring `price_1TRwFsAFYuZWxKCyWuHui0r8` (R$ 1.490/mo, 1.000 analyses, 2% commission)
+  - `enterprise` → custom-priced, no Stripe price
+- **Setup fees** (one-time, charged on signup only — NOT on upgrade):
+  - `growth` setup → `price_1TRwKuAFYuZWxKCyKjlq990r` (R$ 990 one-time)
+  - `pro` setup → `price_1TRwLCAFYuZWxKCy1knwa7Kh` (R$ 2.490 one-time)
+  - Setup is appended as a second `line_item` in the signup checkout. Upgrades use a single `line_item` (no setup re-charge).
+  - Admin can waive the setup per tenant via `Tenant.skipSetupFee` (default `false`). Currently this flag is set programmatically (e.g. by the `/api/billing/checkout` endpoint when `body.skipSetupFee=true`) and persisted by the webhook handler. The admin-facing UI to flip the waiver during custom-plan creation is a Sprint 2 item.
+- Self-service signup flow: /planos → Stripe Checkout (no auth needed, mixed line_items: recurring + setup) → webhook creates tenant + user + subscription
 - Webhook generates temp password, sends welcome email via Resend with login link (app.skinner.lat/login)
-- Existing tenant upgrade: dashboard → Stripe Checkout → webhook updates plan
+- Existing tenant upgrade: dashboard → Stripe Checkout (single recurring line_item, NO setup) → webhook updates plan
 - On subscription cancel: tenant status set to "paused"
 - Email: Resend API (RESEND_API_KEY). Falls back to console.log when not configured
 - Environment: STRIPE_SECRET_KEY, NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY, STRIPE_WEBHOOK_SECRET, RESEND_API_KEY, RESEND_FROM_EMAIL

@@ -5,8 +5,8 @@ import Link from "next/link";
 import { trpc } from "@/lib/trpc/client";
 
 const planLabels: Record<string, string> = {
-  starter: "Starter",
   growth: "Growth",
+  pro: "Pro",
   enterprise: "Enterprise",
 };
 
@@ -24,7 +24,7 @@ export default function TenantsPage() {
       utils.tenant.list.invalidate();
       utils.tenant.stats.invalidate();
       setShowCreate(false);
-      setForm({ name: "", slug: "", plan: "starter" });
+      setForm({ name: "", slug: "", plan: "growth" });
     },
   });
   const updateMutation = trpc.tenant.update.useMutation({
@@ -35,7 +35,7 @@ export default function TenantsPage() {
   });
 
   const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState({ name: "", slug: "", plan: "starter" });
+  const [form, setForm] = useState({ name: "", slug: "", plan: "growth" });
 
   function handleSlugify(name: string) {
     const slug = name
@@ -71,7 +71,7 @@ export default function TenantsPage() {
             createMutation.mutate({
               name: form.name,
               slug: form.slug,
-              plan: form.plan as "starter" | "growth" | "enterprise",
+              plan: form.plan as "growth" | "pro" | "enterprise",
             });
           }}
           className="mb-8 p-6 bg-white border border-sable/20 space-y-4"
@@ -112,8 +112,8 @@ export default function TenantsPage() {
                 onChange={(e) => setForm((f) => ({ ...f, plan: e.target.value }))}
                 className="w-full px-3 py-2 border border-sable/30 bg-blanc-casse text-sm text-carbone font-light focus:outline-none focus:border-pierre"
               >
-                <option value="starter">Starter</option>
                 <option value="growth">Growth</option>
+                <option value="pro">Pro</option>
                 <option value="enterprise">Enterprise</option>
               </select>
             </div>

@@ -125,7 +125,9 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const slug = generateSlug(customerEmail);
   const customerName = session.customer_details?.name ?? customerEmail.split("@")[0];
 
-  // Create tenant
+  // Create tenant — persist skipSetupFee flag so future audits can tell whether
+  // this tenant paid the setup or had it waived (e.g. admin-generated link).
+  const skipSetupFee = session.metadata?.skipSetupFee === "true";
   const tenant = await db.tenant.create({
     data: {
       name: customerName,
@@ -134,6 +136,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       analysisLimit: planConfig.analysisLimit,
       commissionRate: planConfig.commissionRate,
       excessCostPerAnalysis: planConfig.excessCostPerAnalysis,
+      skipSetupFee,
       tenantConfig: { create: {} },
     },
   });
@@ -209,7 +212,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     where: { stripeSubscriptionId: subscriptionId },
     create: {
       tenantId,
-      plan: planId ?? "starter",
+      plan: planId ?? "growth",
       status,
       stripeSubscriptionId: subscriptionId,
       stripeCustomerId: customerId,

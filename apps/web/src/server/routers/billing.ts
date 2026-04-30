@@ -57,7 +57,7 @@ export const billingRouter = router({
 
   // Create checkout session for plan upgrade
   checkout: tenantProcedure
-    .input(z.object({ planId: z.enum(["starter", "growth", "enterprise"]) }))
+    .input(z.object({ planId: z.enum(["growth", "pro", "enterprise"]) }))
     .mutation(async ({ ctx, input }) => {
       if (isStripeConfigured() && input.planId !== "enterprise") {
         // Real Stripe — return API endpoint URL for the client to POST to
@@ -77,7 +77,7 @@ export const billingRouter = router({
 
   // Upgrade/downgrade plan (mock - in production this would be Stripe webhook)
   changePlan: tenantProcedure
-    .input(z.object({ planId: z.enum(["starter", "growth", "enterprise"]) }))
+    .input(z.object({ planId: z.enum(["growth", "pro", "enterprise"]) }))
     .mutation(async ({ ctx, input }) => {
       const planConfig = PLANS[input.planId];
 

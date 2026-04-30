@@ -5,25 +5,26 @@ import { trpc } from "@/lib/trpc/client";
 
 // ─── Plan restriction helpers ─────────────────────────────────────────────────
 
-type PlanId = "starter" | "growth" | "enterprise";
+type PlanId = "growth" | "pro" | "enterprise";
 
 // Returns the restriction reason for a field given the current plan, or null if allowed.
+// Note: Apr-2026 rename — what was "starter" is now "growth"; what was "growth" is now "pro".
 function getPlanRestriction(plan: PlanId, field: string): string | null {
   if (plan === "enterprise") return null;
 
-  const starterRestricted = [
+  const growthRestricted = [
     "questionPregnantEnabled",
     "resultsShowAlertSigns",
     "photoOnlyMode",
   ];
 
-  // Growth cannot use photoOnlyMode unless admin explicitly enables it
-  const growthRestricted = ["photoOnlyMode"];
+  // Pro cannot use photoOnlyMode unless admin explicitly enables it
+  const proRestricted = ["photoOnlyMode"];
 
-  if (plan === "starter" && starterRestricted.includes(field)) {
-    return "Disponivel nos planos Growth e Enterprise";
-  }
   if (plan === "growth" && growthRestricted.includes(field)) {
+    return "Disponivel nos planos Pro e Enterprise";
+  }
+  if (plan === "pro" && proRestricted.includes(field)) {
     return "Disponivel apenas no plano Enterprise ou com aprovacao do administrador";
   }
   return null;
@@ -712,7 +713,7 @@ export default function AnaliseConfigPage() {
   const [saved, setSaved] = useState(false);
 
   // Derive plan and locked fields from the loaded data
-  const plan = (tenantQuery.data?.plan ?? "starter") as PlanId;
+  const plan = (tenantQuery.data?.plan ?? "growth") as PlanId;
   const cfg = tenantQuery.data?.tenantConfig as Record<string, unknown> | null | undefined;
 
   let adminLockedFields: string[] = [];
@@ -916,7 +917,7 @@ export default function AnaliseConfigPage() {
                 Plano atual
               </p>
               <span className="text-[10px] text-carbone uppercase tracking-wider font-light">
-                {plan === "starter" ? "Starter" : plan === "growth" ? "Growth" : "Enterprise"}
+                {plan === "growth" ? "Growth" : plan === "pro" ? "Pro" : "Enterprise"}
               </span>
             </div>
 

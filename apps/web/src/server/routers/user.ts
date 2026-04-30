@@ -74,7 +74,7 @@ export const userRouter = router({
       const userCount = await ctx.db.user.count({
         where: { tenantId: ctx.tenantId },
       });
-      const limits = { starter: 2, growth: 10, enterprise: 999 };
+      const limits = { growth: 2, pro: 10, enterprise: 999 };
       const limit = limits[tenant.plan as keyof typeof limits] ?? 2;
       if (userCount >= limit) {
         throw new TRPCError({

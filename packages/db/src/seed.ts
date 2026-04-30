@@ -26,7 +26,7 @@ async function main() {
     create: {
       name: "Clínica Demo Dermatologia",
       slug: "demo-clinic",
-      plan: "growth",
+      plan: "pro",
       analysisLimit: 1000,
       commissionRate: 0.02,
       excessCostPerAnalysis: 2.0,

@@ -1,6 +1,6 @@
 export const PLANS = {
-  starter: {
-    name: "Starter",
+  growth: {
+    name: "Growth",
     monthlyPrice: 490,
     setupFee: 990,
     analysisLimit: 200,
@@ -16,8 +16,8 @@ export const PLANS = {
       "Armazenamento PDFs 30 dias",
     ],
   },
-  growth: {
-    name: "Growth",
+  pro: {
+    name: "Pro",
     monthlyPrice: 1490,
     setupFee: 2490,
     analysisLimit: 1000,

@@ -5,12 +5,12 @@ import { useState } from "react";
 
 const plans = [
   {
-    id: "starter", name: "Starter", price: "R$ 890", setup: "R$ 1.500", commission: "3%",
+    id: "growth", name: "Growth", price: "R$ 890", setup: "R$ 1.500", commission: "3%",
     target: "Clinicas e farmacias independentes", popular: false,
     features: ["Ate 200 analises/mes", "1 usuario admin", "Relatorio PDF", "Marca branca basica", "Suporte por email", "Comissao 3% sobre venda atribuida"],
   },
   {
-    id: "growth", name: "Growth", price: "R$ 2.490", setup: "R$ 3.000", commission: "2%",
+    id: "pro", name: "Pro", price: "R$ 2.490", setup: "R$ 3.000", commission: "2%",
     target: "Redes regionais e clinicas multi-unidade", popular: true,
     features: ["Ate 1.500 analises/mes", "5 usuarios · multi-unidade", "Marca branca completa", "Painel de atribuicao", "Integracao ERP/marketplace", "CSM dedicado", "Comissao 2% sobre venda atribuida"],
   },

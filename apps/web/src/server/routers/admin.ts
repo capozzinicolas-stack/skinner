@@ -294,7 +294,7 @@ export const adminRouter = router({
     .input(
       z.object({
         tenantId: z.string(),
-        plan: z.enum(["starter", "growth", "enterprise"]),
+        plan: z.enum(["growth", "pro", "enterprise"]),
       })
     )
     .mutation(async ({ ctx, input }) => {

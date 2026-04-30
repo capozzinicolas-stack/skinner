@@ -17,8 +17,12 @@ model Tenant {
   id        String   @id @default(cuid())
   name      String
   slug      String   @unique
-  status    String   @default("active") // active, paused, deleted
-  plan      String   @default("starter") // starter, growth, enterprise
+  status    String   @default("active") // active, pending_payment, paused, deleted
+  plan      String   @default("growth") // growth, pro, enterprise (renamed Apr-2026 from starter/growth)
+
+  // When true, the one-time setup fee is NOT charged on signup. Used by admin
+  // for custom-plan tenants where the setup is waived as part of the negotiated deal.
+  skipSetupFee Boolean @default(false)
 
   // Branding
   logoUrl       String?
