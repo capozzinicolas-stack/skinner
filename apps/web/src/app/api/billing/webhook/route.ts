@@ -127,42 +127,48 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   // Create tenant — persist skipSetupFee flag so future audits can tell whether
   // this tenant paid the setup or had it waived (e.g. admin-generated link).
+  // Tenant + User + Subscription are created in a single transaction so a
+  // partial failure cannot leave an orphan user without a tenant or a tenant
+  // without billing context. Stripe metadata + welcome email run AFTER the
+  // commit because they are external side effects we don't want to roll back.
   const skipSetupFee = session.metadata?.skipSetupFee === "true";
-  const tenant = await db.tenant.create({
-    data: {
-      name: customerName,
-      slug,
-      plan: planId,
-      analysisLimit: planConfig.analysisLimit,
-      commissionRate: planConfig.commissionRate,
-      excessCostPerAnalysis: planConfig.excessCostPerAnalysis,
-      skipSetupFee,
-      tenantConfig: { create: {} },
-    },
-  });
+  const tenant = await db.$transaction(async (tx) => {
+    const created = await tx.tenant.create({
+      data: {
+        name: customerName,
+        slug,
+        plan: planId,
+        analysisLimit: planConfig.analysisLimit,
+        commissionRate: planConfig.commissionRate,
+        excessCostPerAnalysis: planConfig.excessCostPerAnalysis,
+        skipSetupFee,
+        tenantConfig: { create: {} },
+      },
+    });
 
-  // Create user with temp password
-  await db.user.create({
-    data: {
-      email: customerEmail,
-      name: customerName,
-      password: hashSync(tempPassword, 10),
-      role: "b2b_admin",
-      tenantId: tenant.id,
-    },
-  });
+    await tx.user.create({
+      data: {
+        email: customerEmail,
+        name: customerName,
+        password: hashSync(tempPassword, 10),
+        role: "b2b_admin",
+        tenantId: created.id,
+      },
+    });
 
-  // Create subscription record
-  await db.subscription.create({
-    data: {
-      tenantId: tenant.id,
-      plan: planId,
-      status: "active",
-      stripeSubscriptionId: subscriptionId,
-      stripeCustomerId: customerId,
-      currentPeriodStart: new Date(),
-      currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-    },
+    await tx.subscription.create({
+      data: {
+        tenantId: created.id,
+        plan: planId,
+        status: "active",
+        stripeSubscriptionId: subscriptionId,
+        stripeCustomerId: customerId,
+        currentPeriodStart: new Date(),
+        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      },
+    });
+
+    return created;
   });
 
   // Update Stripe subscription metadata with tenantId for future webhooks
