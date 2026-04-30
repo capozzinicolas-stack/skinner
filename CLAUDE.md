@@ -227,6 +227,19 @@
 ### Webhook signup atomicity
 - `checkout.session.completed` (new signup branch) creates Tenant + User + Subscription inside a single `db.$transaction`. A partial failure rolls everything back so we never end up with an orphan user pointing to a half-created tenant. Stripe `subscriptions.update` (metadata write-back) and the Resend welcome email run AFTER the commit because they are external side effects we don't want rolled back if a transient error happens later.
 
+### Custom plan flow (admin-quoted, mano-a-mano)
+- Library: `apps/web/src/lib/billing/custom-checkout.ts` exports `buildCustomCheckout({ email, monthlyPriceBRL, analysisLimit, commissionRate, maxUsers, skipSetupFee, planLabel })`. Creates a Stripe **Price** ad-hoc (BRL, recurring monthly) and a Checkout Session that embeds the negotiated limits in `metadata`.
+- Admin endpoint: `POST /api/billing/admin-link` (gated by `getToken().role === "skinner_admin"`) accepts the same shape, validates with Zod, returns `{ url }`.
+- Admin UI: `/admin/tenants/novo-custom` (form: email, R$ mensal, analysisLimit, commission %, maxUsers, "Waivear setup" checkbox, planLabel). Generates the link, offers copy/WhatsApp/open buttons. CTA "Novo Plano Custom" added to `/admin/tenants` header next to "Novo Tenant".
+- **Internal plan tier convention**: custom plans set `planId = "enterprise"` in Stripe metadata. We deliberately reuse the enterprise label so we don't need to introduce a 4th tier in `PLANS` and propagate it across z.enums in 5 routers. Negotiated limits live on Tenant columns (`analysisLimit`, `commissionRate`) — independent of `PLANS` — so the actual sold values flow through unchanged. Display name in the UI shows "Enterprise"; a per-tenant `planLabel` override is sprint-2.
+- **Webhook handling**: `handleCheckoutCompleted` checks `session.metadata.customAnalysisLimit`; if present, uses negotiated limits instead of `PLANS[planId]`. Custom plans always get `excessCostPerAnalysis = 0` (we sold a fixed monthly volume, no overage to surprise the customer). Standard signups (planId = `growth` / `pro` from `/planos`) are untouched and fall through to PLANS-based limits.
+
+## Self-service account management
+
+- **Schema**: `User.passwordChangedAt DateTime?` is null until the user rotates from the welcome-email temp password (or seed default). Used as the toggle for the temp-password banner. Seed pre-stamps demo users (`admin@skinner.com.br`, `clinica@demo.com`) with `now()` so the banner doesn't fire for the demo.
+- **Backend**: `userRouter.updateProfile` (name + email with uniqueness check) and `userRouter.changePassword` (bcrypt-verifies current, hashes new, stamps `passwordChangedAt = now`). Both `protectedProcedure` — operate on the caller's own `userId`. Email change has no confirmation flow yet (sprint-2 hardening).
+- **UI**: page `/dashboard/conta` with two sections (Dados pessoais + Alterar senha). Sidebar nav item "Minha Conta". Dashboard home (`/dashboard/page.tsx`) shows an ivoire banner deep-linking to `/dashboard/conta` whenever `me.passwordChangedAt === null`. Banner disappears as soon as the rotation happens.
+
 ## Tenant lifecycle and auth invariants
 
 - **`tenantProcedure` middleware (`apps/web/src/server/trpc.ts`) validates the tenant on every request.** It fetches `{ id, status }` for `ctx.tenantId` (cached 30s in-memory, process-local, resets on cold start) and:
