@@ -332,6 +332,26 @@ Items deliberately deferred from the pre-launch sprint. None block launch; order
 - **Cache invalidation:** the 30s TTL means a paused/deleted tenant takes up to 30s to lock out all open sessions. Acceptable for an MVP. If we ever need instant invalidation, add an admin endpoint that clears the entry by `tenantId`.
 - **Client-side (`apps/web/src/lib/trpc/provider.tsx`):** `QueryCache` and `MutationCache` share an `onError` handler that triggers `signOut({ callbackUrl: "/login" })` on `UNAUTHORIZED`. A module-level `signOutInFlight` flag prevents multiple parallel batched queries from each calling signOut. React Query is also configured to NOT retry `UNAUTHORIZED` or `FORBIDDEN` (they will not self-heal).
 
+## Portal segmentation (admin vs client)
+
+Skinner runs under three subdomains with strict role-to-portal coupling:
+
+- `www.skinner.lat` — public marketing site, no auth.
+- `admin.skinner.lat` — Skinner internal team. Only `role === "skinner_admin"` accounts can authenticate.
+- `app.skinner.lat` — B2B tenants. Only `role !== "skinner_admin"` (b2b_admin, b2b_analyst, b2b_viewer) accounts can authenticate.
+
+Enforcement runs in **two layers** for defense-in-depth:
+
+1. **Credentials provider (`apps/web/src/lib/auth.ts`)** — the login form passes a `mode` field ("admin" or "client") derived from the hostname. The `authorize()` function refuses to issue a JWT when the role/mode mismatch:
+   - `mode === "admin"` requires `user.role === "skinner_admin"`.
+   - `mode === "client"` requires `user.role !== "skinner_admin"`.
+   - Mismatch returns `null` (treated as wrong credentials by NextAuth — the user sees the same generic invalid-login error, no enumeration leak).
+2. **Middleware (`apps/web/src/middleware.ts`)** — even if a JWT slips through (zombie cookie from a past misconfiguration, manual cookie injection, etc.), every request on `admin.*` or `app.*` is re-validated. A wrong-portal JWT triggers a cross-subdomain redirect to the correct portal's `/login?error=wrong-portal`. Auth pages themselves (`/login`, `/forgot-password`, `/reset-password`, `/api/auth/*`) are exempt so users can always re-authenticate.
+
+NextAuth defaults to **per-subdomain cookie scoping**, so cookies set on `app.skinner.lat` are not sent to `admin.skinner.lat` and vice versa. The middleware fallback handles edge cases where this default could be circumvented (e.g. someone manually setting `cookies.sessionToken.options.domain = ".skinner.lat"`).
+
+When developing locally on `localhost`, both modes are accepted because there is no subdomain prefix — `detectMode()` falls back to "client" by default. To test admin login locally, navigate from a hostname that starts with `admin.` (use `/etc/hosts` to alias `admin.localhost` if needed).
+
 ## Routing invariants
 
 - **`apps/web/src/middleware.ts` runs on every request and gates auth.** Any new page or API route that should be reachable without a logged-in JWT MUST be added to the `PUBLIC_PATHS` array. Otherwise the middleware silently redirects to `/login`, which from the user's perspective looks like "the link doesn't work" (you click and stay on /login). Symptoms always include "click does nothing" or "page flashes and returns to login".

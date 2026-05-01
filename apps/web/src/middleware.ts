@@ -74,6 +74,36 @@ export async function middleware(req: NextRequest) {
     }
   }
 
+  // ── Portal segmentation enforcement ────────────────────────────────
+  // Defense-in-depth on top of the credentials provider check (lib/auth.ts).
+  // If a JWT exists but its role doesn't match the subdomain the user is on
+  // (e.g. a stale tenant cookie surviving on admin.skinner.lat), redirect to
+  // the correct portal so the user can re-auth there. Skipped for the auth
+  // pages themselves so the user can always reach /login on either subdomain.
+  const isAuthPage =
+    pathname === "/login" ||
+    pathname === "/forgot-password" ||
+    pathname === "/reset-password" ||
+    pathname.startsWith("/api/auth");
+
+  if ((isAdminSubdomain || isAppSubdomain) && !isAuthPage) {
+    const portalToken = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    if (portalToken) {
+      if (isAdminSubdomain && portalToken.role !== "skinner_admin") {
+        // B2B user lands on admin portal — kick to client portal.
+        return NextResponse.redirect(
+          new URL("https://app.skinner.lat/login?error=wrong-portal")
+        );
+      }
+      if (isAppSubdomain && portalToken.role === "skinner_admin") {
+        // Admin lands on client portal — kick to admin portal.
+        return NextResponse.redirect(
+          new URL("https://admin.skinner.lat/login?error=wrong-portal")
+        );
+      }
+    }
+  }
+
   // ── Standard routing ───────────────────────────────────────────────
 
   // Allow all public paths without any auth check

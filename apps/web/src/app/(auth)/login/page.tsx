@@ -58,13 +58,22 @@ function LoginForm() {
     const result = await signIn("credentials", {
       email,
       password,
+      // Portal segmentation: admin.skinner.lat vs app.skinner.lat. The server
+      // rejects mismatches in lib/auth.ts, returning the same generic error so
+      // we can't distinguish "wrong portal" from "wrong password" here without
+      // an extra round-trip. Pass the detected mode and let the server decide.
+      mode,
       redirect: false,
     });
 
     setLoading(false);
 
     if (result?.error) {
-      setError("E-mail ou senha invalidos.");
+      setError(
+        mode === "admin"
+          ? "E-mail ou senha invalidos. (Apenas administradores Skinner podem acessar este painel.)"
+          : "E-mail ou senha invalidos. (Administradores devem usar admin.skinner.lat.)"
+      );
       return;
     }
 
@@ -160,7 +169,16 @@ function LoginForm() {
           <div className="bg-blanc-casse/95 backdrop-blur-md border border-sable/30 p-8 shadow-[0_32px_80px_-20px_rgba(0,0,0,0.5)]">
             {(error || urlError) && (
               <div className="p-3 text-sm text-terre bg-ivoire border border-sable/30 mb-6">
-                {error || (urlError === "unauthorized" ? "Acesso nao autorizado." : urlError === "no-tenant" ? "Usuario sem empresa vinculada." : "Erro ao fazer login.")}
+                {error ||
+                  (urlError === "unauthorized"
+                    ? "Acesso nao autorizado."
+                    : urlError === "no-tenant"
+                    ? "Usuario sem empresa vinculada."
+                    : urlError === "wrong-portal"
+                    ? mode === "admin"
+                      ? "Esta conta nao e administrativa. Acesse pelo portal app.skinner.lat."
+                      : "Administradores devem acessar pelo portal admin.skinner.lat."
+                    : "Erro ao fazer login.")}
               </div>
             )}
 
