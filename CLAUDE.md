@@ -332,6 +332,12 @@ Items deliberately deferred from the pre-launch sprint. None block launch; order
 - **Cache invalidation:** the 30s TTL means a paused/deleted tenant takes up to 30s to lock out all open sessions. Acceptable for an MVP. If we ever need instant invalidation, add an admin endpoint that clears the entry by `tenantId`.
 - **Client-side (`apps/web/src/lib/trpc/provider.tsx`):** `QueryCache` and `MutationCache` share an `onError` handler that triggers `signOut({ callbackUrl: "/login" })` on `UNAUTHORIZED`. A module-level `signOutInFlight` flag prevents multiple parallel batched queries from each calling signOut. React Query is also configured to NOT retry `UNAUTHORIZED` or `FORBIDDEN` (they will not self-heal).
 
+## Routing invariants
+
+- **`apps/web/src/middleware.ts` runs on every request and gates auth.** Any new page or API route that should be reachable without a logged-in JWT MUST be added to the `PUBLIC_PATHS` array. Otherwise the middleware silently redirects to `/login`, which from the user's perspective looks like "the link doesn't work" (you click and stay on /login). Symptoms always include "click does nothing" or "page flashes and returns to login".
+- Anything that lives in `(marketing)` route group is still subject to the middleware — the route group is purely a Next.js folder convention and does not bypass middleware.
+- The matcher at the bottom of `middleware.ts` excludes static assets (`_next/static`, `_next/image`, `favicon.ico`, `brand/`, `uploads/`) but everything else passes through.
+
 ## Conventions
 
 - All user-facing text in Portuguese (Brazilian)
