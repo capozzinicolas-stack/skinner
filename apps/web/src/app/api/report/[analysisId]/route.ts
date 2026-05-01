@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { renderToBuffer } from "@react-pdf/renderer";
+import { getToken } from "next-auth/jwt";
 import React from "react";
 import { db } from "@skinner/db";
 import { SkinReport } from "@/lib/pdf/report-template";
 
+/**
+ * PDF report access model:
+ *   - Anonymous (no JWT) → allowed. The analysisId is a CUID and is delivered
+ *     to the patient by the analysis flow (results-screen). This preserves the
+ *     B2C patient download path which has no authenticated session.
+ *   - Authenticated B2B user → analysis.tenantId MUST equal the JWT's tenantId.
+ *     Stops a tenant admin from downloading PDFs of OTHER tenants by guessing IDs.
+ *   - Skinner admin → allowed for any analysis (used for customer support).
+ */
 export async function GET(
   req: NextRequest,
   { params }: { params: { analysisId: string } }
@@ -26,6 +36,16 @@ export async function GET(
         { error: "Analise nao encontrada" },
         { status: 404 }
       );
+    }
+
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    if (token?.tenantId && token.role !== "skinner_admin") {
+      if (token.tenantId !== analysis.tenantId) {
+        return NextResponse.json(
+          { error: "Acesso negado" },
+          { status: 403 }
+        );
+      }
     }
 
     const conditions = safeParseJson(analysis.conditions, []);

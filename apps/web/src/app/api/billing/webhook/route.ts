@@ -493,6 +493,14 @@ export async function POST(req: NextRequest) {
   // IDEMPOTENCY: Stripe re-delivers events on timeout. Track processed event IDs
   // and short-circuit duplicates. The dedupe table is small and bounded by
   // Stripe's retry window (~3 days), so we don't need TTL cleanup right now.
+  //
+  // Two-phase strategy: insert the dedupe row BEFORE the handler so concurrent
+  // duplicate deliveries don't race-process the same event, then DELETE it if
+  // the handler throws so Stripe's retry can re-process the event cleanly.
+  // Without the rollback, a partial failure (e.g. DB hiccup mid-transaction)
+  // would be marked "processed" and silently dropped on retry — a real bug we
+  // observed during the pre-launch audit.
+  let webhookEventInserted = false;
   try {
     const existing = await db.webhookEvent.findUnique({
       where: { stripeEventId: event.id },
@@ -504,6 +512,7 @@ export async function POST(req: NextRequest) {
     await db.webhookEvent.create({
       data: { stripeEventId: event.id, type: event.type },
     });
+    webhookEventInserted = true;
   } catch (err) {
     // If the dedupe write fails (DB hiccup, unique race), log and continue —
     // the inner handlers are already idempotent at the row level (upserts).
@@ -532,6 +541,18 @@ export async function POST(req: NextRequest) {
     }
   } catch (err) {
     console.error(`[webhook] Error handling ${event.type}:`, err);
+    // Roll back the dedupe row so Stripe's retry can re-execute the handler
+    // from scratch. Without this, a half-failed handler (e.g. tenant created
+    // but subscription not) would never get a second chance.
+    if (webhookEventInserted) {
+      try {
+        await db.webhookEvent.delete({
+          where: { stripeEventId: event.id },
+        });
+      } catch (deleteErr) {
+        console.warn(`[webhook] Failed to roll back dedupe row for ${event.id}:`, deleteErr);
+      }
+    }
     return NextResponse.json({ error: "Webhook handler failed" }, { status: 500 });
   }
 

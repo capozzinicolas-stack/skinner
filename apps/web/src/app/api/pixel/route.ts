@@ -1,6 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@skinner/db";
 
+/**
+ * Conversion pixel — accepts a `ref` that is the recommendation.trackingRef
+ * (a unique CUID generated when the recommendation is created). This matches
+ * the value the install snippet reads from `?skr_ref=` (see lib/billing/pixel.ts
+ * and the kit page links). Looking up by `trackingRef` (a @unique field) instead
+ * of `productId` ensures (a) the lookup matches the intended recommendation
+ * exactly, (b) tenant attribution is implicit via the recommendation→analysis
+ * chain, and (c) trackingRef is high-cardinality so guessing one to forge a
+ * conversion is impractical.
+ *
+ * Defense in depth: tenant ID flows from analysis.tenantId, so even if a
+ * trackingRef were leaked, the conversion is recorded against the correct
+ * tenant — never against the requester or a guessed one.
+ */
+async function findRecommendationByRef(ref: string) {
+  return db.recommendation.findUnique({
+    where: { trackingRef: ref },
+    include: {
+      analysis: { select: { tenantId: true } },
+    },
+  });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -10,14 +33,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing ref" }, { status: 400 });
     }
 
-    // Find recommendation by tracking ref (productId used as ref)
-    const recommendation = await db.recommendation.findFirst({
-      where: { productId: ref },
-      include: {
-        analysis: { select: { tenantId: true } },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+    const recommendation = await findRecommendationByRef(ref);
 
     if (!recommendation) {
       return NextResponse.json({ error: "Invalid ref" }, { status: 404 });
@@ -71,10 +87,7 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   const ref = req.nextUrl.searchParams.get("ref");
   if (ref) {
-    const recommendation = await db.recommendation.findFirst({
-      where: { productId: ref },
-      orderBy: { createdAt: "desc" },
-    });
+    const recommendation = await findRecommendationByRef(ref);
 
     if (recommendation) {
       await db.conversion.create({

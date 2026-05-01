@@ -238,6 +238,10 @@
 - B2B panel **stays accessible** when over limit — the dashboard, catalog, reports, billing all still load. Only public analysis creation is blocked.
 - No automatic overage billing today: `excessCostPerAnalysis` exists in the schema for future per-analysis billing but currently behaves as a soft cap. A customer either upgrades plan or waits for the next cycle.
 
+### Webhook dedupe with rollback
+- The dedupe row in `WebhookEvent` is inserted at the START of webhook processing (so concurrent duplicate deliveries can't race-process the same event), but is **DELETED if the handler throws** so Stripe's retry can re-execute cleanly. Without the rollback, a partially-failed handler would be permanently marked "processed" and silently dropped — a regression we caught in the pre-launch audit.
+- All handlers are idempotent at the row level (`upsert` for subscription/tenant updates, transaction with unique-email guard for new signups), so a retry of the same event will not double-create entities. The only non-idempotent operation is the audit `UsageEvent.create` (payment / refund / payment_failed logs); duplicates there are preferable to losing payments and are easy to detect after the fact.
+
 ### Webhook signup atomicity
 - `checkout.session.completed` (new signup branch) creates Tenant + User + Subscription inside a single `db.$transaction`. A partial failure rolls everything back so we never end up with an orphan user pointing to a half-created tenant. Stripe `subscriptions.update` (metadata write-back) and the Resend welcome email run AFTER the commit because they are external side effects we don't want rolled back if a transient error happens later.
 
