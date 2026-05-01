@@ -65,13 +65,25 @@ export function AnnotatedPhoto({
   // Face detection state
   const [detectedPositions, setDetectedPositions] = useState<FaceZonePositions | null>(null);
   const [detecting, setDetecting] = useState(true);
+  // Aspect ratio of the loaded image (e.g. "640/480"). Used to size the
+  // container so it matches the image exactly — without this, an aspectRatio
+  // mismatch combined with object-cover would crop the image and the marker
+  // percentages (computed against the natural image) would no longer line up
+  // with the visible cropped region. Default falls back to 3/4 portrait
+  // until the image actually loads.
+  const [imgAspect, setImgAspect] = useState<string>("3/4");
   const imgRef = useRef<HTMLImageElement>(null);
 
   // Run face detection once when the component mounts and the image is ready.
   useEffect(() => {
     let cancelled = false;
 
-    async function runDetection(img: HTMLImageElement) {
+    async function onReady(img: HTMLImageElement) {
+      // Sync container aspect to the image so percentage-based markers are
+      // not displaced by object-fit cropping.
+      if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+        setImgAspect(`${img.naturalWidth}/${img.naturalHeight}`);
+      }
       setDetecting(true);
       try {
         const positions = await detectFaceZones(img);
@@ -92,9 +104,9 @@ export function AnnotatedPhoto({
     }
 
     if (img.complete && img.naturalWidth > 0) {
-      runDetection(img);
+      onReady(img);
     } else {
-      const onLoad = () => runDetection(img);
+      const onLoad = () => onReady(img);
       img.addEventListener("load", onLoad);
       return () => {
         cancelled = true;
@@ -113,14 +125,20 @@ export function AnnotatedPhoto({
 
   return (
     <div className="w-full">
-      {/* Photo container */}
-      <div className="relative w-full overflow-hidden" style={{ aspectRatio: "3/4" }}>
+      {/* Photo container — aspect mirrors the loaded image so percentage-based
+          markers align with visible facial landmarks. object-contain is used
+          as a safety net so the image is never cropped if the aspect briefly
+          mismatches (initial render, very tall/wide photos). */}
+      <div
+        className="relative w-full overflow-hidden bg-blanc-casse"
+        style={{ aspectRatio: imgAspect }}
+      >
         {/* Base photo — also used by the landmark detector via imgRef */}
         <img
           ref={imgRef}
           src={photoBase64}
           alt="Foto facial para analise"
-          className="w-full h-full object-cover"
+          className="w-full h-full object-contain"
           style={{ display: "block" }}
           crossOrigin="anonymous"
         />

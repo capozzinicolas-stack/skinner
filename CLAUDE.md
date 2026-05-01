@@ -102,6 +102,11 @@
 - `results-screen.tsx` imports from labels.ts and capitalizes for display headings.
 - Adding a new condition or objective: add a row in `labels.ts` and it appears translated everywhere.
 
+### Annotated face map alignment
+- `apps/web/src/components/analysis/annotated-photo.tsx` overlays zone markers (forehead, under_eyes, nose, cheeks, chin, jawline) on the patient photo. Marker positions come either from face-api.js landmarks (computed as % of `naturalWidth`/`naturalHeight`) or from a centered-selfie fallback when detection fails.
+- **Critical invariant**: the photo container's aspect ratio MUST equal the image's natural aspect ratio. Otherwise `object-cover`/`contain` cropping displaces the visible image relative to the marker percentages and markers land off the face. The component reads `imgAspect` from the loaded image and applies it inline. Combined with `object-contain` as a safety net, this prevents the markers-on-the-side-of-the-face bug.
+- Do NOT hardcode `aspectRatio: "3/4"` on this container. Photos from camera capture (`photo-capture.tsx`) come in `videoWidth × videoHeight` (commonly 4:3 or 16:9), which does not match a forced 3:4 portrait container.
+
 ### Patient-friendly UI labels in results-screen
 - "Estado da sua pele" instead of "Barreira cutânea" (with explanatory sentence below).
 - "O que observamos na sua pele" instead of "Condições identificadas".
