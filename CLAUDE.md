@@ -224,6 +224,15 @@
 - **`charge.refunded`**: tenant.status = `paused` immediately. Full refund → subscription.status = `canceled` AND best-effort cancel in Stripe to stop further billing. Partial refund → keeps subscription, admin must re-activate manually. Logs a `refund` UsageEvent.
 - **`invoice.paid` recovery**: if the subscription was previously `past_due` and a payment finally succeeds, both subscription and tenant are restored to `active` automatically.
 
+### Period reset on renewal
+- `handleInvoicePaid` checks `invoice.billing_reason`. When equal to `subscription_cycle` (recurring renewal), it resets `tenant.analysisUsed = 0` and syncs `Subscription.currentPeriodStart`/`End` from the invoice line item's `period`. Signups (`subscription_create`) and upgrades (`subscription_update`) skip the reset because the tenant either started at 0 or is mid-period and shouldn't lose accumulated usage.
+- This replaces the originally-planned monthly cron — Stripe is the single source of truth for "when a period starts", so we piggyback on its events rather than running a parallel scheduler.
+
+### Limit-reached behavior
+- Public `analysis.run` mutation throws `FORBIDDEN` with a Portuguese message ("Esta clinica atingiu o limite mensal de analises...") when `tenant.analysisUsed >= tenant.analysisLimit`. The patient-facing error UI surfaces it at the end of the questionnaire.
+- B2B panel **stays accessible** when over limit — the dashboard, catalog, reports, billing all still load. Only public analysis creation is blocked.
+- No automatic overage billing today: `excessCostPerAnalysis` exists in the schema for future per-analysis billing but currently behaves as a soft cap. A customer either upgrades plan or waits for the next cycle.
+
 ### Webhook signup atomicity
 - `checkout.session.completed` (new signup branch) creates Tenant + User + Subscription inside a single `db.$transaction`. A partial failure rolls everything back so we never end up with an orphan user pointing to a half-created tenant. Stripe `subscriptions.update` (metadata write-back) and the Resend welcome email run AFTER the commit because they are external side effects we don't want rolled back if a transient error happens later.
 
@@ -238,7 +247,79 @@
 
 - **Schema**: `User.passwordChangedAt DateTime?` is null until the user rotates from the welcome-email temp password (or seed default). Used as the toggle for the temp-password banner. Seed pre-stamps demo users (`admin@skinner.com.br`, `clinica@demo.com`) with `now()` so the banner doesn't fire for the demo.
 - **Backend**: `userRouter.updateProfile` (name + email with uniqueness check) and `userRouter.changePassword` (bcrypt-verifies current, hashes new, stamps `passwordChangedAt = now`). Both `protectedProcedure` — operate on the caller's own `userId`. Email change has no confirmation flow yet (sprint-2 hardening).
-- **UI**: page `/dashboard/conta` with two sections (Dados pessoais + Alterar senha). Sidebar nav item "Minha Conta". Dashboard home (`/dashboard/page.tsx`) shows an ivoire banner deep-linking to `/dashboard/conta` whenever `me.passwordChangedAt === null`. Banner disappears as soon as the rotation happens.
+- **UI**: page `/dashboard/conta` with three sections (Dados pessoais + Alterar senha + Excluir minha conta). Sidebar nav item "Minha Conta". Dashboard home (`/dashboard/page.tsx`) shows an ivoire banner deep-linking to `/dashboard/conta` whenever `me.passwordChangedAt === null`. Banner disappears as soon as the rotation happens.
+
+### Forgot password (email-link reset)
+- **Schema**: `PasswordResetToken { tokenHash (sha256 hex, unique), userId, expiresAt, usedAt }`. Plain token never persisted — only the hash, so a DB leak does not yield usable reset tokens.
+- **Endpoints**:
+  - `POST /api/auth/forgot` — accepts `{ email }`, generates a 256-bit random token, hashes it, stores the hash with 1h expiry, sends the plain token in the email link. **Always returns 200** even when the email doesn't exist (prevents email-enumeration recon). Errors are swallowed for the same reason.
+  - `POST /api/auth/reset` — accepts `{ token, newPassword (>=8) }`, hashes the token and looks it up, rejects expired/used tokens, otherwise updates password + stamps `usedAt` + stamps `User.passwordChangedAt = now` inside a transaction.
+- **UI**: page `/forgot-password` (email input → "verifique seu email" success state) and page `/reset-password?token=...` (new password + confirm → redirects to `/login`). Both use the immersive landscape background of `/login`. "Esqueci minha senha" link added to the login form.
+- **Email**: `buildPasswordResetEmail` in `apps/web/src/lib/email.ts` (Resend, brand-styled). Subject "Skinner — Redefina sua senha".
+
+### Data deletion (LGPD)
+- `userRouter.requestDataDeletion` (b2b_admin only). The mutation runs inside `db.$transaction` and:
+  1. Anonymizes all analyses of the tenant: drops `patientPhotoUrl`, `questionnaireData`, `clientCity`, `clientRegion`, `clientCountry`. Keeps aggregates (skinType, primaryObjective, conversion linkages) so cross-tenant benchmark queries don't break and historical accounting stays intact.
+  2. Anonymizes all users of the tenant: replaces email with `deleted-{tenantId}-{ts}@deleted.local`, replaces name with "Removido", replaces password with the literal string "deleted" (cannot match any bcrypt hash).
+  3. Soft-deletes the tenant (`status = "deleted"`). The `tenantProcedure` guard converts this to `UNAUTHORIZED` on the next request, forcing a clean signOut for any open session.
+  4. Logs a `data_deletion` UsageEvent with `requestedBy` for audit.
+- **Hard delete** is admin-only via `/admin/tenants/[id]` and remains the path for re-using a slug or fully purging records.
+- **UI**: "Excluir minha conta" danger-zone section on `/dashboard/conta` with `DELETAR` confirmation text input. After success the client signs out automatically.
+
+## Usage alerts cron
+
+- **Endpoint**: `GET /api/cron/usage-alerts` (auth via `Authorization: Bearer ${CRON_SECRET}` — local dev allowed without if the env var is unset).
+- **Schedule**: defined in `apps/web/vercel.json`, daily at `0 12 * * *` (12:00 UTC = 09:00 BRT).
+- **Logic**: iterates all `active` tenants, computes `pct = analysisUsed/analysisLimit`. Sends an email to all `b2b_admin` users when:
+  - `pct >= 0.80 && pct < 1.0` and no `alert_80` UsageEvent yet in the current period.
+  - `pct >= 1.0` and no `alert_100` UsageEvent yet in the current period.
+- **Idempotency**: the UsageEvent itself is the flag — once written, the cron skips that tenant for the rest of the period. Period boundary is `Subscription.currentPeriodStart` (or 30-day fallback).
+- **Email**: `buildUsageAlertEmail` in `apps/web/src/lib/email.ts`, with different copy + CTA for 80% (preventive) vs 100% (urgency).
+
+## Observability (Sentry)
+
+- `@sentry/nextjs` initialized via `instrumentation.ts` (server + edge) and `sentry.client.config.ts`. DSN comes from `NEXT_PUBLIC_SENTRY_DSN` env var. Disabled in dev (`NODE_ENV !== "production"`) so local errors don't pollute the issue feed.
+- `next.config.js` is wrapped with `withSentryConfig` to upload source maps on build when `SENTRY_AUTH_TOKEN` is set in Vercel. Without the token, the wrapper degrades gracefully — builds still succeed, just without source-map upload.
+- `tracesSampleRate = 0.1` to keep performance traces under Sentry's free-tier 10K transactions/mo cap. Errors are 100% sampled.
+- `captureRequestError` is re-exported from `instrumentation.ts` so Next.js auto-captures unhandled errors in route handlers (including tRPC).
+- Pre-existing `ResizeObserver` and "Non-Error promise rejection" noise is filtered via `ignoreErrors`.
+
+## Conversion pixel docs
+
+- Public docs page at `/integracoes/pixel` explains how clients install the existing `POST /api/pixel` (purchase) and `GET /api/pixel?ref=...` (click pixel image) on their thank-you pages. Includes copy-paste snippets and an LGPD note (no PII collected, no third-party cookies).
+- The `/api/pixel` endpoint logic itself is unchanged — this is documentation only.
+
+## Post-MVP backlog
+
+Items deliberately deferred from the pre-launch sprint. None block launch; ordered roughly by expected ROI.
+
+### Billing hardening
+- **Prorated billing + calendar-cycle alignment**: today subscriptions cycle from signup date. Switch to billing on the 1st of each month with `billing_cycle_anchor` + `proration_behavior: "create_prorations"`. Requires careful QA across timezones and the 28/29/30/31 edge cases.
+- **Per-tenant `planLabel` override**: custom plans display "Enterprise" today. Add `Tenant.planLabel String?` and surface it in `billing.status` + `dashboard` so the customer sees the negotiated label they actually bought.
+- **Overage billing automation**: today `excessCostPerAnalysis` exists but is enforced as a soft block at the limit. To activate it, generate Stripe `invoice items` per excess analysis (manual today). Risky for B2B without explicit pre-authorization — keep dormant until contracts allow.
+- **Webhook dedupe ordering**: `WebhookEvent` is created BEFORE the handler runs. If the handler fails after the dedupe write, Stripe retries get short-circuited and the event is silently lost. Move the dedupe write to after handler success (or wrap it in the same transaction) so retries can heal partial failures.
+- **Race fix `invoice.paid` arriving before `checkout.session.completed`**: rare but observed. The first invoice's `payment` UsageEvent gets dropped because the tenant doesn't exist yet. Add an outbox/queue or re-attempt on subscription_create.
+
+### Auth hardening
+- **2FA / MFA for admin accounts** (TOTP first, WebAuthn later).
+- **Email change confirmation flow**: today `updateProfile` accepts a new email immediately. Add a verification email + token before flipping the address.
+- **Rate limit `forgot-password` per IP** (3/h) — currently unrate-limited.
+- **Session invalidation on password change**: reset all open JWTs for the user when password rotates (prevents an attacker with a leaked session from continuing to act after the password is rotated).
+
+### Data + compliance
+- **LGPD self-service download**: let `b2b_admin` export all tenant data (analyses, users, products, conversions) as a JSON or ZIP before requesting deletion.
+- **Patient-facing data deletion**: today only the tenant admin can request deletion. Patients (B2C) have no path; the analysis is anonymous (no email) so they have no handle, but if we add identified patients later, this flow needs a counterpart.
+- **Audit log table** for admin actions (plan changes, status changes, data deletions). Today scattered in `UsageEvent`.
+
+### Operational
+- **Cleanup webhook**: a separate cron that purges `WebhookEvent` rows older than 30 days to keep the table bounded.
+- **Sentry source map upload**: requires `SENTRY_AUTH_TOKEN` in Vercel. Add it the first time we hit a stack trace we can't read.
+- **Better Stack / Axiom log drain** as a Sentry complement for raw HTTP logs (cheaper for high-volume tracing).
+
+### Sales / growth
+- **Bulk admin tenant create** for partner integrations (e.g. Nuvemshop App Store distribution).
+- **Public payments page for custom links** with branded preview (today the admin-link Checkout opens directly to Stripe Hosted Checkout, no preview screen).
+- **Recovery email to abandoned checkouts** via `checkout.session.expired` webhook.
 
 ## Tenant lifecycle and auth invariants
 

@@ -47,6 +47,83 @@ export async function sendEmail({ to, subject, html }: SendEmailParams): Promise
   }
 }
 
+export function buildPasswordResetEmail(params: {
+  resetUrl: string;
+  expiresInMinutes: number;
+}): { subject: string; html: string } {
+  return {
+    subject: `Skinner — Redefina sua senha`,
+    html: `
+      <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 24px; color: #1C1917;">
+        <img src="https://www.skinner.lat/brand/logo-primary.png" alt="Skinner" style="height: 48px; margin-bottom: 32px;" />
+
+        <h1 style="font-family: Georgia, serif; font-size: 26px; font-weight: normal; font-style: italic; margin: 0 0 16px; color: #1C1917;">
+          Redefina sua senha
+        </h1>
+
+        <p style="font-size: 15px; color: #7C7269; line-height: 1.6; margin: 0 0 24px;">
+          Recebemos um pedido para redefinir a senha da sua conta Skinner.
+          Use o botao abaixo para escolher uma nova senha.
+        </p>
+
+        <a href="${params.resetUrl}" style="display: block; text-align: center; padding: 14px 24px; background: #1C1917; color: #F7F3EE; text-decoration: none; font-size: 14px; letter-spacing: 0.02em;">
+          Redefinir senha
+        </a>
+
+        <p style="font-size: 12px; color: #7C7269; margin: 24px 0 0; line-height: 1.5;">
+          Este link expira em ${params.expiresInMinutes} minutos e so pode ser usado uma vez.
+          Se voce nao pediu esta redefinicao, ignore este email — sua senha continua a mesma.
+        </p>
+
+        <div style="border-top: 1px solid #EDE6DB; margin-top: 32px; padding-top: 16px;">
+          <p style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.14em; color: #C8BAA9; margin: 0;">
+            Skinner · Skin Tech · 2026
+          </p>
+        </div>
+      </div>
+    `,
+  };
+}
+
+export function buildUsageAlertEmail(params: {
+  tenantName: string;
+  usagePct: number; // 0..1
+  used: number;
+  limit: number;
+  upgradeUrl: string;
+}): { subject: string; html: string } {
+  const isFull = params.usagePct >= 1;
+  const subject = isFull
+    ? `Skinner — Limite de analises atingido`
+    : `Skinner — Voce atingiu 80% do seu limite`;
+  const headline = isFull
+    ? "Limite de analises atingido"
+    : "Voce esta proximo do limite";
+  const body = isFull
+    ? `Sua clinica usou todas as ${params.limit} analises do periodo atual. Novas analises pelo link publico ficam temporariamente bloqueadas ate a renovacao do ciclo. Para continuar agora, faca upgrade do plano.`
+    : `Sua clinica ja usou ${params.used} de ${params.limit} analises (${Math.round(params.usagePct * 100)}%) do periodo atual. Recomendamos avaliar um upgrade para evitar interrupcoes.`;
+  return {
+    subject,
+    html: `
+      <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 24px; color: #1C1917;">
+        <img src="https://www.skinner.lat/brand/logo-primary.png" alt="Skinner" style="height: 48px; margin-bottom: 32px;" />
+        <h1 style="font-family: Georgia, serif; font-size: 24px; font-weight: normal; font-style: italic; margin: 0 0 16px; color: #1C1917;">
+          ${headline}
+        </h1>
+        <p style="font-size: 15px; color: #7C7269; line-height: 1.6; margin: 0 0 24px;">${body}</p>
+        <a href="${params.upgradeUrl}" style="display: block; text-align: center; padding: 14px 24px; background: #1C1917; color: #F7F3EE; text-decoration: none; font-size: 14px; letter-spacing: 0.02em;">
+          ${isFull ? "Fazer upgrade agora" : "Ver planos disponiveis"}
+        </a>
+        <div style="border-top: 1px solid #EDE6DB; margin-top: 32px; padding-top: 16px;">
+          <p style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.14em; color: #C8BAA9; margin: 0;">
+            Skinner · ${params.tenantName} · 2026
+          </p>
+        </div>
+      </div>
+    `,
+  };
+}
+
 export function buildWelcomeEmail(params: {
   tenantName: string;
   email: string;

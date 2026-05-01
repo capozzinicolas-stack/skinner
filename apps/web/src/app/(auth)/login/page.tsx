@@ -201,6 +201,14 @@ function LoginForm() {
                 {loading ? "Entrando..." : "Entrar"}
               </button>
             </form>
+            <div className="mt-5 text-center">
+              <a
+                href="/forgot-password"
+                className="text-xs text-pierre font-light hover:text-carbone hover:underline"
+              >
+                Esqueci minha senha
+              </a>
+            </div>
           </div>
 
           {/* Footer text */}

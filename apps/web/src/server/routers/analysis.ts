@@ -43,11 +43,15 @@ export const analysisRouter = router({
         throw new TRPCError({ code: "NOT_FOUND", message: "Tenant não encontrado." });
       }
 
-      // 2. Check credits
+      // 2. Check credits — block public analysis creation when the tenant has
+      // exhausted its monthly quota. The B2B panel stays accessible (only the
+      // public /analise/[slug] flow is blocked). Counter resets via Stripe
+      // invoice.paid webhook on the next billing cycle (see webhook/route.ts).
       if (tenant.analysisUsed >= tenant.analysisLimit) {
         throw new TRPCError({
           code: "FORBIDDEN",
-          message: "Limite de análises atingido para este período.",
+          message:
+            "Esta clinica atingiu o limite mensal de analises. Tente novamente apos a renovacao do periodo ou entre em contato diretamente com a clinica.",
         });
       }
 

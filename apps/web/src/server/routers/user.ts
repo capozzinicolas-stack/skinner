@@ -56,6 +56,75 @@ export const userRouter = router({
       });
     }),
 
+  // LGPD: tenant-wide data deletion request. Soft-deletes the tenant and
+  // anonymizes PII on its analyses + users. Aggregates (skin type counts,
+  // conversion stats) are preserved so cross-tenant benchmarks don't break,
+  // but no PII remains. Hard delete is admin-only via /admin/tenants/[id].
+  // Only b2b_admin can request this — analysts and viewers cannot.
+  requestDataDeletion: protectedProcedure
+    .input(z.object({ confirm: z.literal("DELETAR") }))
+    .mutation(async ({ ctx }) => {
+      const me = await ctx.db.user.findUniqueOrThrow({
+        where: { id: ctx.userId },
+        select: { id: true, role: true, tenantId: true },
+      });
+      if (me.role !== "b2b_admin" || !me.tenantId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Apenas administradores da conta podem solicitar a exclusao.",
+        });
+      }
+      const tenantId = me.tenantId;
+
+      await ctx.db.$transaction([
+        // 1. Anonymize analyses — drop everything that could identify a patient
+        //    but keep aggregates (skinType, primaryObjective, conversion data).
+        //    questionnaireData is non-null in schema, so we replace it with an
+        //    empty JSON object instead of nulling the column.
+        ctx.db.analysis.updateMany({
+          where: { tenantId },
+          data: {
+            clientEmail: null,
+            clientName: null,
+            clientAge: null,
+            clientCity: null,
+            clientRegion: null,
+            clientCountry: null,
+            questionnaireData: "{}",
+            rawResponse: null,
+          },
+        }),
+        // 2. Anonymize users of this tenant.
+        ctx.db.user.updateMany({
+          where: { tenantId },
+          data: {
+            email: `deleted-${tenantId}-${Date.now()}@deleted.local`,
+            name: "Removido",
+            password: "deleted",
+          },
+        }),
+        // 3. Soft-delete the tenant. tenantProcedure will treat this as
+        //    UNAUTHORIZED on the next request and force a logout.
+        ctx.db.tenant.update({
+          where: { id: tenantId },
+          data: { status: "deleted" },
+        }),
+        // 4. Audit log.
+        ctx.db.usageEvent.create({
+          data: {
+            tenantId,
+            type: "data_deletion",
+            quantity: 1,
+            metadata: JSON.stringify({
+              requestedBy: me.id,
+              requestedAt: new Date().toISOString(),
+            }),
+          },
+        }),
+      ]);
+      return { success: true };
+    }),
+
   // Self-service: rotate own password. The current password must be supplied
   // (no "magic link" path here — that lives in /api/auth/forgot, sprint 2).
   // On success we also stamp passwordChangedAt = now so the temp-password

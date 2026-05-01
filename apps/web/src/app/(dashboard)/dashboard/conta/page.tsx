@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { signOut } from "next-auth/react";
 import { trpc } from "@/lib/trpc/client";
 
 export default function MinhaContaPage() {
@@ -12,6 +13,17 @@ export default function MinhaContaPage() {
 
   const [pwd, setPwd] = useState({ current: "", next: "", confirm: "" });
   const [pwdMsg, setPwdMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleteMsg, setDeleteMsg] = useState<string | null>(null);
+
+  const requestDataDeletion = trpc.user.requestDataDeletion.useMutation({
+    onSuccess: () => {
+      setDeleteMsg("Solicitacao processada. Sua sessao sera encerrada em instantes.");
+      setTimeout(() => signOut({ callbackUrl: "/login" }), 2000);
+    },
+    onError: (err) => setDeleteMsg(err.message),
+  });
 
   useEffect(() => {
     if (me.data) {
@@ -119,7 +131,7 @@ export default function MinhaContaPage() {
       </section>
 
       {/* Senha */}
-      <section>
+      <section className="mb-12">
         <h2 className="font-serif text-base text-carbone mb-4">Alterar senha</h2>
         {me.data?.passwordChangedAt === null && (
           <div className="mb-4 px-4 py-3 bg-ivoire border border-sable/30 text-sm text-carbone font-light">
@@ -182,6 +194,51 @@ export default function MinhaContaPage() {
           </div>
         </form>
       </section>
+
+      {/* Zona de risco — soft-delete + anonimizacao da conta (LGPD).
+          Visivel apenas para b2b_admin do tenant. */}
+      {me.data?.role === "b2b_admin" && (
+        <section>
+          <h2 className="font-serif text-base text-carbone mb-4">Excluir minha conta</h2>
+          <div className="bg-white border border-terre/40 p-6 space-y-4">
+            <p className="text-sm text-pierre font-light">
+              Esta acao remove o acesso da sua clinica ao Skinner e anonimiza todos os dados
+              dos pacientes (fotos, respostas e localizacao sao apagados; metricas agregadas
+              sao preservadas para conformidade contabil). Usuarios da equipe sao despersonalizados.
+              <strong className="block mt-2 text-terre">A acao nao pode ser desfeita por voce.</strong>
+            </p>
+            <p className="text-xs text-pierre font-light">
+              Para confirmar, digite <code className="bg-ivoire px-1.5 py-0.5">DELETAR</code> abaixo.
+            </p>
+            <input
+              type="text"
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="DELETAR"
+              className="w-full max-w-xs px-3 py-2 border border-sable/30 bg-blanc-casse text-sm text-carbone font-light focus:outline-none focus:border-terre"
+            />
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                disabled={
+                  deleteConfirmText !== "DELETAR" || requestDataDeletion.isPending
+                }
+                onClick={() => {
+                  if (deleteConfirmText !== "DELETAR") return;
+                  setDeleteMsg(null);
+                  requestDataDeletion.mutate({ confirm: "DELETAR" });
+                }}
+                className="px-4 py-2 bg-terre text-blanc-casse text-sm font-light tracking-wide disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {requestDataDeletion.isPending ? "Processando..." : "Excluir conta definitivamente"}
+              </button>
+              {deleteMsg && (
+                <p className="text-sm text-pierre font-light">{deleteMsg}</p>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

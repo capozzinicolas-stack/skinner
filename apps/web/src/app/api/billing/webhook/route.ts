@@ -308,6 +308,32 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
     console.log(`[webhook] invoice.paid — recovered tenant ${sub.tenantId} from past_due`);
   }
 
+  // RECURRING RENEWAL: reset the per-period analysis counter so the customer
+  // gets a fresh batch of credits aligned with their billing cycle. Only fires
+  // on `subscription_cycle` (Stripe's name for recurring renewals); first
+  // invoice from signup is `subscription_create` and the tenant already starts
+  // at 0, so we skip. Upgrades (`subscription_update`) carry the counter over
+  // because the customer is still inside their current period.
+  if (invoice.billing_reason === "subscription_cycle") {
+    await db.tenant.update({
+      where: { id: sub.tenantId },
+      data: { analysisUsed: 0 },
+    });
+    // Sync stored period boundaries so future overdrafts/alerts compute on the
+    // new window. Stripe puts the new period on the invoice itself.
+    const lineItem = invoice.lines?.data?.[0] as any;
+    if (lineItem?.period?.start && lineItem?.period?.end) {
+      await db.subscription.update({
+        where: { id: sub.id },
+        data: {
+          currentPeriodStart: new Date(lineItem.period.start * 1000),
+          currentPeriodEnd: new Date(lineItem.period.end * 1000),
+        },
+      });
+    }
+    console.log(`[webhook] invoice.paid — tenant ${sub.tenantId} cycle renewed, analysisUsed reset to 0`);
+  }
+
   await db.usageEvent.create({
     data: {
       tenantId: sub.tenantId,
