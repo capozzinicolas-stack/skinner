@@ -5,6 +5,8 @@ import { NextRequest, NextResponse } from "next/server";
 const PUBLIC_PATHS = [
   "/",
   "/login",
+  "/forgot-password",
+  "/reset-password",
   "/analise",
   "/kit",
   "/demo",
@@ -17,6 +19,7 @@ const PUBLIC_PATHS = [
   "/contato",
   "/privacidade",
   "/termos",
+  "/integracoes",
   "/api/auth",
   "/api/trpc/health",
   "/api/trpc/tenant.getBySlug",
