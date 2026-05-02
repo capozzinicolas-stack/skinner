@@ -151,6 +151,18 @@ model TenantConfig {
   // Skin projection feature (~$0.12 per use, on-demand only)
   projectionEnabled       Boolean @default(true)
 
+  // Lead capture (between consent + questionnaire). All defaults preserve the
+  // pre-feature behaviour for tenants that don't opt in:
+  //   - contactCaptureEnabled = true → show the screen (but everything optional)
+  //   - contactCaptureRequired = false → patient can skip without filling anything
+  //   - autoSendPdfEmail = false → no auto-delivery (existing flow unchanged)
+  //   - notifyTenantNewLead = false → no notification spam to b2b_admins
+  contactCaptureEnabled    Boolean @default(true)
+  contactCaptureRequired   Boolean @default(false)
+  contactCustomMessage     String?
+  autoSendPdfEmail         Boolean @default(false)
+  notifyTenantNewLead      Boolean @default(false)
+
   // Admin overrides (locks prevent tenant from changing)
   adminLockedFields    String?  // JSON array of field names that tenant cannot modify
   adminNotes           String?  // Internal notes about this tenant's config
@@ -264,6 +276,11 @@ model Analysis {
   clientEmail String?
   clientName  String?
   clientAge   String? // age range
+  clientPhone String? // WhatsApp / cellphone, captured during contact step
+  // LGPD opt-in: true = patient explicitly checked "concordo em receber contato"
+  // and supplied at least one contact channel. Used to gate B2B outreach.
+  consentToContact   Boolean   @default(false)
+  contactCapturedAt  DateTime? // null = capture screen was skipped or disabled
 
   // Geo (auto-captured from request IP via Vercel/Cloudflare headers — LGPD-friendly:
   // city/region/country only, never the raw IP). Used by the B2B analytics dashboard

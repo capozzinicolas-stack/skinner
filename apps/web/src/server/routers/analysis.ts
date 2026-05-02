@@ -6,6 +6,11 @@ import { claudeAnalyze } from "@/lib/sae/claude-analyzer";
 import { matchProducts } from "@/lib/sae/matcher";
 import type { AnalysisInput, FullAnalysisResult } from "@/lib/sae/types";
 import { analysisLimiter, getClientIp, getClientGeo } from "@/lib/rate-limit";
+import {
+  sendEmail,
+  buildAnalysisDeliveryEmail,
+  buildNewLeadNotificationEmail,
+} from "@/lib/email";
 
 export const analysisRouter = router({
   run: publicProcedure
@@ -16,6 +21,8 @@ export const analysisRouter = router({
         questionnaire: z.record(z.string(), z.union([z.string(), z.array(z.string())])),
         clientEmail: z.string().optional(),
         clientName: z.string().optional(),
+        clientPhone: z.string().optional(),
+        consentToContact: z.boolean().optional(),
       })
     )
     .mutation(async ({ ctx, input }): Promise<FullAnalysisResult> => {
@@ -90,12 +97,19 @@ export const analysisRouter = router({
         ? getClientGeo(ctx.headers)
         : { country: null, region: null, city: null };
 
-      // 5. Save to database
+      // 5. Save to database. Track lead capture: contactCapturedAt is set
+      // whenever ANY contact field arrives (even just a name) so reports can
+      // distinguish "patient skipped capture" from "tenant disabled capture".
+      const anyContactField =
+        !!input.clientEmail || !!input.clientName || !!input.clientPhone;
       const analysis = await ctx.db.analysis.create({
         data: {
           tenantId: tenant.id,
           clientEmail: input.clientEmail,
           clientName: input.clientName,
+          clientPhone: input.clientPhone,
+          consentToContact: input.consentToContact === true,
+          contactCapturedAt: anyContactField ? new Date() : null,
           clientAge: (input.questionnaire.age_range as string) ?? null,
           clientCountry: geo.country,
           clientRegion: geo.region,
@@ -162,6 +176,52 @@ export const analysisRouter = router({
           type: "analysis",
         },
       });
+
+      // 10. Side-effect emails. Both are best-effort (try/catch + log) so a
+      // Resend hiccup never blocks the analysis from returning to the patient.
+      const tConfig = tenant.tenantConfig;
+      try {
+        if (
+          tConfig?.autoSendPdfEmail &&
+          input.clientEmail &&
+          input.consentToContact === true
+        ) {
+          const reportUrl = `https://app.skinner.lat/api/report/${analysis.id}`;
+          const { subject, html } = buildAnalysisDeliveryEmail({
+            tenantName: tenant.name,
+            patientName: input.clientName ?? null,
+            reportUrl,
+          });
+          await sendEmail({ to: input.clientEmail, subject, html });
+        }
+      } catch (err) {
+        console.error("[analysis] auto-send delivery email failed:", err);
+      }
+
+      try {
+        if (tConfig?.notifyTenantNewLead && anyContactField) {
+          const admins = await ctx.db.user.findMany({
+            where: { tenantId: tenant.id, role: "b2b_admin" },
+            select: { email: true },
+          });
+          if (admins.length > 0) {
+            const { subject, html } = buildNewLeadNotificationEmail({
+              tenantName: tenant.name,
+              patientName: input.clientName ?? "Anonimo",
+              patientEmail: input.clientEmail ?? null,
+              patientPhone: input.clientPhone ?? null,
+              skinType: analysisOutput.skin_type,
+              primaryObjective: analysisOutput.primary_objective,
+              dashboardUrl: "https://app.skinner.lat/dashboard/leads",
+            });
+            await Promise.all(
+              admins.map((u) => sendEmail({ to: u.email, subject, html }))
+            );
+          }
+        }
+      } catch (err) {
+        console.error("[analysis] notify-tenant new-lead failed:", err);
+      }
 
       return {
         analysisId: analysis.id,

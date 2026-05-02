@@ -252,6 +252,31 @@
 - **Internal plan tier convention**: custom plans set `planId = "enterprise"` in Stripe metadata. We deliberately reuse the enterprise label so we don't need to introduce a 4th tier in `PLANS` and propagate it across z.enums in 5 routers. Negotiated limits live on Tenant columns (`analysisLimit`, `commissionRate`) — independent of `PLANS` — so the actual sold values flow through unchanged. Display name in the UI shows "Enterprise"; a per-tenant `planLabel` override is sprint-2.
 - **Webhook handling**: `handleCheckoutCompleted` checks `session.metadata.customAnalysisLimit`; if present, uses negotiated limits instead of `PLANS[planId]`. Custom plans always get `excessCostPerAnalysis = 0` (we sold a fixed monthly volume, no overage to surprise the customer). Standard signups (planId = `growth` / `pro` from `/planos`) are untouched and fall through to PLANS-based limits.
 
+## Lead capture flow
+
+A new step is inserted in the public analysis pipeline between consent and questionnaire:
+
+```
+welcome → consent → contact (NEW) → questionnaire → photo → loading → result
+```
+
+- **Toggle**: `TenantConfig.contactCaptureEnabled` (default `true`). When `false`, the step is skipped and the flow goes directly from consent to questionnaire (or photo if `photoOnlyMode`).
+- **Required vs optional**: `TenantConfig.contactCaptureRequired` (default `false`). When `false`, the patient sees a "Pular" button and can continue without filling anything. When `true`, at least one contact channel (email or phone) plus the LGPD consent checkbox are required.
+- **LGPD discipline**: contact data is persisted to `Analysis.clientName`/`clientEmail`/`clientPhone` regardless, but `consentToContact` boolean tracks whether the patient explicitly opted in. The Leads tab and notification emails ONLY surface analyses where `consentToContact === true` AND `contactCapturedAt IS NOT NULL`.
+- **Custom message**: `TenantConfig.contactCustomMessage` lets the tenant override the default "${tenantName} gostaria de manter contato..." line. Empty falls back to default.
+- **Component**: `apps/web/src/components/analysis/contact-capture.tsx`. State lives in the parent page (`/analise/[slug]/page.tsx`) so the values can be passed to `analysis.run` mutation.
+
+### Auto email delivery
+- `TenantConfig.autoSendPdfEmail` (default `false`). When true AND patient gave email AND `consentToContact === true`, after the analysis completes we send the patient a branded email via Resend with a link to `/api/report/[analysisId]` (NOT an attachment — PDF is generated on-demand to keep the email small and let us update the template later).
+- `TenantConfig.notifyTenantNewLead` (default `false`). When true AND any contact field was captured, all `b2b_admin` users of the tenant get an email with the lead summary and a link to `/dashboard/leads`.
+- Both side effects are wrapped in try/catch and only logged on failure — they NEVER block the analysis from returning to the patient. Email failures are surfaced via Sentry.
+
+### Leads dashboard
+- Page: `/dashboard/leads`. Visible to all tenant roles (b2b_admin, b2b_analyst, b2b_viewer).
+- Backend: `leadsRouter` (`apps/web/src/server/routers/leads.ts`) exposes `list({ days, onlyConsented })` and `exportCsv({ days })`. Both filtered to consent + contactCapturedAt.
+- UI: table with date, name, contact (email + phone), skin type, primary objective, and quick actions (WhatsApp deep-link with pre-filled message, mailto link with subject/body, link to PDF).
+- CSV export uses UTF-8 BOM (matches dashboard exportSnapshot convention).
+
 ## Self-service account management
 
 - **Schema**: `User.passwordChangedAt DateTime?` is null until the user rotates from the welcome-email temp password (or seed default). Used as the toggle for the temp-password banner. Seed pre-stamps demo users (`admin@skinner.com.br`, `clinica@demo.com`) with `now()` so the banner doesn't fire for the demo.

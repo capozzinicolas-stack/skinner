@@ -1,0 +1,1743 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Skinner — Brand Book 2026</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Poppins:wght@200;300;400;500;600;700&display=swap');
+
+    :root {
+      --blanc-casse: #F7F3EE;
+      --carbone:     #1C1917;
+      --pierre:      #7C7269;
+      --sable:       #C8BAA9;
+      --ivoire:      #EDE6DB;
+      --terre:       #3D342C;
+
+      --rule:        rgba(28, 25, 23, 0.12);
+      --rule-soft:   rgba(28, 25, 23, 0.06);
+      --bg:          var(--blanc-casse);
+      --ink:         var(--carbone);
+      --muted:       var(--pierre);
+
+      --serif: 'Lora', 'Times New Roman', serif;
+      --sans:  'Poppins', -apple-system, 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--sans);
+      font-weight: 300;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.6;
+      font-size: 15px;
+      -webkit-font-smoothing: antialiased;
+      letter-spacing: 0.005em;
+    }
+
+    .page { max-width: 1080px; margin: 0 auto; padding: 0 96px; }
+
+    /* ─── BRAND HEADER (recurrente en cada sección) ───────────────── */
+    .brand-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 32px 96px 24px;
+      border-bottom: 1px solid var(--rule);
+      max-width: 1272px;
+      margin: 0 auto;
+      position: sticky;
+      top: 0;
+      background: var(--blanc-casse);
+      z-index: 10;
+    }
+    .brand-header-mark {
+      display: flex;
+      align-items: center;
+    }
+    .brand-header-mark img {
+      height: 28px;
+      width: auto;
+      display: block;
+    }
+    .brand-header-meta {
+      font-size: 10px;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      color: var(--pierre);
+      font-weight: 300;
+    }
+    .brand-header-meta .sep { color: var(--sable); margin: 0 12px; }
+
+    /* ─── COVER ─────────────────────────────────────────────────────── */
+    .cover {
+      min-height: 100vh;
+      background: var(--carbone);
+      color: var(--blanc-casse);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 96px 120px;
+      position: relative;
+    }
+    .cover-wordmark {
+      width: 100%;
+      max-width: 640px;
+      filter: invert(1) brightness(1.1);
+      margin-bottom: 56px;
+      opacity: 0.98;
+    }
+    .cover-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.25em;
+      font-weight: 300;
+      color: var(--sable);
+    }
+    .cover-mid {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      max-width: 900px;
+    }
+    .cover-tagline {
+      font-family: var(--sans);
+      font-size: 13px;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      color: var(--sable);
+      margin-bottom: 80px;
+      font-weight: 300;
+    }
+    .cover-summary {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 22px;
+      line-height: 1.5;
+      color: var(--ivoire);
+      max-width: 720px;
+      font-weight: 400;
+    }
+    .cover-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.25em;
+      color: var(--sable);
+      font-weight: 300;
+    }
+
+    /* ─── TABLE OF CONTENTS ────────────────────────────────────────── */
+    .toc { padding: 160px 0 140px; }
+    .section-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.4em;
+      color: var(--pierre);
+      font-weight: 400;
+      margin-bottom: 16px;
+    }
+    .toc h2 {
+      font-family: var(--serif);
+      font-size: 56px;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      color: var(--carbone);
+      margin-bottom: 8px;
+    }
+    .toc h2 em { font-style: italic; color: var(--pierre); font-weight: 400; }
+    .toc-lead {
+      color: var(--muted);
+      font-size: 16px;
+      max-width: 640px;
+      margin-bottom: 64px;
+    }
+    .toc-list { list-style: none; }
+    .toc-list li {
+      display: grid;
+      grid-template-columns: 60px 1fr auto;
+      align-items: baseline;
+      padding: 24px 0;
+      border-bottom: 1px solid var(--rule);
+      gap: 24px;
+    }
+    .toc-list li:first-child { border-top: 1px solid var(--rule); }
+    .toc-num {
+      font-family: var(--serif);
+      font-size: 14px;
+      color: var(--pierre);
+      font-weight: 400;
+    }
+    .toc-list li a {
+      color: var(--carbone);
+      text-decoration: none;
+      font-size: 17px;
+      font-weight: 400;
+      display: flex;
+      gap: 16px;
+      align-items: baseline;
+      flex-wrap: wrap;
+    }
+    .toc-list li a em {
+      font-family: var(--serif);
+      font-style: italic;
+      color: var(--pierre);
+      font-weight: 400;
+    }
+    .toc-list li a:hover { color: var(--terre); }
+    .toc-page {
+      font-family: var(--serif);
+      color: var(--pierre);
+      font-size: 13px;
+    }
+
+    /* ─── SECTIONS ─────────────────────────────────────────────────── */
+    .section {
+      padding: 140px 0 120px;
+      border-top: 1px solid var(--carbone);
+    }
+    .section-num {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.4em;
+      color: var(--pierre);
+      font-weight: 400;
+      margin-bottom: 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--rule);
+    }
+    .section-num img {
+      width: 22px;
+      height: 22px;
+      display: block;
+      opacity: 0.85;
+    }
+    .section h2 {
+      font-family: var(--serif);
+      font-size: 52px;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      color: var(--carbone);
+      margin-bottom: 8px;
+      line-height: 1.05;
+    }
+    .section h2 em {
+      font-style: italic;
+      color: var(--pierre);
+      font-weight: 400;
+    }
+    .section .lead {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 19px;
+      line-height: 1.6;
+      color: var(--terre);
+      max-width: 760px;
+      margin: 32px 0 56px;
+      font-weight: 400;
+    }
+    h3 {
+      font-family: var(--sans);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--carbone);
+      margin: 56px 0 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--rule);
+    }
+    h4 {
+      font-family: var(--sans);
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--carbone);
+      margin: 24px 0 10px;
+    }
+    p { margin-bottom: 16px; }
+    p strong { color: var(--carbone); font-weight: 500; }
+
+    /* ─── BILINGUAL BLOCKS ─────────────────────────────────────────── */
+    .bilingual {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      margin: 24px 0 32px;
+    }
+    .bilingual > div { position: relative; }
+    .bilingual > div::before {
+      content: attr(data-lang);
+      position: absolute;
+      top: -22px;
+      left: 0;
+      font-size: 9px;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      color: var(--pierre);
+      font-weight: 400;
+    }
+    .bilingual p:last-child { margin-bottom: 0; }
+
+    /* ─── PULLQUOTE / MANIFESTO ────────────────────────────────────── */
+    .pullquote {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 28px;
+      line-height: 1.45;
+      color: var(--carbone);
+      padding: 48px 0;
+      max-width: 880px;
+      border-top: 1px solid var(--carbone);
+      border-bottom: 1px solid var(--carbone);
+      margin: 48px 0;
+      font-weight: 400;
+    }
+    .pullquote span { color: var(--pierre); }
+
+    .manifesto {
+      background: var(--carbone);
+      color: var(--blanc-casse);
+      padding: 64px;
+      margin: 48px 0;
+    }
+    .manifesto h3 {
+      color: var(--sable);
+      border-bottom-color: rgba(247,243,238,0.15);
+    }
+    .manifesto .pullquote {
+      color: var(--blanc-casse);
+      border-color: var(--sable);
+    }
+    .manifesto .pullquote span { color: var(--sable); }
+    .manifesto p { color: var(--ivoire); }
+
+    /* ─── TABLES ───────────────────────────────────────────────────── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0 32px;
+      font-size: 14px;
+    }
+    th {
+      text-align: left;
+      padding: 16px 20px 12px 0;
+      font-weight: 500;
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--carbone);
+      border-bottom: 1px solid var(--carbone);
+      vertical-align: bottom;
+    }
+    td {
+      padding: 18px 20px 18px 0;
+      border-bottom: 1px solid var(--rule);
+      vertical-align: top;
+      color: var(--terre);
+      font-weight: 300;
+    }
+    td strong { color: var(--carbone); font-weight: 500; }
+    table.compact td, table.compact th { padding: 12px 16px 12px 0; }
+
+    /* ─── CARDS ────────────────────────────────────────────────────── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1px;
+      background: var(--rule);
+      margin: 24px 0;
+      border: 1px solid var(--rule);
+    }
+    .grid .cell {
+      background: var(--bg);
+      padding: 28px 24px;
+    }
+    .cell h4 { margin-top: 0; }
+    .cell p { font-size: 13px; color: var(--terre); margin-bottom: 0; }
+
+    /* ─── COLOR SWATCHES ───────────────────────────────────────────── */
+    .swatches {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 24px;
+      margin: 32px 0;
+    }
+    .swatch {
+      display: flex;
+      flex-direction: column;
+    }
+    .swatch-color {
+      height: 220px;
+      border: 1px solid var(--rule);
+      position: relative;
+    }
+    .swatch-info { padding: 16px 0 0; }
+    .swatch-name {
+      font-family: var(--serif);
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--carbone);
+      margin-bottom: 4px;
+    }
+    .swatch-name em { font-style: italic; color: var(--pierre); font-weight: 400; font-size: 14px; }
+    .swatch-hex {
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      color: var(--pierre);
+      letter-spacing: 0.1em;
+      margin-bottom: 8px;
+    }
+    .swatch-use {
+      font-size: 12px;
+      color: var(--terre);
+      line-height: 1.5;
+    }
+    .swatch-meta {
+      display: flex;
+      gap: 16px;
+      font-family: 'Courier New', monospace;
+      font-size: 10px;
+      color: var(--pierre);
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid var(--rule);
+    }
+
+    /* ─── TYPOGRAPHY SAMPLES ───────────────────────────────────────── */
+    .type-block {
+      padding: 32px 0;
+      border-bottom: 1px solid var(--rule);
+    }
+    .type-label {
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--pierre);
+      margin-bottom: 16px;
+    }
+    .type-display {
+      font-family: var(--serif);
+      font-size: 64px;
+      line-height: 1.05;
+      color: var(--carbone);
+      letter-spacing: -0.02em;
+      font-weight: 500;
+      margin-bottom: 12px;
+    }
+    .type-display em { font-style: italic; color: var(--pierre); font-weight: 400; }
+    .type-h1 { font-family: var(--serif); font-size: 40px; line-height: 1.1; font-weight: 500; color: var(--carbone); margin-bottom: 8px; }
+    .type-h2 { font-family: var(--serif); font-size: 28px; line-height: 1.2; font-weight: 500; color: var(--carbone); margin-bottom: 8px; }
+    .type-body { font-family: var(--sans); font-size: 15px; font-weight: 300; color: var(--terre); margin-bottom: 8px; line-height: 1.7; }
+    .type-ui-label {
+      font-family: var(--sans);
+      font-size: 10px;
+      font-weight: 300;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--pierre);
+    }
+    .type-spec {
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      color: var(--pierre);
+      letter-spacing: 0.05em;
+      margin-top: 12px;
+    }
+
+    /* ─── DO / DON'T ───────────────────────────────────────────────── */
+    .do-dont {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--rule);
+      margin: 32px 0;
+      border: 1px solid var(--rule);
+    }
+    .do-box, .dont-box {
+      background: var(--bg);
+      padding: 32px;
+    }
+    .do-box h4, .dont-box h4 {
+      margin-top: 0;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--rule);
+      margin-bottom: 20px;
+    }
+    .do-box h4::before, .dont-box h4::before {
+      content: attr(data-mark);
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 18px;
+      font-weight: 500;
+      margin-right: 12px;
+    }
+    .do-box h4::before { color: #2f5d3a; }
+    .dont-box h4::before { color: #8b2e2e; }
+    .do-box p, .dont-box p {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 15px;
+      color: var(--terre);
+      margin-bottom: 12px;
+      padding-left: 16px;
+      border-left: 1px solid var(--rule);
+    }
+
+    /* ─── LOGO USAGE ───────────────────────────────────────────────── */
+    .logo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1px;
+      background: var(--rule);
+      border: 1px solid var(--rule);
+      margin: 24px 0 8px;
+    }
+    .logo-box {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 200px;
+      padding: 32px;
+      position: relative;
+    }
+    .logo-mark {
+      font-family: var(--serif);
+      font-size: 48px;
+      font-weight: 500;
+      letter-spacing: -0.03em;
+    }
+    .logo-mark .dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: currentColor;
+      vertical-align: middle;
+      margin: 0 2px 14px 4px;
+    }
+    .logo-caption {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      font-size: 9px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--pierre);
+    }
+
+    /* ─── BUTTONS ──────────────────────────────────────────────────── */
+    .btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      padding: 40px;
+      background: var(--ivoire);
+      border: 1px solid var(--rule);
+      margin: 24px 0;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      padding: 14px 28px;
+      font-family: var(--sans);
+      font-size: 11px;
+      font-weight: 400;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      cursor: default;
+      border: 1px solid transparent;
+    }
+    .btn-primary { background: var(--carbone); color: var(--blanc-casse); }
+    .btn-secondary { background: transparent; border-color: var(--carbone); color: var(--carbone); }
+    .btn-tertiary { background: transparent; color: var(--terre); padding-left: 0; padding-right: 0; border-bottom: 1px solid var(--terre); padding-top: 4px; padding-bottom: 4px; }
+
+    /* ─── TONE SPECTRUM ────────────────────────────────────────────── */
+    .spectrum {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      margin: 32px 0 8px;
+      border: 1px solid var(--rule);
+    }
+    .spectrum-item {
+      padding: 24px 16px;
+      text-align: center;
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      font-weight: 400;
+      border-right: 1px solid var(--rule);
+    }
+    .spectrum-item:last-child { border-right: none; }
+
+    /* ─── CATEGORY TILES (B2B verticals) ───────────────────────────── */
+    .vertical-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1px;
+      background: var(--rule);
+      border: 1px solid var(--rule);
+      margin: 32px 0;
+    }
+    .vertical {
+      background: var(--bg);
+      padding: 36px 32px;
+    }
+    .vertical-tag {
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--pierre);
+      margin-bottom: 12px;
+    }
+    .vertical h4 {
+      font-family: var(--serif);
+      font-size: 24px;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      text-transform: none;
+      color: var(--carbone);
+      margin: 0 0 16px;
+      padding: 0;
+    }
+    .vertical h4 em { font-style: italic; color: var(--pierre); font-weight: 400; font-size: 16px; display: block; margin-top: 2px; }
+    .vertical-attrs { font-size: 13px; color: var(--terre); margin-bottom: 20px; line-height: 1.6; }
+    .vertical-line {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 15px;
+      color: var(--carbone);
+      padding-top: 16px;
+      border-top: 1px solid var(--rule);
+    }
+
+    /* ─── TAG ──────────────────────────────────────────────────────── */
+    .tag {
+      display: inline-block;
+      padding: 4px 12px;
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--carbone);
+      border: 1px solid var(--carbone);
+      margin: 3px 4px 3px 0;
+      font-weight: 400;
+    }
+    .tag-soft { color: var(--pierre); border-color: var(--rule); }
+
+    /* ─── FOOTER ───────────────────────────────────────────────────── */
+    .closing {
+      background: var(--carbone);
+      color: var(--blanc-casse);
+      padding: 120px 64px 80px;
+      margin-top: 80px;
+    }
+    .closing .pullquote {
+      color: var(--blanc-casse);
+      border-color: var(--sable);
+      font-size: 32px;
+      max-width: 760px;
+    }
+    .closing .pullquote span { color: var(--sable); }
+    .closing-meta {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 80px;
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--sable);
+      flex-wrap: wrap;
+      gap: 24px;
+    }
+
+    @media (max-width: 1024px) {
+      .page { padding: 0 56px; }
+      .brand-header { padding: 24px 56px 20px; }
+    }
+
+    @media (max-width: 768px) {
+      .page { padding: 0 32px; }
+      .brand-header { padding: 20px 32px 16px; }
+      .brand-header-mark .wordmark { font-size: 14px; }
+      .brand-header-mark img { width: 26px; height: 26px; }
+      .brand-header-meta { font-size: 9px; letter-spacing: 0.3em; }
+      .cover { padding: 48px 32px; }
+      .cover-wordmark { max-width: 320px; margin-bottom: 32px; }
+      .cover-summary { font-size: 16px; }
+      .section { padding: 80px 0 64px; }
+      .section h2 { font-size: 32px; }
+      .toc h2 { font-size: 36px; }
+      .toc { padding: 80px 0 64px; }
+      .bilingual { grid-template-columns: 1fr; gap: 32px; }
+      .do-dont { grid-template-columns: 1fr; }
+      .type-display { font-size: 40px; }
+      .pullquote { font-size: 20px; padding: 32px 0; }
+      .closing { padding: 64px 32px; }
+      .spectrum { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════ COVER ═══════════════════════════════ -->
+  <div class="cover">
+    <div class="cover-top">
+      <span>Skinner — Skin Tech</span>
+      <span>Brand Book · Edición 2026</span>
+    </div>
+
+    <div class="cover-mid">
+      <img src="brand-book-assets/logo-primary.png" alt="Skinner — Skin Tech" class="cover-wordmark">
+      <div class="cover-tagline">Análise Clínica · Inteligência Editorial</div>
+      <div class="cover-summary">
+        Manual de marca, voz y sistema visual. Documento operativo bilingüe (ES · PT-BR) para todo equipo y partner que comunique en nombre de Skinner.
+      </div>
+    </div>
+
+    <div class="cover-bottom">
+      <span>Versión 1.0 · 2026</span>
+      <span>Confidencial · Uso Interno</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════ HEADER (recurrente) ══════════════════════════ -->
+  <div class="brand-header">
+    <div class="brand-header-mark">
+      <img src="brand-book-assets/logo-primary.png" alt="Skinner — Skin Tech">
+    </div>
+    <div class="brand-header-meta">Brand Book<span class="sep">·</span>Edición 2026</div>
+  </div>
+
+  <!-- ═══════════════════════════════ TOC ═══════════════════════════════ -->
+  <div class="page toc">
+    <div class="section-label">Índice · Sumário</div>
+    <h2>Contenido <em>· Conteúdo</em></h2>
+    <p class="toc-lead">Doce secciones que definen quién es Skinner, cómo se ve, cómo habla y cómo se distingue. Doce seções que definem quem é Skinner, como se vê, como fala e como se distingue.</p>
+    <ol class="toc-list">
+      <li><span class="toc-num">01</span><a href="#essence">Esencia de Marca <em>· Essência de Marca</em></a><span class="toc-page">Sec. 01</span></li>
+      <li><span class="toc-num">02</span><a href="#logo">Logo y Uso <em>· Logo e Uso</em></a><span class="toc-page">Sec. 02</span></li>
+      <li><span class="toc-num">03</span><a href="#colors">Paleta de Colores <em>· Paleta de Cores</em></a><span class="toc-page">Sec. 03</span></li>
+      <li><span class="toc-num">04</span><a href="#typography">Tipografía <em>· Tipografia</em></a><span class="toc-page">Sec. 04</span></li>
+      <li><span class="toc-num">05</span><a href="#voice">Voz y Tono <em>· Voz e Tom</em></a><span class="toc-page">Sec. 05</span></li>
+      <li><span class="toc-num">06</span><a href="#messaging">Mensajes Clave <em>· Mensagens-Chave</em></a><span class="toc-page">Sec. 06</span></li>
+      <li><span class="toc-num">07</span><a href="#terminology">Terminología <em>· Terminologia</em></a><span class="toc-page">Sec. 07</span></li>
+      <li><span class="toc-num">08</span><a href="#ui">Elementos de UI <em>· Elementos de UI</em></a><span class="toc-page">Sec. 08</span></li>
+      <li><span class="toc-num">09</span><a href="#verticals">Identidad por Vertical <em>· Identidade por Vertical</em></a><span class="toc-page">Sec. 09</span></li>
+      <li><span class="toc-num">10</span><a href="#channels">Tono por Canal <em>· Tom por Canal</em></a><span class="toc-page">Sec. 10</span></li>
+      <li><span class="toc-num">11</span><a href="#guidelines">Reglas de Estilo <em>· Regras de Estilo</em></a><span class="toc-page">Sec. 11</span></li>
+      <li><span class="toc-num">12</span><a href="#dont">Prohibiciones <em>· Proibições</em></a><span class="toc-page">Sec. 12</span></li>
+    </ol>
+  </div>
+
+  <!-- ═══════════════════════════════ 01. ESENCIA ═══════════════════════════════ -->
+  <div class="page section" id="essence">
+    <span class="section-num">Sección 01 · Seção 01</span>
+    <h2>Esencia de Marca <em>/ Essência de Marca</em></h2>
+    <p class="lead">Skinner es la primera capa de inteligencia clínica para la piel. Convertimos cada análisis en una decisión informada, una rutina coherente y una experiencia editorial.</p>
+
+    <div class="pullquote">
+      "La piel se lee como un texto. <span>Skinner traduce el texto en cuidado.</span>"
+    </div>
+
+    <h3>Propósito · Propósito</h3>
+    <div class="bilingual">
+      <div data-lang="ES">
+        <p>Llevar análisis dermatológico de grado clínico —fundamentado, auditable y editorial— a cada cabina, consultorio y catálogo de cuidado de la piel en América Latina.</p>
+        <p>Skinner existe porque la piel merece más que un quiz: merece un sistema operativo.</p>
+      </div>
+      <div data-lang="PT-BR">
+        <p>Levar análise dermatológica de nível clínico —fundamentada, auditável e editorial— a cada cabine, consultório e catálogo de skincare na América Latina.</p>
+        <p>Skinner existe porque a pele merece mais do que um quiz: merece um sistema operacional.</p>
+      </div>
+    </div>
+
+    <h3>Misión · Missão</h3>
+    <div class="bilingual">
+      <div data-lang="ES">
+        <p>Equipar a cada profesional de la estética y la dermatología con una herramienta de análisis explicable, segura por diseño y compatible con su catálogo, para que cada paciente reciba una rutina con fundamento clínico —no una recomendación de moda.</p>
+      </div>
+      <div data-lang="PT-BR">
+        <p>Equipar cada profissional da estética e da dermatologia com uma ferramenta de análise explicável, segura por design e compatível com seu catálogo, para que cada paciente receba uma rotina com fundamento clínico —não uma recomendação de moda.</p>
+      </div>
+    </div>
+
+    <h3>Visión · Visão</h3>
+    <div class="bilingual">
+      <div data-lang="ES">
+        <p>Ser el sistema operativo de la piel: la capa que conecta dermatología, IA y comercio de cuidado en una experiencia única, transparente y replicable. Cuando alguien hable de "análisis de piel" en LATAM, debe pensar en Skinner.</p>
+      </div>
+      <div data-lang="PT-BR">
+        <p>Ser o sistema operacional da pele: a camada que conecta dermatologia, IA e comércio de cuidado em uma experiência única, transparente e replicável. Quando alguém falar em "análise de pele" na LATAM, deve pensar em Skinner.</p>
+      </div>
+    </div>
+
+    <h3>Promesa de Marca · Promessa de Marca</h3>
+    <div class="manifesto">
+      <h3 style="margin-top:0; padding-top:0; border-top: none;">El compromiso · O compromisso</h3>
+      <div class="pullquote" style="margin: 0;">
+        "Análisis con fundamento. <span>Rutinas con propósito.</span> Cuidado con criterio."
+      </div>
+      <div class="bilingual" style="margin-top: 32px;">
+        <div data-lang="ES">
+          <p>Cada análisis Skinner es trazable a la condición detectada, al ingrediente activo recomendado y a la fuente clínica que lo sustenta. No hay caja negra. Hay método.</p>
+        </div>
+        <div data-lang="PT-BR">
+          <p>Cada análise Skinner é rastreável à condição detectada, ao ingrediente ativo recomendado e à fonte clínica que o sustenta. Não há caixa-preta. Há método.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>Personalidad · Personalidade</h3>
+    <div class="bilingual">
+      <div data-lang="ES">
+        <p>Si Skinner fuera persona, sería una <strong>esteticista senior con formación clínica y sensibilidad editorial</strong>: precisa cuando explica, cálida cuando recomienda, severa cuando hay que derivar a un dermatólogo. No exagera. No promete milagros. No usa exclamaciones para tapar inseguridad.</p>
+      </div>
+      <div data-lang="PT-BR">
+        <p>Se Skinner fosse pessoa, seria uma <strong>esteticista sênior com formação clínica e sensibilidade editorial</strong>: precisa quando explica, calorosa quando recomenda, firme quando precisa encaminhar a um dermatologista. Não exagera. Não promete milagres. Não usa exclamações para disfarçar insegurança.</p>
+      </div>
+    </div>
+
+    <h3>Valores · Valores</h3>
+    <div class="grid">
+      <div class="cell">
+        <h4>Rigor</h4>
+        <p>Toda recomendación está anclada a una base de conocimiento dermatológico editable y auditable. Ningún ingrediente activo se sugiere por estética.</p>
+      </div>
+      <div class="cell">
+        <h4>Transparencia</h4>
+        <p>Mostramos por qué se recomendó cada producto, qué condición se detectó y qué fuente lo sustenta. La trazabilidad es producto, no documentación.</p>
+      </div>
+      <div class="cell">
+        <h4>Cuidado</h4>
+        <p>LGPD por defecto, anonimización de fotos al borrar cuenta, opt-in para benchmark. La privacidad del paciente es non-negotiable.</p>
+      </div>
+      <div class="cell">
+        <h4>Eficiencia</h4>
+        <p>Análisis en segundos, no en sesiones. Cada flujo se mide en clicks evitados, no en pantallas agregadas.</p>
+      </div>
+      <div class="cell">
+        <h4>Estética editorial</h4>
+        <p>El interfaz se siente como una revista de oficio: jerarquía clara, tipografía con voz, espacio que respeta el contenido.</p>
+      </div>
+      <div class="cell">
+        <h4>Humildad técnica</h4>
+        <p>La IA propone. La profesional decide. El paciente entiende. Skinner nunca reemplaza criterio humano —lo amplifica.</p>
+      </div>
+    </div>
+
+    <h3>Audiencias · Audiências</h3>
+    <table>
+      <thead>
+        <tr><th>Audiencia · Audiência</th><th>Perfil · Perfil</th><th>Qué busca · O que busca</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Operadora B2B</strong><br><span class="type-ui-label">Dueña/Gerente de clínica</span></td>
+          <td>Esteticista o dermatóloga propietaria de clínica de 1–10 cabinas en Brasil. Edad 30–55. Vende skincare como parte del servicio.</td>
+          <td>Cerrar venta de rutina. Subir ticket promedio. Mostrar autoridad técnica. Reducir tiempo de consulta inicial.</td>
+        </tr>
+        <tr>
+          <td><strong>Profesional B2B</strong><br><span class="type-ui-label">Esteticista / Dermatólogo</span></td>
+          <td>Profesional que opera el análisis frente al paciente. Necesita entender los outputs sin curva de aprendizaje.</td>
+          <td>Una herramienta que respete su criterio. Lenguaje técnico opcional. Output replicable y defensible.</td>
+        </tr>
+        <tr>
+          <td><strong>Paciente B2C</strong><br><span class="type-ui-label">Cliente final</span></td>
+          <td>Mujer 25–55 que entra a la clínica con un objetivo de piel. Quiere claridad, no jerga.</td>
+          <td>Sentirse vista y entendida. Recibir una rutina con sentido. Saber cuándo consultar a un dermatólogo.</td>
+        </tr>
+        <tr>
+          <td><strong>Sponsor farmacéutico</strong><br><span class="type-ui-label">Brand manager / Trade</span></td>
+          <td>Compañía dermocosmética que quiere mapear su catálogo a perfiles de piel y aparecer en recomendaciones.</td>
+          <td>Visibilidad calificada. Datos agregados de demanda. Integración limpia con su línea.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══════════════════════════════ 02. LOGO ═══════════════════════════════ -->
+  <div class="page section" id="logo">
+    <span class="section-num">Sección 02 · Seção 02</span>
+    <h2>Logo y Uso <em>/ Logo e Uso</em></h2>
+    <p class="lead">El logotipo Skinner es un wordmark serif con remate puntual. Lee como un titular editorial, no como un botón. La mayúscula inicial es la única afirmación que necesitamos.</p>
+
+    <h3>Construcción · Construção</h3>
+    <div class="bilingual">
+      <div data-lang="ES">
+        <p>Wordmark en <strong>Lora Medium</strong>, espaciado natural, mayúscula inicial. El punto final es opcional pero preferido en aplicaciones formales —es la firma de la marca: "lo dicho, dicho está".</p>
+        <p>Ningún ícono, ningún glifo, ningún sello acompaña al wordmark en su forma primaria. La marca es palabra.</p>
+      </div>
+      <div data-lang="PT-BR">
+        <p>Wordmark em <strong>Lora Medium</strong>, espaçamento natural, maiúscula inicial. O ponto final é opcional, mas preferido em aplicações formais —é a assinatura da marca: "dito, está dito".</p>
+        <p>Nenhum ícone, nenhum glifo, nenhum selo acompanha o wordmark em sua forma primária. A marca é palavra.</p>
+      </div>
+    </div>
+
+    <h3>Variantes · Variantes</h3>
+    <div class="logo-grid">
+      <div class="logo-box" style="background: var(--blanc-casse);">
+        <img src="brand-book-assets/logo-primary.png" alt="Skinner" style="max-width: 240px; max-height: 110px; object-fit: contain;">
+        <span class="logo-caption">Primario · Primário</span>
+      </div>
+      <div class="logo-box" style="background: var(--carbone);">
+        <img src="brand-book-assets/logo-primary.png" alt="Skinner" style="max-width: 240px; max-height: 110px; object-fit: contain; filter: invert(1) brightness(1.1);">
+        <span class="logo-caption" style="color: var(--sable);">Inverso · Invertido</span>
+      </div>
+      <div class="logo-box" style="background: var(--ivoire);">
+        <img src="brand-book-assets/logo-primary.png" alt="Skinner" style="max-width: 240px; max-height: 110px; object-fit: contain;">
+        <span class="logo-caption">Sobre Ivoire</span>
+      </div>
+      <div class="logo-box" style="background: var(--sable);">
+        <img src="brand-book-assets/logo-primary.png" alt="Skinner" style="max-width: 240px; max-height: 110px; object-fit: contain;">
+        <span class="logo-caption">Sobre Sable</span>
+      </div>
+    </div>
+
+    <h3>Indivisibilidad del logo · Indivisibilidade do logo</h3>
+    <div class="bilingual">
+      <div data-lang="ES">
+        <p>El descriptor <strong>"Skin Tech"</strong> ya está integrado al wordmark primario (debajo del logotipo, alineado a la derecha). El logo es <strong>indivisible</strong>: el descriptor no se separa del wordmark "skinner" en su forma oficial.</p>
+        <p>Skinner no posee un isótipo, sello o logomark separado. Para favicons y avatares se usa la inicial "s" extraída del wordmark, conservando el peso y el tracking originales. No se generan crosshairs, dianas, círculos concéntricos ni sellos auxiliares.</p>
+      </div>
+      <div data-lang="PT-BR">
+        <p>O descritor <strong>"Skin Tech"</strong> já está integrado ao wordmark primário (abaixo do logotipo, alinhado à direita). O logo é <strong>indivisível</strong>: o descritor não se separa do wordmark "skinner" em sua forma oficial.</p>
+        <p>Skinner não possui um isótipo, selo ou logomark separado. Para favicons e avatares usa-se a inicial "s" extraída do wordmark, conservando o peso e o tracking originais. Não se geram crosshairs, alvos, círculos concêntricos nem selos auxiliares.</p>
+      </div>
+    </div>
+
+    <h3>Espacio Mínimo · Espaço Mínimo</h3>
+    <div class="bilingual">
+      <div data-lang="ES">
+        <p>El logo respira. Mantener un margen libre equivalente a la altura de la letra "S" en todas las direcciones. Nada —imagen, copy, decoración— invade ese espacio.</p>
+        <p>Tamaño mínimo: <strong>72px</strong> en pantalla, <strong>16mm</strong> en impresión. Por debajo, la legibilidad del remate puntual se compromete.</p>
+      </div>
+      <div data-lang="PT-BR">
+        <p>O logo respira. Manter uma margem livre equivalente à altura da letra "S" em todas as direções. Nada —imagem, copy, ornamento— invade esse espaço.</p>
+        <p>Tamanho mínimo: <strong>72px</strong> em tela, <strong>16mm</strong> em impressão. Abaixo disso, a legibilidade do ponto se compromete.</p>
+      </div>
+    </div>
+
+    <h3>Usos prohibidos · Usos proibidos</h3>
+    <div class="do-dont">
+      <div class="do-box">
+        <h4 data-mark="Sí">Aplicar así · Aplicar assim</h4>
+        <p>Sobre fondos sólidos de la paleta oficial, con margen libre amplio.</p>
+        <p>En Lora Medium, mayúscula inicial, espaciado natural, sin ajustes manuales.</p>
+        <p>En tamaños grandes que respeten la cadencia editorial de la marca.</p>
+      </div>
+      <div class="dont-box">
+        <h4 data-mark="No">Evitar · Evitar</h4>
+        <p>No estirar, condensar, rotar ni inclinar el wordmark.</p>
+        <p>No aplicar sombras, brillos, gradientes, contornos ni efectos 3D.</p>
+        <p>No usar colores fuera de paleta, ni reemplazar Lora por otra serif.</p>
+        <p>No combinar con íconos, sellos o composiciones tipo "lockup" decorativo.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════ 03. COLORES ═══════════════════════════════ -->
+  <div class="page section" id="colors">
+    <span class="section-num">Sección 03 · Seção 03</span>
+    <h2>Paleta de Colores <em>/ Paleta de Cores</em></h2>
+    <p class="lead">Una paleta editorial de seis tonos. Nombres en francés porque el oficio del cuidado de la piel se construyó allí, y porque el francés impone disciplina visual.</p>
+
+    <h3>Paleta Primaria · Paleta Primária</h3>
+    <div class="swatches">
+      <div class="swatch">
+        <div class="swatch-color" style="background: var(--blanc-casse);"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Blanc Cassé <em>· Branco Quebrado</em></div>
+          <div class="swatch-hex">#F7F3EE</div>
+          <div class="swatch-use">Fondo principal de toda superficie. Nunca blanco puro: el blanco roto evita la frialdad clínica y aporta calidez editorial.</div>
+          <div class="swatch-meta"><span>RGB 247·243·238</span></div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: var(--carbone);"></div>
+        <div class="swatch-info">
+          <div class="swatch-name" style="color: var(--carbone);">Carbone <em>· Carvão</em></div>
+          <div class="swatch-hex">#1C1917</div>
+          <div class="swatch-use">Tinta principal: cuerpo de texto, titulares, botones primarios. Sustituye al negro en toda aplicación.</div>
+          <div class="swatch-meta"><span>RGB 28·25·23</span></div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: var(--pierre);"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Pierre <em>· Pedra</em></div>
+          <div class="swatch-hex">#7C7269</div>
+          <div class="swatch-use">Texto secundario, metadatos, etiquetas, bordes activos. El gris cálido de Skinner.</div>
+          <div class="swatch-meta"><span>RGB 124·114·105</span></div>
+        </div>
+      </div>
+    </div>
+
+    <h3>Paleta Secundaria · Paleta Secundária</h3>
+    <div class="swatches">
+      <div class="swatch">
+        <div class="swatch-color" style="background: var(--sable);"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Sable <em>· Areia</em></div>
+          <div class="swatch-hex">#C8BAA9</div>
+          <div class="swatch-use">Acento cálido. Detalles editoriales, separadores destacados, badges, hover sobre fondos oscuros.</div>
+          <div class="swatch-meta"><span>RGB 200·186·169</span></div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: var(--ivoire);"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Ivoire <em>· Marfim</em></div>
+          <div class="swatch-hex">#EDE6DB</div>
+          <div class="swatch-use">Fondo secundario para tarjetas, banners y bloques destacados sin contraste agresivo.</div>
+          <div class="swatch-meta"><span>RGB 237·230·219</span></div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: var(--terre);"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Terre <em>· Terra</em></div>
+          <div class="swatch-hex">#3D342C</div>
+          <div class="swatch-use">Texto sobre fondos claros cuando Carbone resulta demasiado contrastante. Botones secundarios.</div>
+          <div class="swatch-meta"><span>RGB 61·52·44</span></div>
+        </div>
+      </div>
+    </div>
+
+    <h3>Reglas de uso · Regras de uso</h3>
+    <table>
+      <thead>
+        <tr><th>Aplicación · Aplicação</th><th>Color · Cor</th><th>Notas · Notas</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Fondo principal · Fundo principal</td><td><strong>Blanc Cassé</strong></td><td>El blanco puro #FFFFFF queda excluido. Skinner no usa #FFFFFF en superficies de marca.</td></tr>
+        <tr><td>Texto cuerpo · Texto corpo</td><td><strong>Carbone</strong></td><td>Carbone sobre Blanc Cassé. Contraste editorial sin estridencia clínica.</td></tr>
+        <tr><td>Texto secundario · Texto secundário</td><td><strong>Pierre</strong></td><td>Para metadatos, leyendas, etiquetas. Nunca para cuerpo principal.</td></tr>
+        <tr><td>Botón primario · Botão primário</td><td><strong>Carbone + Blanc Cassé</strong></td><td>bg-carbone sobre texto blanc-casse. Sin border-radius.</td></tr>
+        <tr><td>Botón secundario · Botão secundário</td><td><strong>Border Sable + texto Terre</strong></td><td>Border de 1px, sin relleno, label en mayúsculas con tracking amplio.</td></tr>
+        <tr><td>Acento editorial · Acento editorial</td><td><strong>Sable</strong></td><td>Sable es el "highlight" de Skinner: separadores destacados, líneas verticales en magazine layouts, hover en oscuro.</td></tr>
+        <tr><td>Bloque destacado · Bloco em destaque</td><td><strong>Ivoire</strong></td><td>Para "callouts" sin romper el flujo visual. Más sutil que Sable.</td></tr>
+        <tr><td>Reverso oscuro · Inverso escuro</td><td><strong>Carbone + Sable</strong></td><td>Manifesto, cierre, secciones premium. El amarillo-arena reemplaza al "gold" tradicional.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Colores funcionales · Cores funcionais</h3>
+    <div class="bilingual">
+      <div data-lang="ES">
+        <p>Los colores semánticos (éxito, error, advertencia) existen únicamente dentro del producto y nunca aparecen en marketing. Mantienen baja saturación para no romper la paleta editorial.</p>
+        <p><strong>Éxito:</strong> #2F5D3A (verde oliva oscuro). <strong>Error:</strong> #8B2E2E (terracota). <strong>Aviso:</strong> #B08538 (mostaza apagado). <strong>Info:</strong> Pierre.</p>
+      </div>
+      <div data-lang="PT-BR">
+        <p>As cores semânticas (sucesso, erro, alerta) existem apenas dentro do produto e nunca aparecem em marketing. Mantêm baixa saturação para não quebrar a paleta editorial.</p>
+        <p><strong>Sucesso:</strong> #2F5D3A (verde oliva escuro). <strong>Erro:</strong> #8B2E2E (terracota). <strong>Alerta:</strong> #B08538 (mostarda apagado). <strong>Info:</strong> Pierre.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════ 04. TIPOGRAFIA ═══════════════════════════════ -->
+  <div class="page section" id="typography">
+    <span class="section-num">Sección 04 · Seção 04</span>
+    <h2>Tipografía <em>/ Tipografia</em></h2>
+    <p class="lead">Dos familias, dos roles, una conversación. Lora aporta voz y autoridad editorial; Poppins Light desaparece para que el dato hable.</p>
+
+    <h3>Tipografías oficiales · Tipografias oficiais</h3>
+
+    <div class="type-block">
+      <div class="type-label">Display & Headlines · Lora Serif</div>
+      <div class="type-display">Análise <em>com fundamento.</em></div>
+      <div class="type-spec">Lora · 400 / 500 / 600 / 700 · Italic disponible · Google Fonts</div>
+      <p style="font-size: 14px; color: var(--terre); margin-top: 12px; max-width: 720px;">Lora es una serif contemporánea con calidez editorial. La usamos en titulares, citas y momentos donde la marca debe sonar como voz humana. Las cursivas se usan deliberadamente para matizar, jamás para énfasis casual.</p>
+    </div>
+
+    <div class="type-block">
+      <div class="type-label">Body & UI · Poppins</div>
+      <div class="type-h1" style="font-family: var(--sans); font-weight: 400;">Skinner es la primera capa de inteligencia para la piel.</div>
+      <div class="type-body">Poppins Light (300) es la voz del producto. Está al servicio del contenido: cuerpo de texto, navegación, formularios, datos. Nunca compite con la información que transporta. La sutileza es disciplina, no decoración.</div>
+      <div class="type-spec">Poppins · 200 / 300 / 400 / 500 / 600 / 700 · Italic disponible · Google Fonts</div>
+    </div>
+
+    <h3>Escala tipográfica · Escala tipográfica</h3>
+    <table class="compact">
+      <thead>
+        <tr><th>Estilo · Estilo</th><th>Familia · Família</th><th>Tamaño · Tamanho</th><th>Peso · Peso</th><th>Tracking</th><th>Uso · Uso</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Display</td><td>Lora</td><td>56–96 px</td><td>500</td><td>-0.02em</td><td>Hero web, tapas de reporte, manifiestos.</td></tr>
+        <tr><td>H1</td><td>Lora</td><td>40–48 px</td><td>500</td><td>-0.015em</td><td>Apertura de sección, titulares de página.</td></tr>
+        <tr><td>H2</td><td>Lora</td><td>28–32 px</td><td>500</td><td>-0.01em</td><td>Subsección, titulares de tarjeta editorial.</td></tr>
+        <tr><td>Lead</td><td>Lora Italic</td><td>18–22 px</td><td>400</td><td>0</td><td>Bajada de sección, citas pequeñas.</td></tr>
+        <tr><td>Body</td><td>Poppins</td><td>14–16 px</td><td>300</td><td>0.005em</td><td>Texto cuerpo en pantalla y reportes.</td></tr>
+        <tr><td>UI Label</td><td>Poppins</td><td>10–11 px</td><td>300–400</td><td>0.25em</td><td>Etiquetas, badges, navegación. SIEMPRE mayúsculas.</td></tr>
+        <tr><td>Caption</td><td>Poppins</td><td>11–12 px</td><td>300</td><td>0.05em</td><td>Notas al pie, créditos, metadatos.</td></tr>
+        <tr><td>Mono</td><td>Courier New</td><td>10–12 px</td><td>400</td><td>0.05em</td><td>Códigos hex, valores técnicos, datos forenses.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Reglas tipográficas · Regras tipográficas</h3>
+    <div class="bilingual">
+      <div data-lang="ES">
+        <p><strong>Sentence case</strong> en titulares y botones. Mayúscula inicial únicamente, salvo nombres propios. Capitalizar todo titular es jerga publicitaria que Skinner no comparte.</p>
+        <p><strong>Mayúsculas tracking 0.25em–0.4em</strong> reservadas para etiquetas, secciones y CTAs. Nunca para texto corrido.</p>
+        <p><strong>Cursivas Lora</strong> usadas para titulares secundarios bilingües, notas editoriales y citas. Nunca para énfasis casual dentro de párrafos.</p>
+        <p><strong>Bold Poppins</strong> usado con parsimonia: 1–2 veces por bloque de texto. Cuando todo se enfatiza, nada se enfatiza.</p>
+      </div>
+      <div data-lang="PT-BR">
+        <p><strong>Sentence case</strong> em títulos e botões. Maiúscula inicial apenas, salvo nomes próprios. Capitalizar todo título é jargão publicitário que Skinner não compartilha.</p>
+        <p><strong>Maiúsculas tracking 0.25em–0.4em</strong> reservadas para etiquetas, seções e CTAs. Nunca para texto corrido.</p>
+        <p><strong>Itálicos Lora</strong> usados para títulos secundários bilíngues, notas editoriais e citações. Nunca para ênfase casual dentro de parágrafos.</p>
+        <p><strong>Negrito Poppins</strong> usado com parcimônia: 1–2 vezes por bloco de texto. Quando tudo se enfatiza, nada se enfatiza.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════ 05. VOZ Y TONO ═══════════════════════════════ -->
+  <div class="page section" id="voice">
+    <span class="section-num">Sección 05 · Seção 05</span>
+    <h2>Voz y Tono <em>/ Voz e Tom</em></h2>
+    <p class="lead">La voz de Skinner es la misma siempre: precisa, autoritativa, cálida, editorial. El tono se calibra: más clínico ante una dermatóloga, más cuidadoso ante un paciente, más operativo ante un dashboard.</p>
+
+    <h3>Atributos de Voz · Atributos de Voz</h3>
+
+    <div class="grid">
+      <div class="cell">
+        <h4>Precisa · Precisa</h4>
+        <p style="margin-bottom: 14px;"><strong>Somos:</strong> sustantivos concretos, verbos cortos, datos cuando los hay.</p>
+        <p style="margin-bottom: 14px;"><strong>No somos:</strong> ambiguos, adjetivos vacíos, "increíble / amazing / incrível".</p>
+        <p style="font-family: var(--serif); font-style: italic; color: var(--carbone);">"Detectamos hiperpigmentación leve en zona malar. Recomendamos vitamina C 10% por la mañana, durante 8 semanas."</p>
+      </div>
+      <div class="cell">
+        <h4>Autoritativa · Autoritativa</h4>
+        <p style="margin-bottom: 14px;"><strong>Somos:</strong> claros sobre lo que sabemos y honestos sobre lo que no.</p>
+        <p style="margin-bottom: 14px;"><strong>No somos:</strong> dogmáticos, tampoco evasivos. La autoridad nace del método, no del tono.</p>
+        <p style="font-family: var(--serif); font-style: italic; color: var(--carbone);">"Esta condición requiere evaluación por dermatólogo. La rutina sugerida es de mantenimiento, no de tratamiento."</p>
+      </div>
+      <div class="cell">
+        <h4>Cálida · Calorosa</h4>
+        <p style="margin-bottom: 14px;"><strong>Somos:</strong> empáticos, respetuosos del tiempo y la inseguridad del paciente.</p>
+        <p style="margin-bottom: 14px;"><strong>No somos:</strong> efusivos, paternalistas, ni emocionalmente performativos.</p>
+        <p style="font-family: var(--serif); font-style: italic; color: var(--carbone);">"Sua pele está respondendo bem ao tratamento. Vamos manter os ativos atuais por mais 4 semanas."</p>
+      </div>
+      <div class="cell">
+        <h4>Editorial · Editorial</h4>
+        <p style="margin-bottom: 14px;"><strong>Somos:</strong> rítmicos, pausados, conscientes de cómo suena cada frase en voz alta.</p>
+        <p style="margin-bottom: 14px;"><strong>No somos:</strong> publicitarios, ni efectistas, ni adictos al titular pegadizo.</p>
+        <p style="font-family: var(--serif); font-style: italic; color: var(--carbone);">"La piel se lee como un texto. Skinner traduce el texto en cuidado."</p>
+      </div>
+    </div>
+
+    <h3>Espectro de Tono · Espectro de Tom</h3>
+    <div class="spectrum">
+      <div class="spectrum-item" style="background: var(--carbone); color: var(--blanc-casse);">Clínico</div>
+      <div class="spectrum-item" style="background: var(--terre); color: var(--blanc-casse);">Editorial</div>
+      <div class="spectrum-item" style="background: var(--pierre); color: var(--blanc-casse);">Operativo</div>
+      <div class="spectrum-item" style="background: var(--sable); color: var(--carbone);">Cálido</div>
+      <div class="spectrum-item" style="background: var(--ivoire); color: var(--carbone);">Aspiracional</div>
+    </div>
+    <p style="font-size: 13px; color: var(--terre); max-width: 720px;">Nos movemos dentro de este espectro. Nunca llegamos a ser fríos, corporativos, paternalistas ni publicitarios. La calibración depende del canal y la audiencia, no del estado de ánimo del autor.</p>
+
+    <h3>Así sí, así no · Assim sim, assim não</h3>
+    <div class="do-dont">
+      <div class="do-box">
+        <h4 data-mark="Sí">Así habla Skinner · Assim Skinner fala</h4>
+        <p>"Análise concluída. Identificamos 3 condições prioritárias e 1 de manutenção."</p>
+        <p>"La rutina recomendada es de 4 pasos. Cada producto está justificado abajo."</p>
+        <p>"Esta área requiere consulta dermatológica. Skinner no diagnostica."</p>
+        <p>"Sua pele apresenta sinais iniciais de desidratação. Recomendamos um sérum com ácido hialurônico."</p>
+      </div>
+      <div class="dont-box">
+        <h4 data-mark="No">Así Skinner no habla · Assim Skinner não fala</h4>
+        <p>"WOW! Tu análisis está listo!! 🎉 Mira todos estos productos increíbles"</p>
+        <p>"Estimada usuaria, por medio del presente le notificamos que su análisis ha sido procesado satisfactoriamente"</p>
+        <p>"¡Esta crema es lo MEJOR para tu piel, no te la podés perder!"</p>
+       <p>"Pa' que tu piel quede divina, usá este suerito que es BOMBA total ✨"</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════ 06. MENSAJES CLAVE ═══════════════════════════════ -->
+  <div class="page section" id="messaging">
+    <span class="section-num">Sección 06 · Seção 06</span>
+    <h2>Mensajes Clave <em>/ Mensagens-Chave</em></h2>
+    <p class="lead">Cuatro pilares ordenados por jerarquía. Toda comunicación de Skinner —web, dashboard, paper, deck, email— debe poder ser anclada a uno de estos cuatro pilares. Si no puede, no se publica.</p>
+
+    <h3>Pilar 1 · Rigor Clínico Auditable</h3>
+    <div class="pullquote">
+      "Cada recomendación es trazable. <span>Cada ingrediente, justificable. Cada decisión, defensible.</span>"
+    </div>
+    <div class="bilingual">
+      <div data-lang="ES">
+        <p>Skinner se distingue de los "AI skin analyzers" del mercado porque cada output está anclado a una base de conocimiento dermatológico editable —no a un modelo opaco. La profesional puede inspeccionar el prompt, ajustar las reglas y revisar el razonamiento. La trazabilidad es el producto.</p>
+        <p><strong>Donde aparece:</strong> hero del sitio web, sección "Cómo funciona", panel admin "/admin/prompt", presentaciones a clínicas escépticas.</p>
+      </div>
+      <div data-lang="PT-BR">
+        <p>Skinner se distingue dos "AI skin analyzers" do mercado porque cada output está ancorado em uma base de conhecimento dermatológico editável —não em um modelo opaco. A profissional pode inspecionar o prompt, ajustar as regras e revisar o raciocínio. A rastreabilidade é o produto.</p>
+        <p><strong>Onde aparece:</strong> hero do site, seção "Como funciona", painel admin "/admin/prompt", apresentações para clínicas céticas.</p>
+      </div>
+    </div>
+
+    <h3>Pilar 2 · Estética Editorial</h3>
+    <div class="pullquote">
+      "Una clínica de estética merece <span>una herramienta que respete su estética.</span>"
+    </div>
+    <div class="bilingual">
+      <div data-lang="ES">
+        <p>Skinner se ve y se siente como una revista de oficio: tipografía con voz, jerarquía deliberada, espacio que respeta el contenido. No es UI "fancy"; es UI que sostiene la autoridad de la profesional frente a su paciente.</p>
+        <p><strong>Donde aparece:</strong> reporte PDF, pantalla de resultados, comunicación de marca, identidad visual.</p>
+      </div>
+      <div data-lang="PT-BR">
+        <p>Skinner se vê e se sente como uma revista de ofício: tipografia com voz, hierarquia deliberada, espaço que respeita o conteúdo. Não é UI "fancy"; é UI que sustenta a autoridade da profissional diante de sua paciente.</p>
+        <p><strong>Onde aparece:</strong> relatório PDF, tela de resultados, comunicação de marca, identidade visual.</p>
+      </div>
+    </div>
+
+    <h3>Pilar 3 · Eficiencia Operacional</h3>
+    <div class="pullquote">
+      "Análisis en segundos. <span>Conversión arriba. Ticket promedio arriba. Tiempo de consulta abajo.</span>"
+    </div>
+    <div class="bilingual">
+      <div data-lang="ES">
+        <p>Skinner no es un juguete: es una herramienta de revenue. El dashboard B2B muestra impacto en pesos —no impresiones, no clics, no "engagement". Conversion lift por perfil. Sazonalidad de condiciones. Gaps de catálogo. ROI medible mes a mes.</p>
+        <p><strong>Donde aparece:</strong> página de planes, dashboard B2B, llamadas comerciales, casos de estudio.</p>
+      </div>
+      <div data-lang="PT-BR">
+        <p>Skinner não é um brinquedo: é uma ferramenta de revenue. O dashboard B2B mostra impacto em reais —não impressões, não cliques, não "engagement". Conversion lift por perfil. Sazonalidade de condições. Lacunas de catálogo. ROI mensurável mês a mês.</p>
+        <p><strong>Onde aparece:</strong> página de planos, dashboard B2B, ligações comerciais, casos de estudo.</p>
+      </div>
+    </div>
+
+    <h3>Pilar 4 · Cuidado Humano y LGPD</h3>
+    <div class="pullquote">
+      "La piel es íntima. <span>Los datos también.</span>"
+    </div>
+    <div class="bilingual">
+      <div data-lang="ES">
+        <p>LGPD por defecto: anonimización al borrar cuenta, opt-in explícito para benchmark cruzado, fotos jamás reutilizadas para entrenar modelos sin consentimiento. La privacidad es producto, no compliance.</p>
+        <p><strong>Donde aparece:</strong> términos, página de privacidad, modal de consentimiento, página "Excluir minha conta", contratos enterprise.</p>
+      </div>
+      <div data-lang="PT-BR">
+        <p>LGPD por padrão: anonimização ao excluir conta, opt-in explícito para benchmark cruzado, fotos jamais reutilizadas para treinar modelos sem consentimento. A privacidade é produto, não compliance.</p>
+        <p><strong>Onde aparece:</strong> termos, página de privacidade, modal de consentimento, página "Excluir minha conta", contratos enterprise.</p>
+      </div>
+    </div>
+
+    <h3>Taglines oficiales · Taglines oficiais</h3>
+    <table>
+      <thead>
+        <tr><th>Contexto · Contexto</th><th>ES</th><th>PT-BR</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Categoría / descriptor</strong></td><td>Skin Tech</td><td>Skin Tech</td></tr>
+        <tr><td><strong>Hero principal</strong></td><td>La primera capa de inteligencia para la piel.</td><td>A primeira camada de inteligência para a pele.</td></tr>
+        <tr><td><strong>Sub-hero</strong></td><td>Análisis con fundamento. Rutinas con propósito.</td><td>Análise com fundamento. Rotinas com propósito.</td></tr>
+        <tr><td><strong>SEO / Meta</strong></td><td>Análisis de piel con IA, auditable y editorial. Para clínicas estéticas y dermatológicas.</td><td>Análise de pele com IA, auditável e editorial. Para clínicas estéticas e dermatológicas.</td></tr>
+        <tr><td><strong>CTA B2B (clínicas)</strong></td><td>Equipá tu cabina con análisis clínico en segundos.</td><td>Equipe sua cabine com análise clínica em segundos.</td></tr>
+        <tr><td><strong>CTA B2C (paciente)</strong></td><td>Tu rutina, fundamentada por tu piel.</td><td>Sua rotina, fundamentada pela sua pele.</td></tr>
+        <tr><td><strong>Reporte PDF</strong></td><td>Análisis de Piel · Skinner</td><td>Análise de Pele · Skinner</td></tr>
+        <tr><td><strong>Cierre editorial</strong></td><td>Cuidado con criterio.</td><td>Cuidado com critério.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══════════════════════════════ 07. TERMINOLOGIA ═══════════════════════════════ -->
+  <div class="page section" id="terminology">
+    <span class="section-num">Sección 07 · Seção 07</span>
+    <h2>Terminología <em>/ Terminologia</em></h2>
+    <p class="lead">La consistencia léxica refuerza identidad y limita riesgo legal. Estas son las palabras que Skinner usa —y las que evita deliberadamente.</p>
+
+    <h3>Términos preferidos · Termos preferidos</h3>
+    <table>
+      <thead>
+        <tr><th>Usar · Usar</th><th>Evitar · Evitar</th><th>Por qué · Por quê</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Skinner</strong></td><td>Skinners, SKINNER, skinner</td><td>Mayúscula inicial siempre, sin plural, sin acrónimos. Palabra única.</td></tr>
+        <tr><td><strong>Análisis · Análise</strong></td><td>Diagnóstico · Diagnóstico</td><td>Diagnóstico es acto médico reservado. Skinner analiza, no diagnostica. Riesgo legal.</td></tr>
+        <tr><td><strong>Recomendación · Recomendação</strong></td><td>Prescripción · Prescrição</td><td>Prescripción implica acto profesional. Skinner sugiere, profesional decide.</td></tr>
+        <tr><td><strong>Paciente · Paciente</strong></td><td>Usuario · Usuário (en clínica)</td><td>"Paciente" en contexto clínico/dermatológico. "Cliente" en marketplace o D2C.</td></tr>
+        <tr><td><strong>Rutina · Rotina</strong></td><td>Tratamiento · Tratamento</td><td>Tratamiento es término clínico. Rutina es lo que la profesional construye con Skinner.</td></tr>
+        <tr><td><strong>Activos · Ativos</strong></td><td>Ingredientes mágicos / fórmulas secretas</td><td>"Activos" es el término técnico correcto para principios activos cosméticos.</td></tr>
+        <tr><td><strong>Condición · Condição</strong></td><td>Problema · Problema</td><td>"Condición" es neutro y técnico. "Problema" estigmatiza al paciente.</td></tr>
+        <tr><td><strong>Cabina · Cabine</strong></td><td>Sala / oficina</td><td>Es el espacio donde la esteticista atiende. Vocabulario nativo del sector.</td></tr>
+        <tr><td><strong>Catálogo · Catálogo</strong></td><td>Inventario / stock</td><td>"Catálogo" implica curaduría editorial. Skinner curatea, no almacena.</td></tr>
+        <tr><td><strong>Operadora · Operadora</strong></td><td>Cliente B2B / Owner</td><td>"Operadora" reconoce que la persona opera el negocio (clínica), no solo lo posee.</td></tr>
+        <tr><td><strong>Análisis con fundamento</strong></td><td>Diagnóstico AI / Smart skin scan</td><td>Marca de propiedad de Skinner. Refleja Pilar 1.</td></tr>
+        <tr><td><strong>LGPD por defecto</strong></td><td>"100% segura" / "totalmente confidencial"</td><td>Promesas absolutas son insostenibles. La precisión protege.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Vocabulario clínico · Vocabulário clínico</h3>
+    <div class="bilingual">
+      <div data-lang="ES">
+        <p>Skinner ofrece dos modos de tono: <strong>humanizado</strong> (default, B2C/estética) y <strong>técnico</strong> (dermatología). En modo humanizado, "comedões" se traduce a "cravos pretos e brancos"; "telangiectasias" a "vasinhos visíveis"; "ptose" a "perda de firmeza". El término clínico nunca se inventa: se traduce.</p>
+        <p>El modo se configura por tenant en <code>TenantConfig.analysisTone</code>. Solo afecta campos paciente-facing; los IDs de condición se mantienen para que el matcher funcione.</p>
+      </div>
+      <div data-lang="PT-BR">
+        <p>Skinner oferece dois modos de tom: <strong>humanizado</strong> (default, B2C/estética) e <strong>técnico</strong> (dermatologia). Em modo humanizado, "comedões" se traduz como "cravos pretos e brancos"; "telangiectasias" como "vasinhos visíveis"; "ptose" como "perda de firmeza". O termo clínico nunca se inventa: se traduz.</p>
+        <p>O modo se configura por tenant em <code>TenantConfig.analysisTone</code>. Afeta apenas campos voltados ao paciente; os IDs de condição se mantêm para que o matcher funcione.</p>
+      </div>
+    </div>
+
+    <h3>Formato de moneda y unidades · Moeda e unidades</h3>
+    <table class="compact">
+      <thead>
+        <tr><th>Contexto</th><th>Formato</th><th>Ejemplo · Exemplo</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Precio en BRL (default mercado)</td><td>R$ 1.490,00 — separador de miles "." y decimal ","</td><td>R$ 490,00 / R$ 1.490,00</td></tr>
+        <tr><td>Precio en USD (enterprise / cross-border)</td><td>US$ 1,490 — separador de miles ",", decimales solo si necesarios</td><td>US$ 290 / US$ 1,490</td></tr>
+        <tr><td>Porcentaje activo</td><td>Número + % + nombre activo en minúscula</td><td>10% vitamina C / 0,5% retinol</td></tr>
+        <tr><td>Frecuencia de uso</td><td>"X / día" o "X / semana"</td><td>1×/día — 2×/semana</td></tr>
+        <tr><td>Duración de tratamiento</td><td>"N semanas / meses"</td><td>8 semanas — 3 meses</td></tr>
+        <tr><td>Edad</td><td>Rango XX–XX años</td><td>25–34 años / 25–34 anos</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Nombres internos del producto · Nomes internos</h3>
+    <div style="display: flex; flex-wrap: wrap; gap: 4px; margin: 16px 0;">
+      <span class="tag">Análisis Skinner</span>
+      <span class="tag">Reporte de Piel</span>
+      <span class="tag">Mapa Facial</span>
+      <span class="tag">Plano de Cuidado</span>
+      <span class="tag">Skinner Dashboard</span>
+      <span class="tag">Skinner Admin</span>
+      <span class="tag">Skinner Studio</span>
+      <span class="tag">Catálogo Skinner</span>
+      <span class="tag">Base Dermatológica</span>
+      <span class="tag">Modo Humanizado</span>
+      <span class="tag">Modo Técnico</span>
+      <span class="tag">Benchmark de Plataforma</span>
+      <span class="tag">Skin Projection</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════ 08. UI ═══════════════════════════════ -->
+  <div class="page section" id="ui">
+    <span class="section-num">Sección 08 · Seção 08</span>
+    <h2>Elementos de UI <em>/ Elementos de UI</em></h2>
+    <p class="lead">Sistema visual de superficie producto. Coherente con la marca: rectangular, calmado, jerárquico. Construido sobre Tailwind CSS con tokens propios.</p>
+
+    <h3>Botones · Botões</h3>
+    <div class="btn-group">
+      <span class="btn btn-primary">Iniciar análisis</span>
+      <span class="btn btn-secondary">Ver detalles</span>
+      <span class="btn btn-tertiary">Cancelar</span>
+    </div>
+    <table class="compact">
+      <thead>
+        <tr><th>Variante</th><th>Estilo</th><th>Uso · Uso</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Primary</strong></td><td>bg Carbone / text Blanc Cassé / sin border-radius</td><td>Acción principal por pantalla. Una por contexto, regla absoluta.</td></tr>
+        <tr><td><strong>Secondary</strong></td><td>border 1px Carbone / text Carbone / fondo transparente</td><td>Acciones alternativas equivalentes a la primaria.</td></tr>
+        <tr><td><strong>Tertiary / Ghost</strong></td><td>text Terre / underline 1px / sin padding lateral</td><td>Cancelar, "ver más", acciones de baja jerarquía.</td></tr>
+        <tr><td><strong>Destructive</strong></td><td>bg #8B2E2E / text Blanc Cassé</td><td>Eliminar cuenta, anonimizar datos. Confirmación SIEMPRE requerida.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Border-radius · Border-radius</h3>
+    <div class="bilingual">
+      <div data-lang="ES">
+        <p><strong>Cero. Skinner no usa esquinas redondeadas en su sistema.</strong> Los bordes rectos son una decisión editorial: la esquina recta sostiene la jerarquía, evita el cliché "friendly SaaS" y refuerza el carácter de oficio.</p>
+        <p>La única excepción son los avatares de paciente (círculo perfecto, no rectángulo redondeado). Todo lo demás —tarjetas, botones, modales, inputs, badges— termina en esquina recta de 0px.</p>
+      </div>
+      <div data-lang="PT-BR">
+        <p><strong>Zero. Skinner não usa cantos arredondados em seu sistema.</strong> As bordas retas são uma decisão editorial: o canto reto sustenta a hierarquia, evita o clichê "friendly SaaS" e reforça o caráter de ofício.</p>
+        <p>A única exceção são os avatares de paciente (círculo perfeito, não retângulo arredondado). Todo o resto —cartões, botões, modais, inputs, badges— termina em canto reto de 0px.</p>
+      </div>
+    </div>
+
+    <h3>Divisores y rejillas · Divisores e grades</h3>
+    <table class="compact">
+      <thead>
+        <tr><th>Elemento</th><th>Stroke</th><th>Color · Cor</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Regla principal entre secciones</td><td>1px solid</td><td>Carbone</td></tr>
+        <tr><td>Regla suave (separador interno)</td><td>1px solid</td><td>rgba(28,25,23,0.12)</td></tr>
+        <tr><td>Regla acento editorial</td><td>1px solid</td><td>Sable</td></tr>
+        <tr><td>Border de tarjeta</td><td>1px solid</td><td>rgba(28,25,23,0.06)</td></tr>
+        <tr><td>Border de input activo</td><td>1px solid</td><td>Carbone</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Espaciado · Espaçamento</h3>
+    <div class="bilingual">
+      <div data-lang="ES">
+        <p>Sistema basado en múltiplos de 4px (4 / 8 / 12 / 16 / 24 / 32 / 48 / 64 / 96 / 128). Skinner es generoso con el espacio: cuando hay duda entre dos valores adyacentes, siempre el mayor.</p>
+        <p>El padding mínimo de cualquier tarjeta es 24px. El padding mínimo de cualquier sección es 80px vertical en desktop. La densidad informacional se logra con jerarquía tipográfica, nunca apretando elementos.</p>
+      </div>
+      <div data-lang="PT-BR">
+        <p>Sistema baseado em múltiplos de 4px (4 / 8 / 12 / 16 / 24 / 32 / 48 / 64 / 96 / 128). Skinner é generoso com o espaço: quando houver dúvida entre dois valores adjacentes, sempre o maior.</p>
+        <p>O padding mínimo de qualquer cartão é 24px. O padding mínimo de qualquer seção é 80px vertical em desktop. A densidade informacional se alcança com hierarquia tipográfica, nunca espremendo elementos.</p>
+      </div>
+    </div>
+
+    <h3>Iconografía · Iconografia</h3>
+    <div class="bilingual">
+      <div data-lang="ES">
+        <p>Skinner usa <strong>Lucide Icons</strong> con stroke 1.25px (no el default 2px), tamaño base 18px, color Carbone o Pierre. La línea fina sostiene la estética editorial; la línea gruesa rompe el sistema.</p>
+        <p>Los íconos jamás llevan relleno (filled), ni colores semánticos saturados, ni decoraciones. Son acompañantes funcionales del texto.</p>
+      </div>
+      <div data-lang="PT-BR">
+        <p>Skinner usa <strong>Lucide Icons</strong> com stroke 1.25px (não o default 2px), tamanho base 18px, cor Carbone ou Pierre. A linha fina sustenta a estética editorial; a linha grossa quebra o sistema.</p>
+        <p>Os ícones jamais levam preenchimento (filled), nem cores semânticas saturadas, nem ornamentos. São acompanhantes funcionais do texto.</p>
+      </div>
+    </div>
+
+    <h3>Inputs y formularios · Inputs e formulários</h3>
+    <table class="compact">
+      <thead>
+        <tr><th>Elemento</th><th>Especificación · Especificação</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Label</td><td>Poppins 300 · 10px · uppercase · tracking 0.25em · color Pierre</td></tr>
+        <tr><td>Input field</td><td>Border-bottom 1px Pierre (sin border lateral/superior). Padding 12px 0. Background transparente.</td></tr>
+        <tr><td>Input activo / focus</td><td>Border-bottom 1px Carbone. Sin shadow, sin glow.</td></tr>
+        <tr><td>Placeholder</td><td>Pierre con opacity 0.6.</td></tr>
+        <tr><td>Helper text</td><td>11px Poppins 300 color Pierre, debajo del input.</td></tr>
+        <tr><td>Error text</td><td>11px Poppins 400 color #8B2E2E, debajo del input.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══════════════════════════════ 09. VERTICALES ═══════════════════════════════ -->
+  <div class="page section" id="verticals">
+    <span class="section-num">Sección 09 · Seção 09</span>
+    <h2>Identidad por Vertical <em>/ Identidade por Vertical</em></h2>
+    <p class="lead">Skinner se vende a cuatro tipos de cliente B2B. La voz no cambia; el énfasis sí. Esta sección define el ángulo de comunicación para cada vertical.</p>
+
+    <div class="vertical-grid">
+      <div class="vertical">
+        <div class="vertical-tag">Vertical 01</div>
+        <h4>Clínicas Estéticas <em>· Clínicas Estéticas</em></h4>
+        <div class="vertical-attrs">
+          <strong>Perfil:</strong> Spa, instituto de belleza, clínica de estética avanzada. 1–10 cabinas. Esteticista propietaria. Vende skincare retail como complemento del servicio.<br><br>
+          <strong>Énfasis:</strong> Eficiencia operacional + Estética editorial. Subir ticket promedio, aumentar reagendamiento, mostrar autoridad técnica frente al paciente.
+        </div>
+        <div class="vertical-line">
+          "Tu cabina con autoridad clínica. Sin renunciar a tu estética."
+        </div>
+      </div>
+
+      <div class="vertical">
+        <div class="vertical-tag">Vertical 02</div>
+        <h4>Dermatología <em>· Dermatologia</em></h4>
+        <div class="vertical-attrs">
+          <strong>Perfil:</strong> Consultorio o clínica dermatológica. Médica titular + asistentes. Necesita compatibilidad clínica y vocabulario técnico preservado.<br><br>
+          <strong>Énfasis:</strong> Rigor clínico + Cuidado humano. Modo técnico activado por defecto. Skinner como pre-screening, nunca sustituto del acto médico.
+        </div>
+        <div class="vertical-line">
+          "Pre-screening con vocabulario clínico. Su criterio, nuestra evidencia."
+        </div>
+      </div>
+
+      <div class="vertical">
+        <div class="vertical-tag">Vertical 03</div>
+        <h4>Farmacéuticas <em>· Farmacêuticas</em></h4>
+        <div class="vertical-attrs">
+          <strong>Perfil:</strong> Compañía dermocosmética con catálogo de marca. Brand manager o trade marketing. Quiere mapear su línea a perfiles de piel reales.<br><br>
+          <strong>Énfasis:</strong> Rigor clínico + Eficiencia operacional. Datos agregados de demanda, integración limpia, visibilidad calificada en clínicas.
+        </div>
+        <div class="vertical-line">
+          "Tu catálogo, mapeado al perfil real del paciente. Datos accionables, no impresiones."
+        </div>
+      </div>
+
+      <div class="vertical">
+        <div class="vertical-tag">Vertical 04</div>
+        <h4>Marketplaces & D2C <em>· Marketplaces & D2C</em></h4>
+        <div class="vertical-attrs">
+          <strong>Perfil:</strong> Tienda online de skincare (Nuvemshop, Shopify) o D2C de marca propia. Quiere análisis embebido en su flow de compra.<br><br>
+          <strong>Énfasis:</strong> Eficiencia operacional + Estética editorial. Conversión, ticket promedio, retención. Skinner como capa de inteligencia sobre el catálogo.
+        </div>
+        <div class="vertical-line">
+          "Tu tienda con criterio dermatológico. Cada compra, una rutina con sentido."
+        </div>
+      </div>
+    </div>
+
+    <h3>Calibración de mensajes por vertical · Calibração por vertical</h3>
+    <table class="compact">
+      <thead>
+        <tr><th>Vertical</th><th>Tono dominante</th><th>Métrica que vende · Métrica que vende</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Estética</td><td>Editorial + Cálido</td><td>Conversion lift, ticket promedio, NPS paciente</td></tr>
+        <tr><td>Dermatología</td><td>Clínico + Operativo</td><td>Tiempo de consulta, precisión vs. evaluación humana, completion rate</td></tr>
+        <tr><td>Farmacéutica</td><td>Operativo + Clínico</td><td>Demanda agregada por activo, ranking de marca, share de recomendación</td></tr>
+        <tr><td>Marketplace</td><td>Editorial + Operativo</td><td>Conversion rate, AOV, repeat purchase, abandono de carrito</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══════════════════════════════ 10. TONO POR CANAL ═══════════════════════════════ -->
+  <div class="page section" id="channels">
+    <span class="section-num">Sección 10 · Seção 10</span>
+    <h2>Tono por Canal <em>/ Tom por Canal</em></h2>
+    <p class="lead">La voz es la misma; el tono se adapta al medio. Aquí, el mapa exacto de cómo suena Skinner en cada superficie.</p>
+
+    <table>
+      <thead>
+        <tr><th>Canal · Canal</th><th>Tono · Tom</th><th>Ejemplo · Exemplo</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Hero web público</strong><br><span class="type-ui-label">app.skinner.lat</span></td>
+          <td>Editorial + Aspiracional. Frases cortas, cadencia revista.</td>
+          <td>"La primera capa de inteligencia para la piel. Análisis con fundamento, rutinas con propósito."</td>
+        </tr>
+        <tr>
+          <td><strong>Pantalla de resultados (paciente)</strong></td>
+          <td>Cálido + Clínico humanizado. Segunda persona singular, traducción de jerga.</td>
+          <td>"Sua pele apresenta sinais leves de desidratação na zona da bochecha. Recomendamos um sérum com ácido hialurônico pela manhã."</td>
+        </tr>
+        <tr>
+          <td><strong>Reporte PDF</strong></td>
+          <td>Editorial + Clínico. Tercera persona impersonal, jerarquía tipográfica fuerte.</td>
+          <td>"Análise de Pele · Maria Silva · 02 de mayo, 2026. Identificadas 3 condiciones prioritarias y 1 de mantenimiento."</td>
+        </tr>
+        <tr>
+          <td><strong>Dashboard B2B</strong></td>
+          <td>Operativo + Datos primero. Etiquetas en mayúsculas tracking, números grandes.</td>
+          <td>"Conversão deste mês · 34%. Variação vs. mês anterior · +6 pp. Lift por perfil 'pele oleosa adulta' · +12 pp."</td>
+        </tr>
+        <tr>
+          <td><strong>Emails transaccionales</strong></td>
+          <td>Profesional + Cálido. Sin urgencia falsa, sin emojis.</td>
+          <td>"Olá Camila, sua análise está pronta. Você pode acessá-la no link abaixo. Dura aproximadamente 5 minutos."</td>
+        </tr>
+        <tr>
+          <td><strong>Email de bienvenida B2B</strong></td>
+          <td>Editorial + Operativo. Setup como ritual, no como onboarding.</td>
+          <td>"Bem-vinda à Skinner. Sua conta está ativa. Os próximos 15 minutos definem como sua cabine vai operar."</td>
+        </tr>
+        <tr>
+          <td><strong>Email de pago fallido</strong></td>
+          <td>Empático + Resolutivo. Sin culpabilizar, con próximo paso claro.</td>
+          <td>"O pagamento desta fatura não foi processado. Tentaremos novamente em 3 dias. Você pode atualizar o método aqui."</td>
+        </tr>
+        <tr>
+          <td><strong>Toast / Errores UI</strong></td>
+          <td>Directo + Útil. Qué pasó + qué hacer. Una frase.</td>
+          <td>"Erro ao carregar a foto. Tente novamente."</td>
+        </tr>
+        <tr>
+          <td><strong>Estados vacíos · Empty states</strong></td>
+          <td>Editorial + Invitativo. La ausencia se comunica con elegancia.</td>
+          <td>"Aún sin análisis registrados. La primera análise abrirá esta vista."</td>
+        </tr>
+        <tr>
+          <td><strong>Pitch a clínicas</strong></td>
+          <td>Operativo + Editorial. Caso de negocio, no fanfarria.</td>
+          <td>"Tres datos: clínicas con Skinner suben ticket promedio 18%, cierran 30% más rutinas, y reducen tiempo de consulta inicial en 40%."</td>
+        </tr>
+        <tr>
+          <td><strong>Pitch a farmacéuticas</strong></td>
+          <td>Clínico + Operativo. Volúmenes, mapeo, cobertura.</td>
+          <td>"Mapeamos seu catálogo a nove perfis dermatológicos prevalentes. Visibilidade qualificada em mais de 200 cabinas ativas no Brasil."</td>
+        </tr>
+        <tr>
+          <td><strong>Redes sociales / LinkedIn</strong></td>
+          <td>Editorial + Educativo. Posts largos, sin clickbait, sin emojis.</td>
+          <td>"Por qué dejamos de usar la palabra 'diagnóstico' en Skinner. Reflexión sobre regulación, oficio y vocabulario."</td>
+        </tr>
+        <tr>
+          <td><strong>Documentación técnica</strong></td>
+          <td>Técnico + Conciso. Inglés permitido en términos de API.</td>
+          <td>"POST /api/analysis — accepts photo (multipart/form-data) and questionnaire (JSON). Returns analysis_id within 8s p95."</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Una nota sobre los emojis · Uma nota sobre os emojis</h3>
+    <div class="bilingual">
+      <div data-lang="ES">
+        <p>Skinner no usa emojis en ninguna comunicación oficial. Ni en producto, ni en email, ni en redes, ni en documentación interna que pueda escapar al exterior. La razón no es estética: es categoría. Una marca que se posiciona como Skin Tech con vocación clínica no puede comunicar con caritas amarillas.</p>
+        <p>Excepción única: chats internos del equipo (Slack), donde la informalidad fortalece la cultura. Pero jamás cruzan a comunicación cliente-facing.</p>
+      </div>
+      <div data-lang="PT-BR">
+        <p>Skinner não usa emojis em nenhuma comunicação oficial. Nem no produto, nem em e-mail, nem em redes, nem em documentação interna que possa escapar ao exterior. A razão não é estética: é categoria. Uma marca que se posiciona como Skin Tech com vocação clínica não pode comunicar com carinhas amarelas.</p>
+        <p>Exceção única: chats internos do time (Slack), onde a informalidade fortalece a cultura. Mas jamais atravessam para comunicação voltada ao cliente.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════ 11. REGLAS DE ESTILO ═══════════════════════════════ -->
+  <div class="page section" id="guidelines">
+    <span class="section-num">Sección 11 · Seção 11</span>
+    <h2>Reglas de Estilo <em>/ Regras de Estilo</em></h2>
+    <p class="lead">Convenciones gramaticales, de formato y de presentación. Estas reglas se aplican a todo contenido publicado bajo el sello Skinner.</p>
+
+    <h3>Idioma · Idioma</h3>
+    <div class="bilingual">
+      <div data-lang="ES">
+        <p>Mercado primario: <strong>Brasil (PT-BR)</strong>. Toda comunicación cliente-facing del producto está en portugués brasileño. Documentos internos y comerciales pueden estar en español o inglés según contexto. APIs y código siempre en inglés.</p>
+        <p>Materiales bilingües (este brand book, contratos enterprise multinacionales) presentan ES + PT-BR lado a lado. Nunca traducciones automáticas.</p>
+      </div>
+      <div data-lang="PT-BR">
+        <p>Mercado primário: <strong>Brasil (PT-BR)</strong>. Toda comunicação voltada ao cliente do produto está em português brasileiro. Documentos internos e comerciais podem estar em espanhol ou inglês conforme o contexto. APIs e código sempre em inglês.</p>
+        <p>Materiais bilíngues (este brand book, contratos enterprise multinacionais) apresentam ES + PT-BR lado a lado. Nunca traduções automáticas.</p>
+      </div>
+    </div>
+
+    <h3>Gramática y mecánica · Gramática e mecânica</h3>
+    <table class="compact">
+      <thead>
+        <tr><th>Regla · Regra</th><th>Skinner usa · Skinner usa</th><th>Ejemplo · Exemplo</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Capitalización de títulos</td><td>Sentence case (solo primera mayúscula)</td><td>"Análise de pele" — no "Análise De Pele"</td></tr>
+        <tr><td>Coma serial (Oxford)</td><td>Sí en ES, sí en PT-BR cuando aporta claridad</td><td>"Limpieza, ácido hialurónico, vitamina C, y SPF"</td></tr>
+        <tr><td>Números</td><td>Numerales para datos. Palabras para 1–9 en prosa.</td><td>"3 condições prioritárias" / "uma única gota"</td></tr>
+        <tr><td>Fechas</td><td>DD de mes YYYY · DD de mês YYYY</td><td>"02 de mayo, 2026" / "02 de maio, 2026"</td></tr>
+        <tr><td>Hora</td><td>24h en producto. 12h con AM/PM en marketing.</td><td>"14:30" en dashboard / "2:30 PM" en email comercial</td></tr>
+        <tr><td>Porcentajes</td><td>Sin espacio antes del símbolo</td><td>"34%" — no "34 %"</td></tr>
+        <tr><td>Listas en UI</td><td>Sin punto final si son fragmentos</td><td>"Limpieza, hidratación, protección"</td></tr>
+        <tr><td>Voz pasiva</td><td>Evitar. Preferir voz activa siempre que sea posible.</td><td>"Detectamos hiperpigmentación" — no "Hiperpigmentación fue detectada"</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Puntuación y énfasis · Pontuação e ênfase</h3>
+    <table class="compact">
+      <thead>
+        <tr><th>Elemento · Elemento</th><th>Política · Política</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Signos de exclamación · Pontos de exclamação</td><td><strong>Cero. Skinner no usa "!" en ninguna comunicación oficial.</strong> La emoción se comunica con verbo y sustantivo, no con puntuación.</td></tr>
+        <tr><td>Puntos suspensivos · Reticências</td><td>Evitar. Si la frase requiere pausa, usar punto y seguido o punto y coma.</td></tr>
+        <tr><td>MAYÚSCULAS · MAIÚSCULAS</td><td>Solo para etiquetas y CTAs con tracking 0.25em+. Nunca para énfasis.</td></tr>
+        <tr><td>Negrita · Negrito</td><td>1–2 usos por bloque de texto. Para términos clave, no para frases enteras.</td></tr>
+        <tr><td>Cursiva · Itálico</td><td>Para títulos secundarios bilingües, citas internas, notas editoriales. Jamás para énfasis casual.</td></tr>
+        <tr><td>Comillas · Aspas</td><td>"Comillas inglesas" en ES y PT-BR. Las comillas latinas «...» quedan reservadas para citas dentro de citas.</td></tr>
+        <tr><td>Links · Links</td><td>Siempre descriptivos. "Ver detalhes da análise" — nunca "Clique aqui" o "Aprende más".</td></tr>
+        <tr><td>Guion vs. raya</td><td>Usar la raya em (—) para incisos. El guion (-) solo para palabras compuestas.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Lenguaje inclusivo y profesional · Linguagem inclusiva</h3>
+    <div class="bilingual">
+      <div data-lang="ES">
+        <p><strong>Tratamiento al paciente:</strong> tuteo (segunda persona singular) en ES; "você" en PT-BR. Nunca usted/senhor/senhora salvo en términos legales.</p>
+        <p><strong>Género gramatical:</strong> evitar marcadores forzados (@, x, e). Preferir reformular para evitar el conflicto: "el equipo" → "Skinner"; "los pacientes" → "cada persona analizada".</p>
+        <p><strong>Profesional médico:</strong> usar el género que la profesional use por sí misma. Por defecto en plural: "las profesionales que usan Skinner" (mayoría del mercado), pero individualizar cuando sea posible.</p>
+      </div>
+      <div data-lang="PT-BR">
+        <p><strong>Tratamento ao paciente:</strong> "você" em PT-BR. Nunca "senhor/senhora" salvo em termos legais.</p>
+        <p><strong>Gênero gramatical:</strong> evitar marcadores forçados (@, x, e). Preferir reformular para evitar o conflito: "o time" → "Skinner"; "os pacientes" → "cada pessoa analisada".</p>
+        <p><strong>Profissional médica:</strong> usar o gênero que a profissional usa por si mesma. Padrão no plural feminino: "as profissionais que usam Skinner" (maioria do mercado), mas individualizar quando possível.</p>
+      </div>
+    </div>
+
+    <h3>Datos sensibles y disclaimers · Dados sensíveis e disclaimers</h3>
+    <table class="compact">
+      <thead>
+        <tr><th>Situación · Situação</th><th>Texto obligatorio · Texto obrigatório</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Resultado de análisis (paciente)</td><td>"Esta análise não substitui consulta dermatológica. Em caso de dúvida, procure um profissional."</td></tr>
+        <tr><td>Recomendación que toca contraindicación</td><td>"Recomendação ajustada à informação que você forneceu. Em caso de gestação, amamentação ou medicação contínua, consulte seu médico antes de iniciar."</td></tr>
+        <tr><td>Captura de foto en onboarding</td><td>"Sua foto será usada apenas para esta análise. Você pode solicitar a exclusão a qualquer momento em Minha Conta."</td></tr>
+        <tr><td>Compartir resultado externamente</td><td>"Documento gerado por Skinner. As recomendações refletem o catálogo da clínica e são revisadas pelo profissional responsável."</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══════════════════════════════ 12. PROHIBICIONES ═══════════════════════════════ -->
+  <div class="page section" id="dont">
+    <span class="section-num">Sección 12 · Seção 12</span>
+    <h2>Prohibiciones <em>/ Proibições</em></h2>
+    <p class="lead">Lo que Skinner nunca hace. Esta lista no es exhaustiva pero define los límites duros. Cuando algo se siente fuera de marca, casi siempre está cruzando una de estas líneas.</p>
+
+    <div class="grid">
+      <div class="cell">
+        <h4>Nunca diagnosticamos · Nunca diagnosticamos</h4>
+        <p>"Diagnóstico" es acto médico. Skinner analiza, identifica, sugiere. La palabra "diagnóstico" está prohibida en producto, marketing, contratos y soporte. Riesgo legal, riesgo reputacional, y simplemente no es lo que hacemos.</p>
+      </div>
+      <div class="cell">
+        <h4>Nunca prometemos resultados · Nunca prometemos resultados</h4>
+        <p>"Tu piel mejorará 80% en 12 semanas" es publicidad engañosa. Lo que decimos: "esta rutina apunta a una mejora estimada del 50% en 8 semanas, según base clínica de los activos sugeridos". Ancla, no promesa.</p>
+      </div>
+      <div class="cell">
+        <h4>Nunca usamos urgencia falsa · Nunca usamos urgência falsa</h4>
+        <p>"Compra ahora antes de que se acabe", "Solo por 24 horas", "Última oportunidad". Esto pertenece al e-commerce de moda, no a una marca de cuidado. Skinner no manipula tiempo para forzar decisiones.</p>
+      </div>
+      <div class="cell">
+        <h4>Nunca mencionamos competidores · Nunca mencionamos competidores</h4>
+        <p>No hablamos mal de otros analizadores AI ni los nombramos. Nos diferenciamos por lo que somos —rigor, estética, transparencia—, no por lo que otros no son.</p>
+      </div>
+      <div class="cell">
+        <h4>Nunca usamos jerga corporativa · Nunca usamos jargão corporativo</h4>
+        <p>"Aproveite a oportunidade", "estamos comprometidos com a excelência", "soluções de ponta", "transformamos a sua jornada". Este vocabulario es síntoma de marca sin voz. Skinner tiene voz.</p>
+      </div>
+      <div class="cell">
+        <h4>Nunca tropicalizamos clichés · Nunca tropicalizamos clichês</h4>
+        <p>"Pele de pêssego", "rosto de boneca", "luminosa como nunca". Lugares comunes del marketing de belleza. Skinner los rechaza porque infantilizan al paciente y vacían el lenguaje.</p>
+      </div>
+      <div class="cell">
+        <h4>Nunca usamos emojis cliente-facing · Nunca usamos emojis voltados ao cliente</h4>
+        <p>Cero emojis en producto, e-mails, reportes, redes corporativas, contratos. La estética editorial y la categoría clínica no son compatibles con la sintaxis emoji. Esto es regla absoluta.</p>
+      </div>
+      <div class="cell">
+        <h4>Nunca abusamos del bold y la mayúscula · Nunca abusamos do negrito</h4>
+        <p>Cuando todo se enfatiza, nada se enfatiza. Bold para términos clave (1–2 por párrafo). Mayúsculas solo en etiquetas con tracking. Tres frases en bold consecutivas son un error de edición.</p>
+      </div>
+      <div class="cell">
+        <h4>Nunca inventamos datos clínicos · Nunca inventamos dados clínicos</h4>
+        <p>Toda cifra, ingrediente activo o estudio citado debe ser verificable. Si no hay evidencia, se dice "evidencia preliminar" o "datos limitados". La invención no es marketing: es fraude.</p>
+      </div>
+      <div class="cell">
+        <h4>Nunca usamos "100% natural" o similares · Nunca usamos "100% natural"</h4>
+        <p>Frases vacías, regulatoriamente cuestionables y técnicamente falsas (todo es química). Si un activo es de origen botánico, decimos "extracto botánico de X". Precisión sobre slogan.</p>
+      </div>
+      <div class="cell">
+        <h4>Nunca esquinas redondeadas · Nunca cantos arredondados</h4>
+        <p>Border-radius 0 en todo el sistema, sin excepciones más allá de avatares circulares. Romper esto rompe la marca visual. No es preferencia: es identidad.</p>
+      </div>
+      <div class="cell">
+        <h4>Nunca paternalismo médico · Nunca paternalismo médico</h4>
+        <p>"No te preocupes", "es normal sentirte así", "tranquila, vamos a resolverlo". Cálido no significa condescendiente. El paciente es adulto, capaz, con criterio. Skinner informa, no consuela.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════ CIERRE ═══════════════════════════════ -->
+  <div class="closing">
+    <div class="page" style="padding: 0;">
+      <div class="section-label" style="color: var(--sable);">Cierre · Encerramento</div>
+      <div class="pullquote">
+        "Una marca es la suma de sus decisiones repetidas. <span>Skinner es lo que hacemos cada día, no lo que decimos que somos.</span>"
+      </div>
+      <div class="bilingual" style="margin-top: 64px;">
+        <div data-lang="ES" style="color: var(--ivoire);">
+          <p>Este brand book es operativo, no decorativo. Cuando algo no está claro, releer el pilar correspondiente. Cuando la duda persista, preferir siempre el camino más editorial, más sobrio, más clínico, más cuidadoso.</p>
+          <p>La marca es responsabilidad de quien escribe la próxima frase. Esa persona, hoy, sos vos.</p>
+        </div>
+        <div data-lang="PT-BR" style="color: var(--ivoire);">
+          <p>Este brand book é operativo, não decorativo. Quando algo não estiver claro, reler o pilar correspondente. Quando a dúvida persistir, preferir sempre o caminho mais editorial, mais sóbrio, mais clínico, mais cuidadoso.</p>
+          <p>A marca é responsabilidade de quem escreve a próxima frase. Essa pessoa, hoje, é você.</p>
+        </div>
+      </div>
+      <div class="closing-meta">
+        <span>Skinner · Skin Tech</span>
+        <span>Brand Book · Versión 1.0</span>
+        <span>2026 · Confidencial</span>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

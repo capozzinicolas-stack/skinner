@@ -78,6 +78,12 @@ type AnalysisFormState = {
   // Limits
   maxProductRecs: string;
   maxServiceRecs: string;
+  // Lead capture
+  contactCaptureEnabled: boolean;
+  contactCaptureRequired: boolean;
+  contactCustomMessage: string;
+  autoSendPdfEmail: boolean;
+  notifyTenantNewLead: boolean;
 };
 
 const DEFAULT_FORM: AnalysisFormState = {
@@ -116,6 +122,11 @@ const DEFAULT_FORM: AnalysisFormState = {
   serviceCtaText: "",
   maxProductRecs: "",
   maxServiceRecs: "",
+  contactCaptureEnabled: true,
+  contactCaptureRequired: false,
+  contactCustomMessage: "",
+  autoSendPdfEmail: false,
+  notifyTenantNewLead: false,
 };
 
 function calcScore(f: AnalysisFormState): number {
@@ -777,6 +788,11 @@ export default function AnaliseConfigPage() {
         cfg.maxProductRecs != null ? String(cfg.maxProductRecs) : "",
       maxServiceRecs:
         cfg.maxServiceRecs != null ? String(cfg.maxServiceRecs) : "",
+      contactCaptureEnabled: (cfg.contactCaptureEnabled as boolean) ?? true,
+      contactCaptureRequired: (cfg.contactCaptureRequired as boolean) ?? false,
+      contactCustomMessage: (cfg.contactCustomMessage as string) ?? "",
+      autoSendPdfEmail: (cfg.autoSendPdfEmail as boolean) ?? false,
+      notifyTenantNewLead: (cfg.notifyTenantNewLead as boolean) ?? false,
     });
   }, [tenantQuery.data]);
 
@@ -833,6 +849,11 @@ export default function AnaliseConfigPage() {
         maxProducts != null && !isNaN(maxProducts) ? maxProducts : null,
       maxServiceRecs:
         maxServices != null && !isNaN(maxServices) ? maxServices : null,
+      contactCaptureEnabled: form.contactCaptureEnabled,
+      contactCaptureRequired: form.contactCaptureRequired,
+      contactCustomMessage: form.contactCustomMessage || null,
+      autoSendPdfEmail: form.autoSendPdfEmail,
+      notifyTenantNewLead: form.notifyTenantNewLead,
     });
   }
 
@@ -1127,6 +1148,97 @@ export default function AnaliseConfigPage() {
                     checked={form.photoOnlyMode}
                     onChange={(v) => set("photoOnlyMode", v)}
                     disabled={isLocked("photoOnlyMode")}
+                  />
+                </div>
+              </div>
+            </Section>
+
+            {/* Captura de contato (lead generation) */}
+            <Section
+              title="Captura de contato"
+              description="Pede nome, e-mail e WhatsApp do paciente entre o consentimento e o questionario. Pacientes que autorizam o contato aparecem na pestaña Leads."
+            >
+              <div className="p-5 bg-white border border-sable/20 space-y-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <p className="text-sm text-carbone">Mostrar tela de captura</p>
+                    <p className="text-xs text-pierre font-light mt-1">
+                      Quando desativado, o paciente vai direto do consentimento ao questionario
+                      (analise 100% anonima).
+                    </p>
+                  </div>
+                  <Toggle
+                    checked={form.contactCaptureEnabled}
+                    onChange={(v) => set("contactCaptureEnabled", v)}
+                  />
+                </div>
+
+                <div className="flex items-start justify-between gap-4 border-t border-sable/15 pt-4">
+                  <div className="flex-1">
+                    <p className="text-sm text-carbone">Tornar campos obrigatorios</p>
+                    <p className="text-xs text-pierre font-light mt-1">
+                      Exige ao menos um meio de contato (e-mail ou WhatsApp) + consentimento LGPD
+                      para prosseguir. Reduz a taxa de conclusao em ~40% — recomendado deixar
+                      opcional.
+                    </p>
+                  </div>
+                  <Toggle
+                    checked={form.contactCaptureRequired}
+                    onChange={(v) => set("contactCaptureRequired", v)}
+                    disabled={!form.contactCaptureEnabled}
+                  />
+                </div>
+
+                <div className="border-t border-sable/15 pt-4">
+                  <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-2">
+                    Mensagem custom (opcional)
+                  </label>
+                  <textarea
+                    value={form.contactCustomMessage}
+                    onChange={(e) => set("contactCustomMessage", e.target.value)}
+                    disabled={!form.contactCaptureEnabled}
+                    rows={3}
+                    placeholder="Ex.: Gostariamos de te acompanhar com recomendacoes exclusivas e descontos especiais."
+                    className="w-full px-3 py-2 border border-sable/30 bg-blanc-casse text-sm text-carbone font-light focus:outline-none focus:border-pierre disabled:opacity-50"
+                  />
+                  <p className="text-[10px] text-pierre/70 font-light mt-1">
+                    Se vazio, usamos a mensagem padrao mencionando o nome da clinica.
+                  </p>
+                </div>
+              </div>
+            </Section>
+
+            {/* Entrega + notificacoes */}
+            <Section
+              title="Entrega e notificacoes"
+              description="Como o resultado chega ao paciente e como sua equipe e avisada de novas leads."
+            >
+              <div className="p-5 bg-white border border-sable/20 space-y-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <p className="text-sm text-carbone">Enviar PDF por e-mail automaticamente</p>
+                    <p className="text-xs text-pierre font-light mt-1">
+                      Apos a analise, se o paciente forneceu e-mail e autorizou contato,
+                      recebe um e-mail com o link para baixar o relatorio em PDF.
+                    </p>
+                  </div>
+                  <Toggle
+                    checked={form.autoSendPdfEmail}
+                    onChange={(v) => set("autoSendPdfEmail", v)}
+                  />
+                </div>
+
+                <div className="flex items-start justify-between gap-4 border-t border-sable/15 pt-4">
+                  <div className="flex-1">
+                    <p className="text-sm text-carbone">Avisar minha equipe sobre novas leads</p>
+                    <p className="text-xs text-pierre font-light mt-1">
+                      Envia e-mail para todos os administradores do tenant sempre que uma
+                      nova lead for capturada com consentimento.
+                    </p>
+                  </div>
+                  <Toggle
+                    checked={form.notifyTenantNewLead}
+                    onChange={(v) => set("notifyTenantNewLead", v)}
                   />
                 </div>
               </div>

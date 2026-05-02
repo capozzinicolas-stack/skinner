@@ -5,6 +5,7 @@ const dashboardNav = [
   { label: "Dashboard", href: "/dashboard", icon: "⌂" },
   { label: "Catalogo", href: "/dashboard/catalogo", icon: "☰" },
   { label: "Relatorios", href: "/dashboard/relatorios", icon: "☷" },
+  { label: "Leads", href: "/dashboard/leads", icon: "✉" },
   { label: "Kits", href: "/dashboard/kits", icon: "◈" },
   { label: "Analise", href: "/dashboard/analise", icon: "◎" },
   { label: "Marca", href: "/dashboard/marca", icon: "★" },

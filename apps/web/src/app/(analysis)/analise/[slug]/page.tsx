@@ -6,9 +6,10 @@ import { Questionnaire, type QuestionnaireAnswers, type QuestionnaireConfig, typ
 import { PhotoCapture } from "@/components/analysis/photo-capture";
 import { LoadingScreen } from "@/components/analysis/loading-screen";
 import { ResultsScreen, type ResultsConfig } from "@/components/analysis/results-screen";
+import { ContactCapture, type ContactData } from "@/components/analysis/contact-capture";
 import type { FullAnalysisResult } from "@/lib/sae/types";
 
-type Step = "welcome" | "consent" | "questionnaire" | "photo" | "loading" | "result" | "error";
+type Step = "welcome" | "consent" | "contact" | "questionnaire" | "photo" | "loading" | "result" | "error";
 
 export default function AnalysisPage({
   params,
@@ -17,6 +18,12 @@ export default function AnalysisPage({
 }) {
   const [step, setStep] = useState<Step>("welcome");
   const [answers, setAnswers] = useState<QuestionnaireAnswers | null>(null);
+  const [contact, setContact] = useState<ContactData>({
+    clientName: "",
+    clientEmail: "",
+    clientPhone: "",
+    consentToContact: false,
+  });
   const [result, setResult] = useState<FullAnalysisResult | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
@@ -119,11 +126,29 @@ export default function AnalysisPage({
       tenantSlug: params.slug,
       photoBase64: base64,
       questionnaire: answers,
+      clientName: contact.clientName || undefined,
+      clientEmail: contact.clientEmail || undefined,
+      clientPhone: contact.clientPhone || undefined,
+      consentToContact: contact.consentToContact,
     });
   }
 
-  // When photoOnlyMode is enabled, skip questionnaire entirely
+  function handleContactDone(data: ContactData) {
+    setContact(data);
+    if (cfg?.photoOnlyMode) {
+      setStep("photo");
+    } else {
+      setStep("questionnaire");
+    }
+  }
+
+  // After consent: if contact capture is enabled, route to the new step;
+  // otherwise preserve the prior behaviour (questionnaire / photoOnly).
   function handleConsentContinue() {
+    if (cfg?.contactCaptureEnabled !== false) {
+      setStep("contact");
+      return;
+    }
     if (cfg?.photoOnlyMode) {
       setStep("photo");
     } else {
@@ -239,6 +264,15 @@ export default function AnalysisPage({
               </button>
             </div>
           </div>
+        )}
+
+        {step === "contact" && (
+          <ContactCapture
+            tenantName={tenantName}
+            customMessage={cfg?.contactCustomMessage ?? null}
+            required={cfg?.contactCaptureRequired === true}
+            onComplete={handleContactDone}
+          />
         )}
 
         {step === "questionnaire" && (

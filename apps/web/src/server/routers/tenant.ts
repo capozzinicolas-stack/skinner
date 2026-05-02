@@ -81,6 +81,10 @@ export const tenantRouter = router({
               mercadoPagoEmail: true,
               // Skin projection
               projectionEnabled: true,
+              // Lead capture (public so the analysis flow knows whether to render the step)
+              contactCaptureEnabled: true,
+              contactCaptureRequired: true,
+              contactCustomMessage: true,
             },
           },
         },
@@ -291,6 +295,12 @@ export const tenantRouter = router({
         maxServiceRecs: z.number().int().min(1).max(20).nullable().optional(),
         // Skin projection feature
         projectionEnabled: z.boolean().optional(),
+        // Lead capture
+        contactCaptureEnabled: z.boolean().optional(),
+        contactCaptureRequired: z.boolean().optional(),
+        contactCustomMessage: z.string().nullable().optional(),
+        autoSendPdfEmail: z.boolean().optional(),
+        notifyTenantNewLead: z.boolean().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {

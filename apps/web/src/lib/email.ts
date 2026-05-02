@@ -47,6 +47,84 @@ export async function sendEmail({ to, subject, html }: SendEmailParams): Promise
   }
 }
 
+export function buildAnalysisDeliveryEmail(params: {
+  tenantName: string;
+  patientName: string | null;
+  reportUrl: string;
+}): { subject: string; html: string } {
+  const greeting = params.patientName ? `Ola ${params.patientName}` : "Ola";
+  return {
+    subject: `Sua analise de pele esta pronta`,
+    html: `
+      <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 24px; color: #1C1917;">
+        <img src="https://www.skinner.lat/brand/logo-primary.png" alt="Skinner" style="height: 48px; margin-bottom: 32px;" />
+        <h1 style="font-family: Georgia, serif; font-size: 26px; font-weight: normal; font-style: italic; margin: 0 0 16px; color: #1C1917;">
+          ${greeting},
+        </h1>
+        <p style="font-size: 15px; color: #7C7269; line-height: 1.6; margin: 0 0 24px;">
+          Sua analise de pele realizada na <strong style="color: #1C1917;">${params.tenantName}</strong> esta pronta. Clique abaixo para baixar o relatorio completo em PDF.
+        </p>
+        <a href="${params.reportUrl}" style="display: block; text-align: center; padding: 14px 24px; background: #1C1917; color: #F7F3EE; text-decoration: none; font-size: 14px; letter-spacing: 0.02em;">
+          Baixar relatorio em PDF
+        </a>
+        <p style="font-size: 12px; color: #C8BAA9; margin: 32px 0 0; line-height: 1.5;">
+          Este email foi enviado pela ${params.tenantName} com base no seu consentimento durante a analise. Se voce nao reconhece esta solicitacao, ignore este email.
+        </p>
+        <div style="border-top: 1px solid #EDE6DB; margin-top: 32px; padding-top: 16px;">
+          <p style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.14em; color: #C8BAA9; margin: 0;">
+            Skinner · Skin Tech · 2026
+          </p>
+        </div>
+      </div>
+    `,
+  };
+}
+
+export function buildNewLeadNotificationEmail(params: {
+  tenantName: string;
+  patientName: string;
+  patientEmail: string | null;
+  patientPhone: string | null;
+  skinType: string;
+  primaryObjective: string;
+  dashboardUrl: string;
+}): { subject: string; html: string } {
+  const contactLine = [
+    params.patientEmail ? `Email: ${params.patientEmail}` : null,
+    params.patientPhone ? `WhatsApp: ${params.patientPhone}` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  return {
+    subject: `Nova lead capturada — ${params.patientName}`,
+    html: `
+      <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 24px; color: #1C1917;">
+        <img src="https://www.skinner.lat/brand/logo-primary.png" alt="Skinner" style="height: 48px; margin-bottom: 32px;" />
+        <h1 style="font-family: Georgia, serif; font-size: 24px; font-weight: normal; font-style: italic; margin: 0 0 16px; color: #1C1917;">
+          Nova lead capturada
+        </h1>
+        <p style="font-size: 15px; color: #7C7269; line-height: 1.6; margin: 0 0 24px;">
+          Uma nova analise foi concluida na <strong style="color: #1C1917;">${params.tenantName}</strong> e o paciente autorizou contato.
+        </p>
+        <div style="background: #F7F3EE; border: 1px solid #C8BAA9; padding: 20px; margin: 0 0 24px;">
+          <p style="font-size: 14px; margin: 0 0 8px;"><strong>Nome:</strong> ${params.patientName}</p>
+          ${contactLine ? `<p style="font-size: 14px; margin: 0 0 8px;">${contactLine}</p>` : ""}
+          <p style="font-size: 14px; margin: 0 0 8px;"><strong>Tipo de pele:</strong> ${params.skinType}</p>
+          <p style="font-size: 14px; margin: 0;"><strong>Objetivo principal:</strong> ${params.primaryObjective}</p>
+        </div>
+        <a href="${params.dashboardUrl}" style="display: block; text-align: center; padding: 14px 24px; background: #1C1917; color: #F7F3EE; text-decoration: none; font-size: 14px; letter-spacing: 0.02em;">
+          Ver leads no painel
+        </a>
+        <div style="border-top: 1px solid #EDE6DB; margin-top: 32px; padding-top: 16px;">
+          <p style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.14em; color: #C8BAA9; margin: 0;">
+            Skinner · ${params.tenantName} · 2026
+          </p>
+        </div>
+      </div>
+    `,
+  };
+}
+
 export function buildPasswordResetEmail(params: {
   resetUrl: string;
   expiresInMinutes: number;
