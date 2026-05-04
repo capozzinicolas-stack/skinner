@@ -6,6 +6,7 @@ import {
   View,
   StyleSheet,
   Font,
+  Image,
 } from "@react-pdf/renderer";
 
 // Register Skinner brand fonts.
@@ -78,6 +79,12 @@ const s = StyleSheet.create({
     height: 1,
     backgroundColor: colors.sable,
     marginVertical: 20,
+  },
+  coverLogo: {
+    maxWidth: 180,
+    maxHeight: 60,
+    marginBottom: 16,
+    objectFit: "contain",
   },
   coverInfo: {
     fontFamily: "Poppins",
@@ -260,6 +267,7 @@ const stepLabels: Record<string, string> = {
 
 type ReportData = {
   tenantName: string;
+  tenantLogoUrl?: string;
   clientName?: string;
   date: string;
   disclaimer?: string;
@@ -295,6 +303,13 @@ export function SkinReport({ data }: { data: ReportData }) {
     <Document>
       {/* Cover page */}
       <Page size="A4" style={s.coverPage}>
+        {data.tenantLogoUrl && (
+          // Tenant logo on the cover when configured. If the URL fails to load
+          // at render time, react-pdf throws — wrap the whole route handler in
+          // try/catch (already done in /api/report) so we degrade to a 500 with
+          // a friendly Portuguese error rather than corrupting the PDF stream.
+          <Image src={data.tenantLogoUrl} style={s.coverLogo} />
+        )}
         <Text style={s.coverTitle}>Analise de Pele</Text>
         <Text style={s.coverSubtitle}>Skinner — Skin Tech</Text>
         <View style={s.coverLine} />

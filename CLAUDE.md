@@ -431,6 +431,24 @@ NextAuth defaults to **per-subdomain cookie scoping**, so cookies set on `app.sk
 
 When developing locally on `localhost`, both modes are accepted because there is no subdomain prefix — `detectMode()` falls back to "client" by default. To test admin login locally, navigate from a hostname that starts with `admin.` (use `/etc/hosts` to alias `admin.localhost` if needed).
 
+## Brand customization (per-tenant)
+
+Tenant brand fields configured at `/dashboard/marca` are now applied end-to-end in the patient-facing flow. All defaults preserve the Skinner Carbone/Terre palette so a tenant that never opens the page still gets a polished look.
+
+| Field | Where it applies |
+|---|---|
+| `logoUrl` | Header of `/analise/[slug]`, header of `/kit/[kitId]`, header of `/kit/manual/...`, **cover of the PDF report** |
+| `primaryColor` | Welcome screen CTA, consent screen CTA, error screen CTA, "Baixar relatorio em PDF" button on results-screen. Applied via inline `style={{ backgroundColor }}` so any hex value the tenant sets renders 1:1 (Tailwind JIT can't compile arbitrary hex from runtime) |
+| `secondaryColor` | Hover state of all CTAs that use `primaryColor`. Falls back to `primaryColor` itself if the tenant only configured one color, so we never flash an unrelated color on hover |
+| `brandVoice` | Injected into Claude system prompt in `claude-analyzer.ts` alongside the existing `analysisTone`. Truncated to 500 chars to keep prompt cost bounded. Applies as inspiration to all patient-facing fields (`summary`, `conditions[].description`, `action_plan`, etc.) without overriding the safety rules from `analysisTone` |
+| `disclaimer` | Bottom of results-screen, kit pages, **footer of PDF report** (was already wired) |
+
+### Buttons NOT branded today (intentional)
+The "Comprar via WhatsApp" / "Pagar" / "Inscrever-se no kit" buttons inside results-screen and kit pages stay on `bg-carbone` so they look uniform across tenants. If a tenant requests fully-branded secondary actions, migrate them to inline `style` like the primary CTAs above.
+
+### PDF logo loading risk
+react-pdf uses `Image src={url}` which fetches the asset at render time. An invalid `logoUrl` throws inside `renderToBuffer`. The `/api/report/[analysisId]` route handler already wraps the render in try/catch and returns 500 with a friendly Portuguese error, so a broken logo URL degrades to "Erro ao gerar relatorio" rather than a corrupted PDF stream. Always test the logo URL with a sample PDF render after `/dashboard/marca` save.
+
 ## Routing invariants
 
 - **`apps/web/src/middleware.ts` runs on every request and gates auth.** Any new page or API route that should be reachable without a logged-in JWT MUST be added to the `PUBLIC_PATHS` array. Otherwise the middleware silently redirects to `/login`, which from the user's perspective looks like "the link doesn't work" (you click and stay on /login). Symptoms always include "click does nothing" or "page flashes and returns to login".

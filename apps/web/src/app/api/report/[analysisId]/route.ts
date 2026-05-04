@@ -53,6 +53,10 @@ export async function GET(
 
     const reportData = {
       tenantName: analysis.tenant.name,
+      // Tenant logo (if configured under /dashboard/marca) replaces the
+      // default Skinner cover image. Pass undefined if not set so the PDF
+      // template falls back gracefully.
+      tenantLogoUrl: analysis.tenant.logoUrl ?? undefined,
       clientName: analysis.clientName ?? undefined,
       date: new Date(analysis.createdAt).toLocaleDateString("pt-BR"),
       disclaimer: analysis.tenant.disclaimer ?? undefined,

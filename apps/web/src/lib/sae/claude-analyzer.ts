@@ -20,6 +20,18 @@ export async function claudeAnalyze(input: AnalysisInput): Promise<AnalysisOutpu
     where: { tenantId: input.tenantId },
   });
 
+  // Load tenant for brand voice (lives on Tenant, not TenantConfig).
+  // Truncated to 500 chars when injected so a verbose entry doesn't blow up
+  // prompt size or cost.
+  const tenant = await db.tenant.findUnique({
+    where: { id: input.tenantId },
+    select: { brandVoice: true },
+  });
+  const brandVoiceRaw = (tenant?.brandVoice ?? "").trim();
+  const brandVoice = brandVoiceRaw.length > 500
+    ? brandVoiceRaw.slice(0, 500)
+    : brandVoiceRaw;
+
   // Load global platform rules
   const platformConfig = await db.platformConfig.findUnique({
     where: { id: "default" },
@@ -109,7 +121,8 @@ REGRAS:
 ${platformConfig?.analysisGlobalRules ? `\nREGRAS GLOBAIS DA PLATAFORMA:\n${platformConfig.analysisGlobalRules}` : ""}
 ${platformConfig?.analysisRestrictedConditions ? `\nCONDICOES RESTRITAS GLOBALMENTE (NAO MENCIONAR): ${platformConfig.analysisRestrictedConditions}` : ""}
 ${tenantConfig?.customPromptSuffix ? `\nINSTRUCOES ADICIONAIS DO CLIENTE: ${tenantConfig.customPromptSuffix}` : ""}
-${tenantConfig?.restrictedConditions ? `\nCONDICOES RESTRITAS PELO CLIENTE (NAO MENCIONAR): ${tenantConfig.restrictedConditions}` : ""}`;
+${tenantConfig?.restrictedConditions ? `\nCONDICOES RESTRITAS PELO CLIENTE (NAO MENCIONAR): ${tenantConfig.restrictedConditions}` : ""}
+${brandVoice ? `\nVOZ DE MARCA DA CLINICA (use como inspiracao adicional ao escrever os campos voltados ao paciente, mantendo as regras de seguranca clinica e o tom configurado acima): ${brandVoice}` : ""}`;
 
   const userPrompt = `QUESTIONARIO DO PACIENTE:
 - Tipo de pele auto-relatado: ${q.skin_type ?? "nao informado"}

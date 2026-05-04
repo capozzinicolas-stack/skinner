@@ -378,6 +378,8 @@ export function ResultsScreen({
   result,
   tenantName,
   disclaimer,
+  primaryColor,
+  secondaryColor,
   config,
   photoBase64,
 }: {
@@ -385,9 +387,13 @@ export function ResultsScreen({
   tenantName: string;
   disclaimer?: string;
   primaryColor: string;
+  secondaryColor?: string;
   config?: ResultsConfig;
   photoBase64?: string;
 }) {
+  // brandHover falls back to primaryColor if the tenant didn't set a
+  // secondary so we never get a flash of an unrelated color on hover.
+  const brandHover = secondaryColor || primaryColor;
   const { analysis, recommendations } = result;
   const barrier = barrierLabels[analysis.barrier_status] ?? barrierLabels.healthy;
   const [showPlan, setShowPlan] = useState(false);
@@ -755,7 +761,10 @@ export function ResultsScreen({
             href={`/api/report/${result.analysisId}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-block px-8 py-3 border border-sable/40 text-terre text-sm font-light tracking-wide hover:bg-ivoire transition-colors"
+            style={{ backgroundColor: primaryColor }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = brandHover)}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = primaryColor)}
+            className="inline-block px-8 py-3 text-blanc-casse text-sm font-light tracking-wide transition-colors"
           >
             Baixar relatorio em PDF
           </a>

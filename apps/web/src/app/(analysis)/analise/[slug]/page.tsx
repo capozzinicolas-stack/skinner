@@ -45,6 +45,12 @@ export default function AnalysisPage({
   });
 
   const tenantName = tenant.data?.name ?? "Skinner";
+  // Brand colors with safe fallbacks. brandPrimary lives on every CTA the
+  // patient can click; brandSecondary covers hover states + accent chips.
+  // Both default to the Skinner Carbone/Terre palette so a tenant that
+  // never opens /dashboard/marca still gets a polished look.
+  const brandPrimary = tenant.data?.primaryColor || "#1C1917";
+  const brandSecondary = tenant.data?.secondaryColor || "#3D342C";
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const cfg = analysisConfig.data as any;
 
@@ -201,7 +207,10 @@ export default function AnalysisPage({
             <div className="flex flex-col gap-3 items-center">
               <button
                 onClick={() => setStep("consent")}
-                className="px-10 py-3 bg-carbone text-blanc-casse text-sm font-light tracking-wide hover:bg-terre transition-colors"
+                style={{ backgroundColor: brandPrimary }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = brandSecondary)}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = brandPrimary)}
+                className="px-10 py-3 text-blanc-casse text-sm font-light tracking-wide transition-colors"
               >
                 {welcomeCtaText}
               </button>
@@ -258,7 +267,10 @@ export default function AnalysisPage({
               </button>
               <button
                 onClick={handleConsentContinue}
-                className="flex-1 px-4 py-3 bg-carbone text-blanc-casse text-sm font-light tracking-wide hover:bg-terre transition-colors"
+                style={{ backgroundColor: brandPrimary }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = brandSecondary)}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = brandPrimary)}
+                className="flex-1 px-4 py-3 text-blanc-casse text-sm font-light tracking-wide transition-colors"
               >
                 {consentButtonText}
               </button>
@@ -294,7 +306,8 @@ export default function AnalysisPage({
             result={result}
             tenantName={tenantName}
             disclaimer={tenant.data.disclaimer ?? undefined}
-            primaryColor="#1C1917"
+            primaryColor={tenant.data.primaryColor || "#1C1917"}
+            secondaryColor={tenant.data.secondaryColor || undefined}
             config={resultsConfig}
             photoBase64={capturedPhoto ?? undefined}
           />
@@ -306,7 +319,10 @@ export default function AnalysisPage({
             <p className="text-sm text-pierre font-light">{errorMsg}</p>
             <button
               onClick={() => setStep("photo")}
-              className="px-6 py-2 bg-carbone text-blanc-casse text-sm font-light tracking-wide hover:bg-terre transition-colors"
+              style={{ backgroundColor: brandPrimary }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = brandSecondary)}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = brandPrimary)}
+              className="px-6 py-2 text-blanc-casse text-sm font-light tracking-wide transition-colors"
             >
               Tentar novamente
             </button>
