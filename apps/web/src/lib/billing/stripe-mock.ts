@@ -2,7 +2,7 @@
  * Billing utilities — uses real Stripe when configured, mock otherwise.
  */
 
-import { PLANS, type PlanId } from "./plans";
+import type { Plan, PlanId } from "./plans";
 
 // Check if real Stripe is available
 export function isStripeConfigured(): boolean {
@@ -26,9 +26,17 @@ export function createPortalUrl(tenantId: string): string {
   return `/dashboard/faturamento`;
 }
 
-// Calculate monthly bill for a tenant
+/**
+ * Calculate monthly bill for a tenant. Pure function — caller resolves the
+ * Plan via getPlan() and passes it. Keeping this sync makes it easy to test
+ * and avoids tying the financial math to the cache layer.
+ *
+ * Falls back to safe defaults when plan is null (deleted plan, missing
+ * row) so the UI never blows up on a stale tenant; baseFee 0 means we don't
+ * pretend to charge for a plan that doesn't exist anymore.
+ */
 export function calculateMonthlyBill(
-  plan: PlanId,
+  plan: Plan | null,
   analysisUsed: number,
   commissionsTotal: number
 ): {
@@ -38,11 +46,14 @@ export function calculateMonthlyBill(
   commissionCost: number;
   total: number;
 } {
-  const planConfig = PLANS[plan];
-  const baseFee = planConfig.monthlyPrice ?? 0;
-  const excessAnalyses = Math.max(0, analysisUsed - planConfig.analysisLimit);
-  const excessCost = excessAnalyses * planConfig.excessCostPerAnalysis;
-  const commissionCost = commissionsTotal * planConfig.commissionRate;
+  const baseFee = plan?.monthlyPriceBRL ?? 0;
+  const limit = plan?.analysisLimit ?? Number.MAX_SAFE_INTEGER;
+  const excessRate = plan?.excessCostPerAnalysis ?? 0;
+  const commissionRate = plan?.commissionRate ?? 0;
+
+  const excessAnalyses = Math.max(0, analysisUsed - limit);
+  const excessCost = excessAnalyses * excessRate;
+  const commissionCost = commissionsTotal * commissionRate;
 
   return {
     baseFee,

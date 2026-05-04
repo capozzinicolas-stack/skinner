@@ -2,24 +2,17 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { trpc } from "@/lib/trpc/client";
 
-const plans = [
-  {
-    id: "growth", name: "Growth", price: "R$ 890", setup: "R$ 1.500", commission: "3%",
-    target: "Clinicas e farmacias independentes", popular: false,
-    features: ["Ate 200 analises/mes", "1 usuario admin", "Relatorio PDF", "Marca branca basica", "Suporte por email", "Comissao 3% sobre venda atribuida"],
-  },
-  {
-    id: "pro", name: "Pro", price: "R$ 2.490", setup: "R$ 3.000", commission: "2%",
-    target: "Redes regionais e clinicas multi-unidade", popular: true,
-    features: ["Ate 1.500 analises/mes", "5 usuarios · multi-unidade", "Marca branca completa", "Painel de atribuicao", "Integracao ERP/marketplace", "CSM dedicado", "Comissao 2% sobre venda atribuida"],
-  },
-  {
-    id: "enterprise", name: "Enterprise", price: "Sob consulta", setup: "—", commission: "1%",
-    target: "Laboratorios, redes nacionais", popular: false,
-    features: ["Analises ilimitadas", "Usuarios ilimitados", "API privada + webhooks", "SLA 99.9%", "Modelo de IA dedicado", "Co-marketing", "Comissao 1% sobre venda atribuida"],
-  },
-];
+// Hardcoded marketing-only metadata that doesn't live in the Plan model
+// (target audience descriptor, "Mais escolhido" badge highlight). Keyed by
+// plan id. If the admin creates a new plan id, it falls back to no badge
+// and a generic target line.
+const MARKETING_META: Record<string, { target: string; popular: boolean }> = {
+  growth: { target: "Clinicas e farmacias independentes", popular: false },
+  pro: { target: "Redes regionais e clinicas multi-unidade", popular: true },
+  enterprise: { target: "Laboratorios, redes nacionais", popular: false },
+};
 
 const faq = [
   ["Como funciona a comissao?", "Cobrada apenas sobre vendas confirmadas geradas pela recomendacao Skinner. Rastreamento via pixel ou API. Voce so paga quando a Skinner gera venda."],
@@ -32,6 +25,10 @@ const faq = [
 
 export default function PlanosPage() {
   const [loading, setLoading] = useState<string | null>(null);
+  const plansQuery = trpc.billing.publicPlans.useQuery();
+  const plans = (plansQuery.data ?? [])
+    .slice()
+    .sort((a, b) => a.displayOrder - b.displayOrder);
 
   async function handleCheckout(planId: string) {
     setLoading(planId);
@@ -70,44 +67,61 @@ export default function PlanosPage() {
 
       <section className="py-24 px-8">
         <div className="max-w-[1200px] mx-auto">
+          {plansQuery.isLoading && (
+            <p className="text-sm text-pierre font-light">Carregando planos...</p>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {plans.map((p) => (
-              <div key={p.id} className={`relative p-8 border flex flex-col ${p.popular ? "border-carbone bg-blanc-casse" : "border-sable/40 bg-white"}`}>
-                {p.popular && <span className="absolute -top-3 left-8 font-mono text-[10px] tracking-[0.12em] uppercase text-blanc-casse bg-carbone px-3 py-1">Mais escolhido</span>}
-                <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-pierre">{p.target}</p>
-                <h2 className="font-serif text-4xl italic text-carbone mt-2">{p.name}</h2>
-                <div className="mt-4 mb-1">
-                  <b className="font-serif text-3xl text-carbone">{p.price}</b>
-                  {p.price.startsWith("R$") && <small className="text-pierre font-light text-sm ml-1">/mes</small>}
+            {plans.map((p) => {
+              const meta = MARKETING_META[p.id] ?? { target: "", popular: false };
+              const priceLabel = p.customAllowed
+                ? "Sob consulta"
+                : `R$ ${p.monthlyPriceBRL.toLocaleString("pt-BR")}`;
+              const setupLabel =
+                p.customAllowed || !p.setupFeeBRL
+                  ? "—"
+                  : `R$ ${p.setupFeeBRL.toLocaleString("pt-BR")}`;
+              const commissionLabel = `${(p.commissionRate * 100).toFixed(0)}%`;
+              return (
+                <div key={p.id} className={`relative p-8 border flex flex-col ${meta.popular ? "border-carbone bg-blanc-casse" : "border-sable/40 bg-white"}`}>
+                  {meta.popular && <span className="absolute -top-3 left-8 font-mono text-[10px] tracking-[0.12em] uppercase text-blanc-casse bg-carbone px-3 py-1">Mais escolhido</span>}
+                  {meta.target && (
+                    <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-pierre">{meta.target}</p>
+                  )}
+                  <h2 className="font-serif text-4xl italic text-carbone mt-2">{p.name}</h2>
+                  <div className="mt-4 mb-1">
+                    <b className="font-serif text-3xl text-carbone">{priceLabel}</b>
+                    {!p.customAllowed && <small className="text-pierre font-light text-sm ml-1">/mes</small>}
+                  </div>
+                  <p className="text-[13px] text-pierre font-light">Setup: {setupLabel} · Comissao: {commissionLabel}</p>
+                  <div className="h-px bg-sable/30 my-6" />
+                  <ul className="flex flex-col gap-3 flex-1">
+                    {p.features.map((f, i) => (
+                      <li key={i} className="flex gap-3 text-sm text-terre font-light">
+                        <span className="w-1.5 h-1.5 bg-carbone mt-2 flex-shrink-0" />{f}
+                      </li>
+                    ))}
+                  </ul>
+                  {p.customAllowed ? (
+                    <Link href="/contato" className="mt-8 block text-center py-4 text-sm tracking-[0.02em] transition-all border border-sable text-carbone hover:bg-ivoire hover:border-carbone">
+                      {p.ctaText || "Falar com vendas"}
+                    </Link>
+                  ) : (
+                    <button
+                      onClick={() => handleCheckout(p.id)}
+                      disabled={loading === p.id}
+                      className={`mt-8 block w-full text-center py-4 text-sm tracking-[0.02em] transition-all disabled:opacity-50 ${
+                        meta.popular
+                          ? "bg-carbone text-blanc-casse border border-carbone hover:bg-terre"
+                          : "border border-sable text-carbone hover:bg-ivoire hover:border-carbone"
+                      }`}
+                    >
+                      {loading === p.id ? "Redirecionando..." : (p.ctaText || "Inscrever-se")}
+                    </button>
+                  )}
                 </div>
-                <p className="text-[13px] text-pierre font-light">Setup: {p.setup} · Comissao: {p.commission}</p>
-                <div className="h-px bg-sable/30 my-6" />
-                <ul className="flex flex-col gap-3 flex-1">
-                  {p.features.map((f, i) => (
-                    <li key={i} className="flex gap-3 text-sm text-terre font-light">
-                      <span className="w-1.5 h-1.5 bg-carbone mt-2 flex-shrink-0" />{f}
-                    </li>
-                  ))}
-                </ul>
-                {p.id === "enterprise" ? (
-                  <Link href="/contato" className="mt-8 block text-center py-4 text-sm tracking-[0.02em] transition-all border border-sable text-carbone hover:bg-ivoire hover:border-carbone">
-                    Falar com vendas
-                  </Link>
-                ) : (
-                  <button
-                    onClick={() => handleCheckout(p.id)}
-                    disabled={loading === p.id}
-                    className={`mt-8 block w-full text-center py-4 text-sm tracking-[0.02em] transition-all disabled:opacity-50 ${
-                      p.popular
-                        ? "bg-carbone text-blanc-casse border border-carbone hover:bg-terre"
-                        : "border border-sable text-carbone hover:bg-ivoire hover:border-carbone"
-                    }`}
-                  >
-                    {loading === p.id ? "Redirecionando..." : "Inscrever-se"}
-                  </button>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="mt-24">

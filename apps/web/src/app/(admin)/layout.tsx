@@ -3,6 +3,7 @@ import { Sidebar } from "@/components/shared/sidebar";
 const adminNav = [
   { label: "Dashboard", href: "/admin", icon: "⌂" },
   { label: "Tenants", href: "/admin/tenants", icon: "☰" },
+  { label: "Planos", href: "/admin/planos", icon: "∴" },
   { label: "Usuarios", href: "/admin/usuarios", icon: "◻" },
   { label: "Leads", href: "/admin/leads", icon: "◈" },
   { label: "Analytics", href: "/admin/analytics", icon: "▦" },

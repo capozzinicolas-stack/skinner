@@ -1,8 +1,9 @@
 import { z } from "zod/v4";
 import { TRPCError } from "@trpc/server";
 import { router, adminProcedure } from "../trpc";
-import { PLANS, type PlanId } from "@/lib/billing/plans";
+import { getPlan, getAllPlans, invalidatePlanCache } from "@/lib/billing/plans";
 import { calculateMonthlyBill } from "@/lib/billing/stripe-mock";
+import { getStripe } from "@/lib/billing/stripe";
 import { hashSync } from "bcryptjs";
 
 export const adminRouter = router({
@@ -52,9 +53,11 @@ export const adminRouter = router({
       }),
     ]);
 
+    const allPlans = await getAllPlans({ visibleOnly: false, includeDeprecated: true });
+    const planMap = new Map(allPlans.map((p) => [p.id, p]));
     const totalMRR = allActiveTenants.reduce((sum, t) => {
-      const plan = PLANS[t.plan as PlanId];
-      return sum + (plan?.monthlyPrice ?? 0);
+      const plan = planMap.get(t.plan);
+      return sum + (plan?.monthlyPriceBRL ?? 0);
     }, 0);
 
     const tenantsAtRisk = allActiveTenants.filter(
@@ -170,7 +173,8 @@ export const adminRouter = router({
       ]);
 
       const salesTotal = conversions._sum.saleValue ?? 0;
-      const bill = calculateMonthlyBill(tenant.plan as PlanId, tenant.analysisUsed, salesTotal);
+      const planForBill = await getPlan(tenant.plan);
+      const bill = calculateMonthlyBill(planForBill, tenant.analysisUsed, salesTotal);
 
       return {
         tenant,
@@ -289,16 +293,20 @@ export const adminRouter = router({
       });
     }),
 
-  // Admin: change plan for any tenant
+  // Admin: change plan for any tenant. Plan id is now a free string (admin
+  // can create custom plans via /admin/planos), validated via getPlan.
   changeTenantPlan: adminProcedure
     .input(
       z.object({
         tenantId: z.string(),
-        plan: z.enum(["growth", "pro", "enterprise"]),
+        plan: z.string().min(1),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const planConfig = PLANS[input.plan];
+      const planConfig = await getPlan(input.plan);
+      if (!planConfig) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Plano nao encontrado." });
+      }
       return ctx.db.tenant.update({
         where: { id: input.tenantId },
         data: {

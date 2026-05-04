@@ -1,9 +1,29 @@
 import { z } from "zod/v4";
-import { router, tenantProcedure, adminProcedure } from "../trpc";
-import { PLANS, type PlanId } from "@/lib/billing/plans";
+import { router, tenantProcedure, adminProcedure, publicProcedure } from "../trpc";
+import { getPlan, getAllPlans, type PlanId } from "@/lib/billing/plans";
 import { calculateMonthlyBill, createCheckoutUrl, createPortalUrl, isStripeConfigured } from "@/lib/billing/stripe-mock";
 
 export const billingRouter = router({
+  // Public list of plans for the marketing /planos page. Same shape as the
+  // authenticated `plans` query but doesn't require a tenant session.
+  publicPlans: publicProcedure.query(async () => {
+    const all = await getAllPlans({ visibleOnly: true });
+    return all.map((plan) => ({
+      id: plan.id,
+      name: plan.name,
+      monthlyPriceBRL: plan.monthlyPriceBRL,
+      setupFeeBRL: plan.setupFeeBRL,
+      analysisLimit: plan.analysisLimit,
+      commissionRate: plan.commissionRate,
+      maxUsers: plan.maxUsers,
+      features: plan.features,
+      ctaText: plan.ctaText,
+      customAllowed: plan.customAllowed,
+      displayOrder: plan.displayOrder,
+    }));
+  }),
+
+
   // Get current plan and usage for tenant
   status: tenantProcedure.query(async ({ ctx }) => {
     const tenant = await ctx.db.tenant.findUniqueOrThrow({
@@ -13,8 +33,7 @@ export const billingRouter = router({
       },
     });
 
-    const plan = tenant.plan as PlanId;
-    const planConfig = PLANS[plan];
+    const planConfig = await getPlan(tenant.plan);
 
     // Count conversions this period
     const periodStart = new Date();
@@ -31,11 +50,11 @@ export const billingRouter = router({
     });
 
     const salesTotal = conversions._sum.saleValue ?? 0;
-    const bill = calculateMonthlyBill(plan, tenant.analysisUsed, salesTotal);
+    const bill = calculateMonthlyBill(planConfig, tenant.analysisUsed, salesTotal);
 
     return {
-      plan,
-      planName: planConfig.name,
+      plan: tenant.plan,
+      planName: planConfig?.name ?? tenant.plan,
       analysisLimit: tenant.analysisLimit,
       analysisUsed: tenant.analysisUsed,
       creditsRemaining: tenant.analysisLimit - tenant.analysisUsed,
@@ -47,19 +66,34 @@ export const billingRouter = router({
     };
   }),
 
-  // Get available plans
-  plans: tenantProcedure.query(() => {
-    return Object.entries(PLANS).map(([id, plan]) => ({
-      id,
-      ...plan,
+  // Get available plans (visible + non-deprecated)
+  plans: tenantProcedure.query(async () => {
+    const all = await getAllPlans({ visibleOnly: true });
+    return all.map((plan) => ({
+      id: plan.id,
+      name: plan.name,
+      monthlyPrice: plan.monthlyPriceBRL,
+      setupFee: plan.setupFeeBRL,
+      analysisLimit: plan.analysisLimit,
+      excessCostPerAnalysis: plan.excessCostPerAnalysis,
+      commissionRate: plan.commissionRate,
+      maxUsers: plan.maxUsers,
+      features: plan.features,
+      ctaText: plan.ctaText,
+      customAllowed: plan.customAllowed,
     }));
   }),
 
-  // Create checkout session for plan upgrade
+  // Create checkout session for plan upgrade. Plan id is now any string
+  // (admin can create custom slugs); validation happens server-side via getPlan.
   checkout: tenantProcedure
-    .input(z.object({ planId: z.enum(["growth", "pro", "enterprise"]) }))
+    .input(z.object({ planId: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
-      if (isStripeConfigured() && input.planId !== "enterprise") {
+      const plan = await getPlan(input.planId);
+      if (!plan) {
+        return { url: `/dashboard/faturamento?error=plan-not-found`, useApi: false };
+      }
+      if (isStripeConfigured() && !plan.customAllowed) {
         // Real Stripe — return API endpoint URL for the client to POST to
         return { url: `/api/billing/checkout`, planId: input.planId, useApi: true };
       }
@@ -77,9 +111,12 @@ export const billingRouter = router({
 
   // Upgrade/downgrade plan (mock - in production this would be Stripe webhook)
   changePlan: tenantProcedure
-    .input(z.object({ planId: z.enum(["growth", "pro", "enterprise"]) }))
+    .input(z.object({ planId: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
-      const planConfig = PLANS[input.planId];
+      const planConfig = await getPlan(input.planId);
+      if (!planConfig) {
+        throw new Error("Plan not found");
+      }
 
       await ctx.db.tenant.update({
         where: { id: ctx.tenantId },
@@ -139,9 +176,12 @@ export const billingRouter = router({
       },
     });
 
+    const allPlans = await getAllPlans({ visibleOnly: false, includeDeprecated: true });
+    const planMap = new Map(allPlans.map((p) => [p.id, p]));
+
     const totalMRR = tenants.reduce((sum, t) => {
-      const plan = PLANS[t.plan as PlanId];
-      return sum + (plan?.monthlyPrice ?? 0);
+      const plan = planMap.get(t.plan);
+      return sum + (plan?.monthlyPriceBRL ?? 0);
     }, 0);
 
     return { tenants, totalMRR };

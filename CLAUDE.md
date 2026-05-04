@@ -197,6 +197,51 @@
 - Conditional display: questions can have `showCondition` (e.g. pregnancy only shown when sex=female)
 - TenantConfig toggles (questionAllergiesEnabled, etc.) still work as per-tenant overrides
 
+## Plans (admin-managed)
+
+Pricing, limits, features and Stripe Price IDs all live in the `plans` table managed via `/admin/planos`. The previous hardcoded `PLANS` constant + `STRIPE_PRICE_IDS` arrays were removed in May-2026 because they could not stay in sync with admin edits without a deploy.
+
+### Source of truth
+
+- `model Plan` (Prisma): id (slug, immutable), name, monthlyPriceBRL, setupFeeBRL, analysisLimit, commissionRate, excessCostPerAnalysis, maxUsers, features (JSON array), ctaText, stripePriceId, stripeSetupPriceId, visible, deprecated, customAllowed, displayOrder.
+- `lib/billing/plans.ts` exposes `getPlan(id)`, `getAllPlans({ visibleOnly, includeDeprecated })`, `getPlanForPrice(stripePriceId)`, and `invalidatePlanCache(id?)`. All async, with a 60-second per-instance in-memory cache.
+- `lib/billing/stripe.ts` no longer exports `STRIPE_PRICE_IDS` / `STRIPE_SETUP_PRICE_IDS` / `PRICE_TO_PLAN` — consumers MUST resolve via the plan resolver. The renaming history (Apr-2026 starter→growth, growth→pro) is preserved as a comment for archeology.
+
+### Stripe Price immutability
+
+Stripe Prices are immutable. When the admin changes `monthlyPriceBRL` or `setupFeeBRL`, `plans.update` calls `stripe.prices.create()` and rotates the FK on the Plan row. The OLD Price stays active so existing subscriptions keep paying their original amount — Stripe binds subscriptions to Price by ID, not by product. Custom-allowed plans (enterprise tier) skip Stripe Price creation entirely.
+
+### Grandfathering rules
+
+- **monthlyPriceBRL / setupFeeBRL**: only used for /planos display + new signups. Existing tenants are protected at the Stripe layer (their subscription stays bound to the old Price).
+- **analysisLimit / commissionRate / maxUsers / excessCostPerAnalysis**: snapshotted to `Tenant.*` columns at signup. Plan edits do NOT propagate to existing tenants UNLESS the admin explicitly checks "Aplicar mudancas aos N tenants" in the form. That triggers an `UPDATE tenants ... WHERE plan = id` AND the form shows a confirmation dialog with the tenant count first.
+- **name / features / ctaText**: read live from the Plan row → visual changes propagate to all tenants' faturamento UI immediately.
+
+### Lifecycle
+
+- **Soft delete only** via `deprecated = true` (Plan.archive endpoint sets `deprecated=true, visible=false` together). Hard DELETE is blocked because `Tenant.plan` references the id.
+- Reactivate via `Plan.unarchive`.
+- Plans with `customAllowed = true` (enterprise tier today) are public-listed but disabled for self-service signup; the CTA goes to `/contato` instead.
+
+### Admin endpoints (`plansRouter`)
+
+- `list`, `get(id)`, `tenantsCount(id)` — for the admin UI.
+- `create(planMutableInput + id)` — Stripe Price creation runs FIRST; if Stripe call throws, no DB row is created.
+- `update(planMutableInput + id + applyToExistingTenants)` — diffs the row; only creates new Stripe Prices when prices changed; conditionally fans out the limit update.
+- `archive(id)` / `unarchive(id)` — soft delete.
+
+### Caller migration cheatsheet
+
+| Before | After |
+|---|---|
+| `PLANS["growth"]` | `await getPlan("growth")` |
+| `Object.values(PLANS)` | `await getAllPlans({ visibleOnly: true })` |
+| `STRIPE_PRICE_IDS["pro"]` | `(await getPlan("pro")).stripePriceId` |
+| `PRICE_TO_PLAN["price_xyz"]` | `(await getPlanForPrice("price_xyz")).id` |
+| `calculateMonthlyBill("growth", used, sales)` | `calculateMonthlyBill(await getPlan("growth"), used, sales)` |
+
+The marketing `/planos` page uses the public `billing.publicPlans` tRPC query (publicProcedure, no auth required). Visual marketing-only metadata (target descriptor + popular badge) is keyed by plan id in a small `MARKETING_META` lookup; new plan ids fall back to no badge.
+
 ## Stripe Billing
 
 - Real Stripe integration when `STRIPE_SECRET_KEY` is set, mock otherwise

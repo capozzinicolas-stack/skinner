@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getStripe, PRICE_TO_PLAN } from "@/lib/billing/stripe";
-import { PLANS, type PlanId } from "@/lib/billing/plans";
+import { getStripe } from "@/lib/billing/stripe";
+import { getPlan, getPlanForPrice, type PlanId } from "@/lib/billing/plans";
 import { db } from "@skinner/db";
 import { hashSync } from "bcryptjs";
 import { sendEmail, buildWelcomeEmail } from "@/lib/email";
@@ -34,7 +34,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     return;
   }
 
-  const planConfig = PLANS[planId];
+  const planConfig = await getPlan(planId);
   if (!planConfig) {
     console.error("[webhook] Unknown plan:", planId);
     return;
@@ -233,7 +233,8 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   if (!tenantId) return;
 
   const priceId = subscription.items.data[0]?.price?.id;
-  const planId = priceId ? PRICE_TO_PLAN[priceId] : null;
+  const matchedPlan = priceId ? await getPlanForPrice(priceId) : null;
+  const planId = matchedPlan?.id ?? null;
 
   const statusMap: Record<string, string> = {
     active: "active",
@@ -264,15 +265,14 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     },
   });
 
-  if (planId && PLANS[planId as PlanId]) {
-    const planConfig = PLANS[planId as PlanId];
+  if (matchedPlan) {
     await db.tenant.update({
       where: { id: tenantId },
       data: {
-        plan: planId,
-        analysisLimit: planConfig.analysisLimit,
-        commissionRate: planConfig.commissionRate,
-        excessCostPerAnalysis: planConfig.excessCostPerAnalysis,
+        plan: matchedPlan.id,
+        analysisLimit: matchedPlan.analysisLimit,
+        commissionRate: matchedPlan.commissionRate,
+        excessCostPerAnalysis: matchedPlan.excessCostPerAnalysis,
       },
     });
   }

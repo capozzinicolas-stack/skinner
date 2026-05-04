@@ -12,6 +12,7 @@ import { adminRouter } from "./admin";
 import { kitRouter } from "./kit";
 import { integrationRouter } from "./integration";
 import { leadsRouter } from "./leads";
+import { plansRouter } from "./plans";
 
 export const appRouter = router({
   health: healthRouter,
@@ -27,6 +28,7 @@ export const appRouter = router({
   kit: kitRouter,
   integration: integrationRouter,
   leads: leadsRouter,
+  plans: plansRouter,
 });
 
 export type AppRouter = typeof appRouter;

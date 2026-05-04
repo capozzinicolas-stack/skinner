@@ -2,6 +2,7 @@ import { z } from "zod/v4";
 import { hashSync, compareSync } from "bcryptjs";
 import { TRPCError } from "@trpc/server";
 import { router, tenantProcedure, adminProcedure, protectedProcedure } from "../trpc";
+import { getPlan } from "@/lib/billing/plans";
 
 export const userRouter = router({
   me: protectedProcedure.query(async ({ ctx }) => {
@@ -211,15 +212,16 @@ export const userRouter = router({
         throw new TRPCError({ code: "FORBIDDEN", message: "Apenas administradores podem criar usuários." });
       }
 
-      // Check tenant user limits
+      // Check tenant user limits — sourced from the Plan row managed via
+      // /admin/planos. Falls back to 2 if the plan row was deleted.
       const tenant = await ctx.db.tenant.findUniqueOrThrow({
         where: { id: ctx.tenantId },
       });
       const userCount = await ctx.db.user.count({
         where: { tenantId: ctx.tenantId },
       });
-      const limits = { growth: 2, pro: 10, enterprise: 999 };
-      const limit = limits[tenant.plan as keyof typeof limits] ?? 2;
+      const planConfig = await getPlan(tenant.plan);
+      const limit = planConfig?.maxUsers ?? 2;
       if (userCount >= limit) {
         throw new TRPCError({
           code: "FORBIDDEN",

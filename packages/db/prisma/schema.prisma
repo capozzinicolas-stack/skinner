@@ -200,6 +200,58 @@ model User {
   @@map("users")
 }
 
+// ============================================
+// PLANS (admin-managed pricing tiers)
+// ============================================
+//
+// Source of truth for pricing/limits/features. Replaces the hardcoded PLANS
+// dictionary that previously lived in apps/web/src/lib/billing/plans.ts.
+//
+// Lifecycle invariants:
+//   - id is the slug used in URLs, Stripe metadata, and Tenant.plan. NEVER
+//     change once created (would orphan existing tenants and Stripe records).
+//   - stripePriceId / stripeSetupPriceId are NEVER edited in place. When the
+//     admin changes monthlyPriceBRL or setupFeeBRL, the backend creates a NEW
+//     Stripe Price (Stripe prices are immutable) and rotates the FK here.
+//     Existing subscriptions keep their old Stripe Price (Stripe handles that
+//     transparently) so grandfathering is automatic at the Stripe layer.
+//   - Limits (analysisLimit, commissionRate, maxUsers, excessCostPerAnalysis)
+//     are SNAPSHOTTED to Tenant.* at signup. Changing them on the Plan does
+//     NOT propagate to existing tenants unless the admin explicitly opts in
+//     via the apply-to-existing checkbox in /admin/planos.
+//   - features + name + ctaText are read live from this row (no snapshot), so
+//     visual rewordings DO propagate to existing tenants' faturamento UI.
+//   - Soft delete only (deprecated = true). Hard delete is blocked because
+//     legacy tenants reference the id via Tenant.plan.
+//
+// See CLAUDE.md "Plans (admin-managed)" for the full contract.
+model Plan {
+  id                      String  @id // "growth", "pro", "enterprise", or any custom slug
+  name                    String
+  monthlyPriceBRL         Float   // shown in UI; gates Stripe Price creation when changed
+  setupFeeBRL             Float?  // null = no setup; 0 also means none
+  analysisLimit           Int
+  commissionRate          Float   // 0..1 (e.g. 0.03 = 3%)
+  excessCostPerAnalysis   Float   @default(0)
+  maxUsers                Int
+  features                String  // JSON array of bullet strings
+  ctaText                 String  @default("Inscrever-se")
+
+  stripePriceId           String? // null for enterprise / custom-allowed plans
+  stripeSetupPriceId      String?
+
+  visible                 Boolean @default(true)  // false = hidden from /planos
+  deprecated              Boolean @default(false) // true = no new signups; existing tenants stay
+  customAllowed           Boolean @default(false) // true = enterprise tier; price is "Sob consulta", no Stripe Price required
+
+  displayOrder            Int     @default(0)
+
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@map("plans")
+}
+
 // One-shot tokens issued by /api/auth/forgot, consumed by /api/auth/reset.
 // We store ONLY the SHA-256 hash of the token — the plain token lives only
 // in the email link. 1h expiry, single-use (usedAt timestamp prevents replay).

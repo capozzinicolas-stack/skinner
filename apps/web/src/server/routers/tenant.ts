@@ -1,6 +1,7 @@
 import { z } from "zod/v4";
 import { TRPCError } from "@trpc/server";
 import { router, adminProcedure, publicProcedure, tenantProcedure } from "../trpc";
+import { getPlan } from "@/lib/billing/plans";
 
 export const tenantRouter = router({
   list: adminProcedure.query(async ({ ctx }) => {
@@ -156,20 +157,24 @@ export const tenantRouter = router({
       z.object({
         name: z.string().min(2),
         slug: z.string().min(2).regex(/^[a-z0-9-]+$/),
-        plan: z.enum(["growth", "pro", "enterprise"]).default("growth"),
+        plan: z.string().min(1).default("growth"),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const limits = {
-        growth: { analysisLimit: 200, commissionRate: 0.03, excessCostPerAnalysis: 3.5 },
-        pro: { analysisLimit: 1000, commissionRate: 0.02, excessCostPerAnalysis: 2.0 },
-        enterprise: { analysisLimit: 999999, commissionRate: 0.01, excessCostPerAnalysis: 0 },
-      };
+      const planConfig = await getPlan(input.plan);
+      if (!planConfig) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: `Plano "${input.plan}" nao encontrado.`,
+        });
+      }
 
       return ctx.db.tenant.create({
         data: {
           ...input,
-          ...limits[input.plan],
+          analysisLimit: planConfig.analysisLimit,
+          commissionRate: planConfig.commissionRate,
+          excessCostPerAnalysis: planConfig.excessCostPerAnalysis,
           tenantConfig: { create: {} },
         },
       });
@@ -180,24 +185,36 @@ export const tenantRouter = router({
       z.object({
         id: z.string(),
         name: z.string().min(2).optional(),
-        plan: z.enum(["growth", "pro", "enterprise"]).optional(),
+        plan: z.string().min(1).optional(),
         status: z.enum(["active", "paused", "deleted"]).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const { id, plan, ...rest } = input;
 
-      const planLimits = plan
-        ? {
-            growth: { analysisLimit: 200, commissionRate: 0.03, excessCostPerAnalysis: 3.5 },
-            pro: { analysisLimit: 1000, commissionRate: 0.02, excessCostPerAnalysis: 2.0 },
-            enterprise: { analysisLimit: 999999, commissionRate: 0.01, excessCostPerAnalysis: 0 },
-          }[plan]
-        : {};
+      let planLimits: {
+        analysisLimit: number;
+        commissionRate: number;
+        excessCostPerAnalysis: number;
+      } | null = null;
+      if (plan) {
+        const planConfig = await getPlan(plan);
+        if (!planConfig) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: `Plano "${plan}" nao encontrado.`,
+          });
+        }
+        planLimits = {
+          analysisLimit: planConfig.analysisLimit,
+          commissionRate: planConfig.commissionRate,
+          excessCostPerAnalysis: planConfig.excessCostPerAnalysis,
+        };
+      }
 
       return ctx.db.tenant.update({
         where: { id },
-        data: { ...rest, ...(plan ? { plan, ...planLimits } : {}) },
+        data: { ...rest, ...(plan && planLimits ? { plan, ...planLimits } : {}) },
       });
     }),
 

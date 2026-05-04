@@ -1,17 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
-import { getStripe, STRIPE_PRICE_IDS, STRIPE_SETUP_PRICE_IDS } from "@/lib/billing/stripe";
+import { getStripe } from "@/lib/billing/stripe";
+import { getPlan } from "@/lib/billing/plans";
 import { db } from "@skinner/db";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const planId = body.planId as string;
-    const priceId = STRIPE_PRICE_IDS[planId];
+    const plan = await getPlan(planId);
 
-    if (!priceId) {
+    if (!plan || !plan.stripePriceId) {
       return NextResponse.json({ error: "Plano invalido" }, { status: 400 });
     }
+    if (plan.deprecated) {
+      return NextResponse.json(
+        { error: "Plano descontinuado. Contate vendas." },
+        { status: 400 }
+      );
+    }
+    const priceId = plan.stripePriceId;
 
     const origin = req.headers.get("origin") || "https://www.skinner.lat";
 
@@ -62,7 +70,7 @@ export async function POST(req: NextRequest) {
     // a trusted server-side context (e.g. admin-generated payment links). The
     // public /planos page never sets this flag, so self-service signups always
     // pay the setup fee.
-    const setupPriceId = STRIPE_SETUP_PRICE_IDS[planId];
+    const setupPriceId = plan.stripeSetupPriceId;
     const skipSetup = body.skipSetupFee === true;
 
     const lineItems: Array<{ price: string; quantity: number }> = [
