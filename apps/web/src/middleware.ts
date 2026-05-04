@@ -28,6 +28,7 @@ const PUBLIC_PATHS = [
   "/api/trpc/analysis.run",
   "/api/trpc/dermatology.listConditions",
   "/api/trpc/dermatology.listIngredients",
+  "/api/trpc/billing.publicPlans",
   "/api/leads",
   "/api/pixel",
   "/api/upload",
