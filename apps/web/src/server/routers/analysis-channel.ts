@@ -75,7 +75,7 @@ export const analysisChannelRouter = router({
     const allowIdentityLimit =
       tenant.customAllowIdentityLimit !== null
         ? tenant.customAllowIdentityLimit
-        : (plan as { allowIdentityLimit?: boolean } | null)?.allowIdentityLimit ?? false;
+        : plan?.allowIdentityLimit ?? false;
     return {
       channels: channels.map((c, i) => ({
         ...c,
@@ -229,7 +229,7 @@ export const analysisChannelRouter = router({
         const effective =
           tenantInfo.customAllowIdentityLimit !== null
             ? tenantInfo.customAllowIdentityLimit
-            : (plan as { allowIdentityLimit?: boolean } | null)?.allowIdentityLimit ?? false;
+            : plan?.allowIdentityLimit ?? false;
         const enabling =
           (input.identityLimit ?? 0) > 0 || (input.identityWindowDays ?? 0) > 0;
         if (enabling && !effective) {

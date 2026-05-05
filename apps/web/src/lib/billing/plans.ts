@@ -35,6 +35,7 @@ export type Plan = {
   excessCostPerAnalysis: number;
   maxUsers: number;
   maxChannels: number;
+  allowIdentityLimit: boolean;
   features: string[];
   ctaText: string;
   stripePriceId: string | null;
@@ -66,6 +67,7 @@ function fromRow(row: {
   excessCostPerAnalysis: number;
   maxUsers: number;
   maxChannels: number;
+  allowIdentityLimit: boolean;
   features: string;
   ctaText: string;
   stripePriceId: string | null;
@@ -95,6 +97,7 @@ function fromRow(row: {
     excessCostPerAnalysis: row.excessCostPerAnalysis,
     maxUsers: row.maxUsers,
     maxChannels: row.maxChannels,
+    allowIdentityLimit: row.allowIdentityLimit,
     features,
     ctaText: row.ctaText,
     stripePriceId: row.stripePriceId,
