@@ -3,9 +3,6 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc/client";
 
-// Public origin used for the embed snippet so the host site links to prod
-// even when the tenant is editing on a staging domain. localhost defaults
-// to the same port the dev server uses so the snippet works in dev too.
 const PUBLIC_ORIGIN =
   typeof window !== "undefined" && window.location.hostname === "localhost"
     ? window.location.origin
@@ -43,246 +40,504 @@ function buildEmbedSnippet(slug: string, opts: EmbedOptions): string {
 
 const HELPER_SNIPPET = `<script src="${PUBLIC_ORIGIN}/embed-helper.js" async></script>`;
 
-const EVENTS_SAMPLE = `<script>
-  window.addEventListener("message", function (e) {
-    if (!e.data || e.data.source !== "skinner") return;
-    // e.data.type, e.data.data
-    console.log("Skinner event:", e.data.type, e.data.data);
-    if (e.data.type === "skinner:analysis_completed") {
-      // Ex: dispara um pixel de conversao, abre upsell, etc.
-    }
-  });
-</script>`;
+function slugify(input: string): string {
+  return input
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
+}
+
+function fmtDate(d: Date | string | null): string {
+  if (!d) return "—";
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(new Date(d));
+}
+
+type ChannelRow = {
+  id: string;
+  slug: string;
+  label: string;
+  isDefault: boolean;
+  status: string;
+  expiresAt: Date | string | null;
+  maxAnalyses: number | null;
+  analysisCount: number;
+  isExpired: boolean;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+  tenantId: string;
+};
 
 export default function ChannelsPage() {
   const tenant = trpc.tenant.getMine.useQuery();
-  const slug = tenant.data?.slug;
-  const baseUrl = typeof window !== "undefined" ? window.location.origin : "http://localhost:3015";
-  const analysisUrl = slug ? `${baseUrl}/analise/${slug}` : "";
-  const qrApiUrl = slug
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(analysisUrl)}`
-    : "";
+  const channelsQuery = trpc.analysisChannel.list.useQuery();
+  const utils = trpc.useUtils();
 
+  const [showCreate, setShowCreate] = useState(false);
+  const [activeChannelId, setActiveChannelId] = useState<string | null>(null);
+
+  const tenantSlug = tenant.data?.slug ?? "";
+  const channels = channelsQuery.data?.channels ?? [];
+  const maxChannels = channelsQuery.data?.maxChannels ?? 1;
+  const planName = channelsQuery.data?.planName ?? "—";
+  const channelsRemaining = Math.max(0, maxChannels - channels.length);
+  const canCreate = channelsRemaining > 0;
+
+  // Default-select the first/default channel for the inspect view.
+  const activeChannel =
+    channels.find((c) => c.id === activeChannelId) ??
+    channels.find((c) => c.isDefault) ??
+    channels[0] ??
+    null;
+
+  if (tenant.isLoading || channelsQuery.isLoading) {
+    return <div className="p-8 text-pierre font-light text-sm">Carregando...</div>;
+  }
+
+  return (
+    <div className="p-8 max-w-4xl">
+      <div className="border-b border-sable/20 pb-6 mb-8 flex items-end justify-between">
+        <div>
+          <h1 className="font-serif text-2xl text-carbone">Canais de Acesso</h1>
+          <p className="text-pierre text-sm font-light mt-1">
+            Crie multiplos canais para segmentar campanhas, unidades e parceiros.
+            Cada canal tem seu link, QR e widget proprios.
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="text-[10px] text-pierre uppercase tracking-wider font-light">Plano {planName}</p>
+          <p className="text-sm text-carbone font-light mt-1">
+            {channels.length} de {maxChannels} canal(is)
+          </p>
+        </div>
+      </div>
+
+      {/* Channel list */}
+      <div className="bg-white border border-sable/20 mb-8">
+        <div className="border-b border-sable/20 px-5 py-3 flex items-center justify-between bg-ivoire/40">
+          <h2 className="font-serif text-base text-carbone">Seus canais</h2>
+          <button
+            onClick={() => setShowCreate(true)}
+            disabled={!canCreate}
+            className="px-4 py-2 bg-carbone text-blanc-casse text-sm font-light tracking-wide disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            + Novo canal
+          </button>
+        </div>
+        {!canCreate && (
+          <div className="px-5 py-3 bg-ivoire border-b border-sable/20 text-xs text-pierre font-light">
+            Voce atingiu o limite de canais do plano {planName}. Faca upgrade em{" "}
+            <a href="/dashboard/faturamento" className="text-carbone underline">
+              Faturamento
+            </a>{" "}
+            para criar mais.
+          </div>
+        )}
+        <div className="divide-y divide-sable/10">
+          {channels.map((c) => {
+            const isActive = activeChannel?.id === c.id;
+            const isLive = c.status === "active" && !c.isExpired;
+            return (
+              <button
+                key={c.id}
+                onClick={() => setActiveChannelId(c.id)}
+                className={`w-full text-left px-5 py-3 flex items-center justify-between ${
+                  isActive ? "bg-ivoire/60" : "hover:bg-ivoire/30"
+                }`}
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-carbone font-light truncate">{c.label}</span>
+                    {c.isDefault && (
+                      <span className="text-[10px] text-pierre uppercase tracking-wider font-light">padrao</span>
+                    )}
+                    <span
+                      className={`text-[10px] uppercase tracking-wider font-light px-2 py-0.5 ${
+                        isLive
+                          ? "bg-carbone/10 text-carbone"
+                          : c.isExpired
+                          ? "bg-terre/20 text-terre"
+                          : "bg-sable/30 text-pierre"
+                      }`}
+                    >
+                      {c.isExpired ? "expirado" : c.status === "paused" ? "pausado" : "ativo"}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-pierre/70 font-mono mt-0.5 truncate">
+                    /{c.slug}
+                  </p>
+                </div>
+                <div className="text-right text-xs text-pierre font-light flex-shrink-0 ml-4">
+                  <div>{c.analysisCount} analises</div>
+                  {c.expiresAt && (
+                    <div className="text-[10px] text-pierre/60">expira {fmtDate(c.expiresAt)}</div>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {showCreate && (
+        <CreateChannelModal
+          tenantSlug={tenantSlug}
+          onClose={() => setShowCreate(false)}
+          onCreated={() => {
+            utils.analysisChannel.list.invalidate();
+            setShowCreate(false);
+          }}
+        />
+      )}
+
+      {/* Channel detail (link / qr / embed) */}
+      {activeChannel && <ChannelDetail channel={activeChannel} />}
+    </div>
+  );
+}
+
+function ChannelDetail({ channel }: { channel: ChannelRow }) {
+  const [tab, setTab] = useState<"link" | "qr" | "embed">("link");
   const [embedOpts, setEmbedOpts] = useState<EmbedOptions>(DEFAULT_EMBED_OPTIONS);
-  const [copied, setCopied] = useState<"snippet" | "helper" | "events" | null>(null);
-  const embedSnippet = slug ? buildEmbedSnippet(slug, embedOpts) : "";
-  const previewUrl = slug
-    ? `${PUBLIC_ORIGIN}/embed/${slug}${
-        embedOpts.contactOff || embedOpts.compact
-          ? `?${new URLSearchParams({
-              ...(embedOpts.contactOff ? { contact: "off" } : {}),
-              ...(embedOpts.compact ? { compact: "true" } : {}),
-            }).toString()}`
-          : ""
-      }`
-    : "";
+  const [copied, setCopied] = useState<string | null>(null);
+  const utils = trpc.useUtils();
+  const updateMutation = trpc.analysisChannel.update.useMutation({
+    onSuccess: () => utils.analysisChannel.list.invalidate(),
+  });
+  const archiveMutation = trpc.analysisChannel.archive.useMutation({
+    onSuccess: () => utils.analysisChannel.list.invalidate(),
+  });
 
-  function handleCopy(content: string, key: typeof copied) {
-    navigator.clipboard.writeText(content);
+  const analysisUrl = `${PUBLIC_ORIGIN}/analise/${channel.slug}`;
+  const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(analysisUrl)}`;
+  const embedSnippet = buildEmbedSnippet(channel.slug, embedOpts);
+
+  function copy(text: string, key: string) {
+    navigator.clipboard.writeText(text);
     setCopied(key);
     setTimeout(() => setCopied(null), 2000);
   }
 
-  if (tenant.isLoading) return <div className="p-8 text-gray-500">Carregando...</div>;
-
   return (
-    <div className="p-8 max-w-2xl">
-      <h1 className="text-2xl font-bold text-gray-900">Canais de Acesso</h1>
-      <p className="text-gray-500 mt-1">
-        Configure como seus clientes acessam a análise de pele.
-      </p>
-
-      <div className="mt-8 space-y-8">
-        {/* Link direto */}
-        <div className="p-6 bg-white rounded-xl border shadow-sm space-y-3">
-          <h2 className="text-lg font-semibold">Link Direto</h2>
-          <p className="text-sm text-gray-500">
-            Compartilhe este link com seus clientes para iniciar a análise.
-          </p>
-          <div className="flex items-center gap-2">
-            <input
-              readOnly
-              value={analysisUrl}
-              className="flex-1 px-3 py-2 border rounded-lg text-sm bg-gray-50 text-gray-700"
-            />
+    <div className="bg-white border border-sable/20">
+      <div className="px-5 py-4 border-b border-sable/20 flex items-center justify-between flex-wrap gap-3">
+        <div className="min-w-0">
+          <p className="text-[10px] text-pierre uppercase tracking-wider font-light">Canal selecionado</p>
+          <h2 className="font-serif text-lg text-carbone truncate">{channel.label}</h2>
+        </div>
+        <div className="flex items-center gap-2">
+          {!channel.isDefault && channel.status === "active" && (
+            <button
+              onClick={() =>
+                updateMutation.mutate({ id: channel.id, status: "paused" })
+              }
+              className="px-3 py-1.5 border border-sable text-pierre text-xs font-light"
+            >
+              Pausar
+            </button>
+          )}
+          {!channel.isDefault && channel.status === "paused" && (
+            <button
+              onClick={() =>
+                updateMutation.mutate({ id: channel.id, status: "active" })
+              }
+              className="px-3 py-1.5 border border-sable text-carbone text-xs font-light"
+            >
+              Reativar
+            </button>
+          )}
+          {!channel.isDefault && (
             <button
               onClick={() => {
-                navigator.clipboard.writeText(analysisUrl);
+                if (
+                  confirm(
+                    `Excluir o canal "${channel.label}"? Esta acao nao pode ser desfeita.`
+                  )
+                ) {
+                  archiveMutation.mutate({ id: channel.id });
+                }
               }}
-              className="px-4 py-2 bg-carbone text-blanc-casse text-sm font-medium hover:bg-terre transition-colors"
+              className="px-3 py-1.5 border border-terre/40 text-terre text-xs font-light"
             >
-              Copiar
+              Excluir
             </button>
-          </div>
+          )}
         </div>
+      </div>
 
-        {/* QR Code */}
-        <div className="p-6 bg-white rounded-xl border shadow-sm space-y-3">
-          <h2 className="text-lg font-semibold">QR Code</h2>
-          <p className="text-sm text-gray-500">
-            Imprima e coloque no balcão, vitrine ou material promocional.
-          </p>
-          {qrApiUrl && (
-            <div className="flex flex-col items-center gap-4">
-              <img
-                src={qrApiUrl}
-                alt="QR Code para análise"
-                className="w-48 h-48 border rounded-lg"
+      <div className="px-5 py-3 border-b border-sable/20 flex gap-1">
+        {(["link", "qr", "embed"] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`px-4 py-1.5 text-xs font-light tracking-wide ${
+              tab === t ? "bg-carbone text-blanc-casse" : "text-pierre hover:bg-ivoire/40"
+            }`}
+          >
+            {t === "link" ? "Link Direto" : t === "qr" ? "QR Code" : "Widget Embed"}
+          </button>
+        ))}
+      </div>
+
+      <div className="p-5">
+        {tab === "link" && (
+          <div className="space-y-3">
+            <p className="text-sm text-pierre font-light">
+              Compartilhe este link com seus clientes para iniciar a analise.
+            </p>
+            <div className="flex items-center gap-2">
+              <input
+                readOnly
+                value={analysisUrl}
+                className="flex-1 px-3 py-2 border border-sable/30 bg-blanc-casse text-sm text-carbone font-light"
               />
+              <button
+                onClick={() => copy(analysisUrl, "link")}
+                className="px-4 py-2 bg-carbone text-blanc-casse text-sm font-light tracking-wide"
+              >
+                {copied === "link" ? "Copiado" : "Copiar"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {tab === "qr" && (
+          <div className="space-y-3">
+            <p className="text-sm text-pierre font-light">
+              Imprima e coloque no balcao, vitrine ou material promocional.
+            </p>
+            <div className="flex flex-col items-center gap-3">
+              <img src={qrApiUrl} alt="QR Code" className="w-48 h-48 border border-sable/30" />
               <a
                 href={qrApiUrl}
-                download={`skinner-qr-${slug}.png`}
-                className="px-4 py-2 border border-sable text-terre text-sm font-medium hover:bg-ivoire transition-colors"
+                download={`skinner-qr-${channel.slug}.png`}
+                className="px-4 py-2 border border-sable text-terre text-sm font-light tracking-wide hover:bg-ivoire"
               >
                 Baixar QR Code
               </a>
             </div>
-          )}
-        </div>
-
-        {/* Widget Embed */}
-        <div className="p-6 bg-white border border-sable/30 space-y-5">
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-semibold text-carbone">Widget Embed</h2>
-            <span className="text-xs px-2 py-0.5 bg-ivoire text-pierre uppercase tracking-wider font-light">
-              Ativo
-            </span>
           </div>
-          <p className="text-sm text-pierre font-light">
-            Cole o snippet abaixo onde quiser que a analise apareca no seu site.
-            Funciona em qualquer plataforma (WordPress, Wix, Nuvemshop, Shopify, HTML puro).
-          </p>
+        )}
 
-          {/* Customization controls */}
-          <div className="p-4 bg-blanc-casse border border-sable/20 space-y-3">
-            <p className="text-[10px] uppercase tracking-wider font-light text-pierre">
-              Personalizacao
+        {tab === "embed" && (
+          <div className="space-y-5">
+            <p className="text-sm text-pierre font-light">
+              Cole o snippet abaixo onde quiser que a analise apareca no seu site. Funciona em qualquer plataforma.
             </p>
-            <label className="flex items-center gap-3 text-sm text-carbone font-light">
-              <input
-                type="checkbox"
-                checked={embedOpts.contactOff}
-                onChange={(e) =>
-                  setEmbedOpts((o) => ({ ...o, contactOff: e.target.checked }))
-                }
-                className="w-4 h-4"
-              />
-              Pular tela de captura de contato (ja capturei contato no meu site)
-            </label>
-            <label className="flex items-center gap-3 text-sm text-carbone font-light">
-              <input
-                type="checkbox"
-                checked={embedOpts.compact}
-                onChange={(e) =>
-                  setEmbedOpts((o) => ({ ...o, compact: e.target.checked }))
-                }
-                className="w-4 h-4"
-              />
-              Modo compacto (padding reduzido, ideal para iframes pequenos)
-            </label>
-            <label className="flex items-center gap-3 text-sm text-carbone font-light">
-              <span className="w-32">Altura inicial (px):</span>
-              <input
-                type="number"
-                min={400}
-                value={embedOpts.height}
-                onChange={(e) => setEmbedOpts((o) => ({ ...o, height: e.target.value }))}
-                className="w-24 px-2 py-1 border border-sable/40 bg-white text-sm font-light"
-              />
-              <span className="text-xs text-pierre/70">
-                (auto-resize via embed-helper.js)
-              </span>
-            </label>
-          </div>
 
-          {/* Snippet */}
-          <div>
-            <p className="text-[10px] uppercase tracking-wider font-light text-pierre mb-2">
-              Snippet
-            </p>
-            <pre className="p-4 bg-carbone text-blanc-casse text-xs font-mono overflow-x-auto whitespace-pre">
+            <div className="p-4 bg-blanc-casse border border-sable/20 space-y-3">
+              <p className="text-[10px] uppercase tracking-wider font-light text-pierre">Personalizacao</p>
+              <label className="flex items-center gap-3 text-sm text-carbone font-light">
+                <input
+                  type="checkbox"
+                  checked={embedOpts.contactOff}
+                  onChange={(e) =>
+                    setEmbedOpts((o) => ({ ...o, contactOff: e.target.checked }))
+                  }
+                />
+                Pular tela de captura de contato
+              </label>
+              <label className="flex items-center gap-3 text-sm text-carbone font-light">
+                <input
+                  type="checkbox"
+                  checked={embedOpts.compact}
+                  onChange={(e) =>
+                    setEmbedOpts((o) => ({ ...o, compact: e.target.checked }))
+                  }
+                />
+                Modo compacto
+              </label>
+              <label className="flex items-center gap-3 text-sm text-carbone font-light">
+                <span className="w-32">Altura inicial (px):</span>
+                <input
+                  type="number"
+                  min={400}
+                  value={embedOpts.height}
+                  onChange={(e) => setEmbedOpts((o) => ({ ...o, height: e.target.value }))}
+                  className="w-24 px-2 py-1 border border-sable/40 bg-white text-sm font-light"
+                />
+              </label>
+            </div>
+
+            <div>
+              <p className="text-[10px] uppercase tracking-wider font-light text-pierre mb-2">Snippet</p>
+              <pre className="p-4 bg-carbone text-blanc-casse text-xs font-mono overflow-x-auto whitespace-pre">
 {embedSnippet}
-            </pre>
-            <div className="flex items-center gap-3 mt-3">
+              </pre>
               <button
-                onClick={() => handleCopy(embedSnippet, "snippet")}
-                className="px-4 py-2 bg-carbone text-blanc-casse text-sm font-light tracking-wide"
+                onClick={() => copy(embedSnippet, "snippet")}
+                className="mt-3 px-4 py-2 bg-carbone text-blanc-casse text-sm font-light tracking-wide"
               >
                 {copied === "snippet" ? "Copiado" : "Copiar codigo"}
               </button>
-              {previewUrl && (
-                <a
-                  href={previewUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-4 py-2 border border-sable text-terre text-sm font-light tracking-wide hover:bg-ivoire"
-                >
-                  Visualizar preview
-                </a>
-              )}
+            </div>
+
+            <div>
+              <p className="text-[10px] uppercase tracking-wider font-light text-pierre mb-2">Auto-resize (opcional)</p>
+              <p className="text-xs text-pierre font-light mb-2">
+                Cole UMA vez no seu site para que o iframe redimensione automaticamente.
+              </p>
+              <pre className="p-4 bg-carbone text-blanc-casse text-xs font-mono overflow-x-auto whitespace-pre">
+{HELPER_SNIPPET}
+              </pre>
+              <button
+                onClick={() => copy(HELPER_SNIPPET, "helper")}
+                className="mt-3 px-3 py-1.5 border border-sable text-pierre text-xs font-light"
+              >
+                {copied === "helper" ? "Copiado" : "Copiar"}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CreateChannelModal({
+  tenantSlug,
+  onClose,
+  onCreated,
+}: {
+  tenantSlug: string;
+  onClose: () => void;
+  onCreated: () => void;
+}) {
+  const [label, setLabel] = useState("");
+  const [slug, setSlug] = useState("");
+  const [slugTouched, setSlugTouched] = useState(false);
+  const [expiresAt, setExpiresAt] = useState("");
+  const [maxAnalyses, setMaxAnalyses] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const createMutation = trpc.analysisChannel.create.useMutation({
+    onSuccess: () => onCreated(),
+    onError: (err) => setError(err.message),
+  });
+
+  function handleLabelChange(value: string) {
+    setLabel(value);
+    if (!slugTouched) {
+      const auto = slugify(value);
+      setSlug(auto ? `${tenantSlug}-${auto}` : "");
+    }
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    createMutation.mutate({
+      label: label.trim(),
+      slug: slug.trim(),
+      expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
+      maxAnalyses: maxAnalyses ? parseInt(maxAnalyses, 10) : null,
+    });
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-carbone/60 flex items-start justify-center overflow-y-auto py-12 px-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white border border-sable max-w-md w-full p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between mb-5 pb-4 border-b border-sable/30">
+          <h2 className="font-serif text-lg text-carbone">Novo canal</h2>
+          <button onClick={onClose} className="text-pierre hover:text-carbone text-lg">
+            ×
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
+              Nome interno
+            </label>
+            <input
+              value={label}
+              onChange={(e) => handleLabelChange(e.target.value)}
+              required
+              maxLength={60}
+              placeholder="Ex.: Unidade Centro, Black Friday, Loja Shopify"
+              className="w-full px-3 py-2 border border-sable/30 bg-blanc-casse text-sm text-carbone font-light"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
+              Slug (URL)
+            </label>
+            <input
+              value={slug}
+              onChange={(e) => {
+                setSlug(e.target.value);
+                setSlugTouched(true);
+              }}
+              required
+              minLength={3}
+              maxLength={60}
+              pattern="^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$"
+              className="w-full px-3 py-2 border border-sable/30 bg-blanc-casse text-sm text-carbone font-mono"
+            />
+            <p className="text-[10px] text-pierre/70 font-light mt-1 break-all">
+              URL: {PUBLIC_ORIGIN}/analise/{slug || "..."}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
+                Expira em (opcional)
+              </label>
+              <input
+                type="date"
+                value={expiresAt}
+                onChange={(e) => setExpiresAt(e.target.value)}
+                className="w-full px-3 py-2 border border-sable/30 bg-blanc-casse text-sm text-carbone font-light"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
+                Limite de analises
+              </label>
+              <input
+                type="number"
+                min={1}
+                value={maxAnalyses}
+                onChange={(e) => setMaxAnalyses(e.target.value)}
+                placeholder="ilimitado"
+                className="w-full px-3 py-2 border border-sable/30 bg-blanc-casse text-sm text-carbone font-light"
+              />
             </div>
           </div>
 
-          {/* Helper script */}
-          <div>
-            <p className="text-[10px] uppercase tracking-wider font-light text-pierre mb-2">
-              Auto-resize (opcional)
-            </p>
-            <p className="text-xs text-pierre font-light mb-2">
-              Cole este snippet UMA vez no &lt;head&gt; ou final do &lt;body&gt; do seu site
-              para que o iframe redimensione automaticamente conforme o conteudo cresce.
-              Sem ele, o iframe usa a altura fixa configurada acima.
-            </p>
-            <pre className="p-4 bg-carbone text-blanc-casse text-xs font-mono overflow-x-auto whitespace-pre">
-{HELPER_SNIPPET}
-            </pre>
+          {error && <p className="text-sm text-terre font-light">{error}</p>}
+
+          <div className="flex items-center gap-3 pt-3 border-t border-sable/20">
             <button
-              onClick={() => handleCopy(HELPER_SNIPPET, "helper")}
-              className="mt-3 px-3 py-1.5 border border-sable text-pierre text-xs font-light tracking-wide hover:bg-ivoire"
+              type="submit"
+              disabled={createMutation.isPending}
+              className="px-4 py-2 bg-carbone text-blanc-casse text-sm font-light tracking-wide disabled:opacity-50"
             >
-              {copied === "helper" ? "Copiado" : "Copiar"}
+              {createMutation.isPending ? "Criando..." : "Criar canal"}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 border border-sable text-pierre text-sm font-light"
+            >
+              Cancelar
             </button>
           </div>
-
-          {/* Events */}
-          <div>
-            <p className="text-[10px] uppercase tracking-wider font-light text-pierre mb-2">
-              Eventos JavaScript (avancado)
-            </p>
-            <p className="text-xs text-pierre font-light mb-2">
-              Use os eventos abaixo para integrar com Google Analytics, Pixel do Facebook,
-              Google Tag Manager, ou qualquer ferramenta de tracking. Todos os eventos
-              tem <code className="bg-ivoire px-1">source: "skinner"</code> para facilitar
-              o filtro.
-            </p>
-            <ul className="text-xs text-pierre font-light space-y-1 mb-3 ml-4">
-              <li><code className="text-carbone">skinner:ready</code> — widget carregou</li>
-              <li><code className="text-carbone">skinner:started</code> — paciente clicou Iniciar</li>
-              <li><code className="text-carbone">skinner:contact_captured</code> — passou pela tela de contato</li>
-              <li><code className="text-carbone">skinner:photo_captured</code> — paciente capturou foto</li>
-              <li><code className="text-carbone">skinner:analysis_completed</code> — analise pronta (com analysisId)</li>
-              <li><code className="text-carbone">skinner:height_changed</code> — conteudo redimensionado</li>
-            </ul>
-            <pre className="p-4 bg-carbone text-blanc-casse text-xs font-mono overflow-x-auto whitespace-pre">
-{EVENTS_SAMPLE}
-            </pre>
-            <button
-              onClick={() => handleCopy(EVENTS_SAMPLE, "events")}
-              className="mt-3 px-3 py-1.5 border border-sable text-pierre text-xs font-light tracking-wide hover:bg-ivoire"
-            >
-              {copied === "events" ? "Copiado" : "Copiar exemplo"}
-            </button>
-          </div>
-
-          <div className="text-[10px] text-pierre/70 font-light border-t border-sable/20 pt-4">
-            <p>
-              <strong>Requisitos:</strong> seu site precisa estar em HTTPS para a
-              camera funcionar. Se usa Content Security Policy estrita, adicione{" "}
-              <code className="bg-ivoire px-1">frame-src https://app.skinner.lat</code>{" "}
-              ao header.
-            </p>
-          </div>
-        </div>
+        </form>
       </div>
     </div>
   );

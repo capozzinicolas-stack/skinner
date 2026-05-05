@@ -41,13 +41,53 @@ export const analysisRouter = router({
         }
       }
 
-      // 1. Resolve tenant
-      const tenant = await ctx.db.tenant.findUnique({
+      // 1. Resolve tenant via channel slug first (multi-channel) then by
+      // tenant.slug as legacy fallback. Channel-specific guards (paused,
+      // expired, maxAnalyses) run BEFORE the tenant-wide quota so the
+      // patient sees the most specific error.
+      const channel = await ctx.db.analysisChannel.findUnique({
         where: { slug: input.tenantSlug },
+        select: {
+          id: true,
+          status: true,
+          expiresAt: true,
+          maxAnalyses: true,
+          tenantId: true,
+        },
+      });
+
+      const tenant = await ctx.db.tenant.findUnique({
+        where: channel ? { id: channel.tenantId } : { slug: input.tenantSlug },
         include: { tenantConfig: true },
       });
       if (!tenant || tenant.status !== "active") {
         throw new TRPCError({ code: "NOT_FOUND", message: "Tenant não encontrado." });
+      }
+
+      if (channel) {
+        if (channel.status === "paused") {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Este canal esta pausado pela clinica.",
+          });
+        }
+        if (channel.expiresAt && channel.expiresAt.getTime() < Date.now()) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Este canal expirou. Entre em contato com a clinica para um novo link.",
+          });
+        }
+        if (channel.maxAnalyses != null) {
+          const used = await ctx.db.analysis.count({
+            where: { channelId: channel.id },
+          });
+          if (used >= channel.maxAnalyses) {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: "Este canal atingiu o limite de analises.",
+            });
+          }
+        }
       }
 
       // 2. Check credits — block public analysis creation when the tenant has
@@ -105,6 +145,7 @@ export const analysisRouter = router({
       const analysis = await ctx.db.analysis.create({
         data: {
           tenantId: tenant.id,
+          channelId: channel?.id ?? null,
           clientEmail: input.clientEmail,
           clientName: input.clientName,
           clientPhone: input.clientPhone,

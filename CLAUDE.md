@@ -478,6 +478,45 @@ The cart can only contain items from one channel. If the patient tries to add a 
 ### Pages NOT yet wired to cart (deliberate)
 - `/kit/[kitId]` and `/kit/manual/[tenantSlug]/[kitSlug]` are Server Components rendering legacy buttons. Refactoring to client + cart is a follow-up sprint. The patient who lands there from a shared kit link still gets WhatsApp/Pagar/external buttons that work as before. Conversion-critical flow (`/analise/[slug]` → results) IS wired.
 
+## Multi-channel access (`AnalysisChannel`)
+
+Each tenant can host multiple slugs that route to the same analysis flow. Lets the tenant segment stats by campanha, unidade, embed, parceiro, etc. Plan-gated via `Plan.maxChannels` (Growth=1, Pro=3, Advanced=5).
+
+### Schema
+- `model AnalysisChannel { id, tenantId, slug (globally unique), label, isDefault, expiresAt?, maxAnalyses?, status (active|paused), ... }`
+- `Analysis.channelId String?` FK with `onDelete: SetNull` so deleting a channel doesn't orphan history.
+- `Plan.maxChannels Int @default(1)` — admin can edit per plan via `/admin/planos`.
+
+### Slug resolution
+`tenant.getBySlug(slug)` searches AnalysisChannel first; if found returns the parent tenant + channel metadata (id, status, expiresAt, maxAnalyses, label). Falls back to `Tenant.slug` for any callers that pre-date channels (legacy URL preserved by the default channel created at migration). The query also returns a computed `channelStatus`: `active`, `paused`, or `expired` (expiresAt < now), so the patient page surfaces a friendly error before showing the welcome screen.
+
+`analysis.run` enforces channel guards before the tenant-wide quota: paused channels return FORBIDDEN, expired channels return FORBIDDEN, channels at maxAnalyses return FORBIDDEN. Each new analysis persists `channelId` so all downstream attribution joins work.
+
+### Default channel invariant
+At signup (and via the May-2026 backfill), every tenant has exactly ONE `isDefault: true` channel whose slug equals `Tenant.slug`. This protects every legacy `/analise/{tenantSlug}` URL — that URL keeps working because the default channel has the same slug. The default channel CANNOT be paused, deleted, or have its slug edited.
+
+### Plan limits
+`analysisChannel.create` checks `count(channels where tenantId) < plan.maxChannels`. On hit: throws FORBIDDEN with a Portuguese message + the upgrade CTA path. The UI in `/dashboard/canais` shows "X de Y canal(is)" + disables the "+ Novo canal" button when at cap.
+
+### Backend (`analysisChannel` router, tenantProcedure)
+- `list` — returns channels + analysisCount + plan cap + plan name.
+- `create({ label, slug, expiresAt?, maxAnalyses? })` — validates plan cap, slug regex (`/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/`), and global slug uniqueness.
+- `update({ id, label?, expiresAt?, maxAnalyses?, status? })` — slug is immutable. Default channels cannot be paused.
+- `archive({ id })` — hard delete (after confirm). Default channels cannot be deleted.
+
+### Frontend (`/dashboard/canais`)
+List of channels with status badges + per-channel detail panel with three tabs:
+- **Link Direto** — copy URL `${origin}/analise/${slug}`.
+- **QR Code** — generated via api.qrserver.com using the channel slug (per-channel QR).
+- **Widget Embed** — snippet builder with the channel slug, customization toggles (skip contact, compact, height), helper script snippet.
+
+Per-channel actions: pausar / reativar / excluir (locked for default channel). Slug auto-suggestion `${tenantSlug}-${labelSlugified}` to keep the global namespace clean.
+
+### Deferred to follow-up sprints
+- Filter `/dashboard/relatorios` and `/dashboard/leads` by channel.
+- Per-channel branding overrides (Welcome message, logo, contact required, etc.) — covered by Nivel B in the design discussion.
+- Per-channel questionnaire — Nivel C, build only when a paying tenant requests it.
+
 ## Embed Widget
 
 Each tenant has a per-slug iframe-embeddable widget at `/embed/{slug}`. The widget renders the same Welcome → Consent → Contact → Questionnaire → Photo → Loading → Result flow as `/analise/{slug}` but with no top header so it sits cleanly inside any host site.

@@ -25,11 +25,32 @@ export const tenantRouter = router({
       });
     }),
 
+  // Resolves a slug to its tenant + active channel (if any). Search order:
+  //   1. AnalysisChannel.slug match → returns the parent tenant + channelId.
+  //   2. Tenant.slug fallback → returns tenant with channelId=null (legacy).
+  // Channel state is enforced here so paused/expired channels block before
+  // the patient even sees the welcome screen.
   getBySlug: publicProcedure
     .input(z.object({ slug: z.string() }))
     .query(async ({ ctx, input }) => {
-      return ctx.db.tenant.findUnique({
+      const channel = await ctx.db.analysisChannel.findUnique({
         where: { slug: input.slug },
+        select: {
+          id: true,
+          slug: true,
+          label: true,
+          status: true,
+          expiresAt: true,
+          maxAnalyses: true,
+          isDefault: true,
+          tenantId: true,
+        },
+      });
+
+      const tenantSlug = channel ? null : input.slug;
+
+      const tenant = await ctx.db.tenant.findUnique({
+        where: channel ? { id: channel.tenantId } : { slug: tenantSlug! },
         select: {
           id: true,
           name: true,
@@ -90,6 +111,29 @@ export const tenantRouter = router({
           },
         },
       });
+
+      if (!tenant) return null;
+
+      // Compute live channel status (expired = expiresAt < now). Paused or
+      // expired channels block the analysis flow with a friendly message —
+      // the patient page surfaces this. Default channel is always active so
+      // legacy URLs (slug = tenant.slug) keep resolving.
+      let channelStatus: "active" | "paused" | "expired" | null = null;
+      if (channel) {
+        if (channel.status === "paused") channelStatus = "paused";
+        else if (channel.expiresAt && channel.expiresAt.getTime() < Date.now())
+          channelStatus = "expired";
+        else channelStatus = "active";
+      }
+
+      return {
+        ...tenant,
+        channelId: channel?.id ?? null,
+        channelSlug: channel?.slug ?? input.slug,
+        channelLabel: channel?.label ?? null,
+        channelStatus,
+        channelMaxAnalyses: channel?.maxAnalyses ?? null,
+      };
     }),
 
   // Public query: returns the full TenantConfig for a given tenant slug.

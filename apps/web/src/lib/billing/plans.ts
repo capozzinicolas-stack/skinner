@@ -34,6 +34,7 @@ export type Plan = {
   commissionRate: number;
   excessCostPerAnalysis: number;
   maxUsers: number;
+  maxChannels: number;
   features: string[];
   ctaText: string;
   stripePriceId: string | null;
@@ -64,6 +65,7 @@ function fromRow(row: {
   commissionRate: number;
   excessCostPerAnalysis: number;
   maxUsers: number;
+  maxChannels: number;
   features: string;
   ctaText: string;
   stripePriceId: string | null;
@@ -92,6 +94,7 @@ function fromRow(row: {
     commissionRate: row.commissionRate,
     excessCostPerAnalysis: row.excessCostPerAnalysis,
     maxUsers: row.maxUsers,
+    maxChannels: row.maxChannels,
     features,
     ctaText: row.ctaText,
     stripePriceId: row.stripePriceId,

@@ -63,6 +63,7 @@ model Tenant {
   usageEvents    UsageEvent[]
   kits           Kit[]
   integrations   Integration[]
+  channels       AnalysisChannel[]
 
   @@map("tenants")
 }
@@ -243,6 +244,7 @@ model Plan {
   commissionRate          Float   // 0..1 (e.g. 0.03 = 3%)
   excessCostPerAnalysis   Float   @default(0)
   maxUsers                Int
+  maxChannels             Int     @default(1) // analysis_channels per tenant cap
   features                String  // JSON array of bullet strings
   ctaText                 String  @default("Inscrever-se")
 
@@ -378,11 +380,51 @@ model Analysis {
   completedAt DateTime?
   createdAt  DateTime @default(now())
 
+  // Optional FK to the AnalysisChannel that originated this analysis. Lets
+  // dashboards group/segment by channel (campanha, unidade, embed) without
+  // forking the analysis pipeline. Nullable so legacy analyses (created
+  // before channels existed) keep working.
+  channelId  String?
+  channel    AnalysisChannel? @relation(fields: [channelId], references: [id], onDelete: SetNull)
+
   results         AnalysisResult?
   recommendations Recommendation[]
   report          Report?
 
   @@map("analyses")
+}
+
+// Multiple channels per tenant — different slugs that route to the same
+// analysis flow but with separate analytics, expiration, and per-channel
+// volume caps. Plan-gated via Plan.maxChannels (Growth=1, Pro=3, Advanced=5).
+//
+// Lifecycle:
+//   - Every tenant has exactly one isDefault=true channel created at signup
+//     (or backfilled). Its slug equals the tenant's slug for legacy URL
+//     compatibility — never delete it.
+//   - status: "active" → patient flow works. "paused" → flow returns 404.
+//     "expired" auto-set when expiresAt < now (computed at read, not via cron).
+//   - maxAnalyses caps how many analyses can be run through this channel.
+//     null = unlimited within the tenant's monthly analysis quota.
+//
+// Slug uniqueness is GLOBAL (not per-tenant) so /analise/{slug} resolves
+// directly. UI auto-suggests "{tenantSlug}-{label-slug}" to avoid collisions.
+model AnalysisChannel {
+  id           String    @id @default(cuid())
+  tenantId     String
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  slug         String    @unique
+  label        String
+  isDefault    Boolean   @default(false)
+  expiresAt    DateTime?
+  maxAnalyses  Int?
+  status       String    @default("active") // active | paused | expired
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  analyses     Analysis[]
+
+  @@index([tenantId])
+  @@map("analysis_channels")
 }
 
 model AnalysisResult {
