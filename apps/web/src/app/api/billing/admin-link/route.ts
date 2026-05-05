@@ -18,6 +18,10 @@ const bodySchema = z.object({
   maxUsers: z.number().int().positive().max(999),
   skipSetupFee: z.boolean(),
   planLabel: z.string().min(1).max(50).optional(),
+  // Capability override for this custom-priced tenant. undefined → inherit
+  // from the underlying plan (currently always "enterprise" for customs).
+  // true/false → forces the override on Tenant.customAllowIdentityLimit.
+  allowIdentityLimit: z.boolean().optional(),
 });
 
 export async function POST(req: NextRequest) {

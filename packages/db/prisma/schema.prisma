@@ -24,6 +24,12 @@ model Tenant {
   // for custom-plan tenants where the setup is waived as part of the negotiated deal.
   skipSetupFee Boolean @default(false)
 
+  // Per-tenant override for capability flags from Plan. NULL = inherit from
+  // Plan.allowIdentityLimit. Non-null = override (true/false). Used so the
+  // admin /tenants/novo-custom flow can grant capabilities to custom-priced
+  // tenants without polluting the public Plan rows.
+  customAllowIdentityLimit Boolean?
+
   // Custom-plan display overrides. Both are NULL for standard signups
   // (growth/pro flow) — the UI falls back to Plan.name + Plan.monthlyPriceBRL.
   // For tenants who came in via /admin/tenants/novo-custom, the webhook
@@ -245,6 +251,10 @@ model Plan {
   excessCostPerAnalysis   Float   @default(0)
   maxUsers                Int
   maxChannels             Int     @default(1) // analysis_channels per tenant cap
+  // Capability: when true, the tenant can configure per-channel identity
+  // limits (max analyses per email/phone within a rolling window). Off by
+  // default — Growth tier should not get this. Pro/Advanced plans turn it on.
+  allowIdentityLimit      Boolean @default(false)
   features                String  // JSON array of bullet strings
   ctaText                 String  @default("Inscrever-se")
 
@@ -387,10 +397,18 @@ model Analysis {
   channelId  String?
   channel    AnalysisChannel? @relation(fields: [channelId], references: [id], onDelete: SetNull)
 
+  // Identity bucket used for per-channel identity limit checks. Format:
+  //   "email:lowercased@trimmed.com" or "phone:onlydigits".
+  // NULL for legacy analyses or when the channel doesn't enforce identity
+  // limits. Indexed alongside channelId+createdAt so the count check is
+  // O(log n).
+  identityKey String?
+
   results         AnalysisResult?
   recommendations Recommendation[]
   report          Report?
 
+  @@index([channelId, identityKey, createdAt])
   @@map("analyses")
 }
 
@@ -419,6 +437,13 @@ model AnalysisChannel {
   expiresAt    DateTime?
   maxAnalyses  Int?
   status       String    @default("active") // active | paused | expired
+  // Identity-based abuse limit (Nivel 1 — see CLAUDE.md "Identity limits").
+  // When identityLimit is non-null, analysis.run requires the patient to
+  // supply an email or phone (used to build identityKey) and refuses runs
+  // beyond identityLimit count within identityWindowDays. Plan-gated by
+  // Plan.allowIdentityLimit (override-able via Tenant.customAllowIdentityLimit).
+  identityLimit       Int?
+  identityWindowDays  Int?
   // Per-channel UI/copy overrides serialized as JSON. When non-null, fields
   // present in this object override the same-named TenantConfig fields for
   // patients arriving via this channel slug. Whitelisted fields only — see

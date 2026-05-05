@@ -52,6 +52,8 @@ export const analysisRouter = router({
           status: true,
           expiresAt: true,
           maxAnalyses: true,
+          identityLimit: true,
+          identityWindowDays: true,
           tenantId: true,
         },
       });
@@ -87,6 +89,69 @@ export const analysisRouter = router({
               message: "Este canal atingiu o limite de analises.",
             });
           }
+        }
+      }
+
+      // 1.5 Identity-based abuse limit (Nivel 1). Build identityKey from
+      // contact data when the channel enforces a per-identity cap. Email
+      // beats phone (more stable). Without contact, the run is rejected
+      // because the count check would be unsafe — implicitly forces
+      // contact-capture for channels with this limit on.
+      let identityKey: string | null = null;
+      if (channel?.identityLimit != null && channel.identityLimit > 0) {
+        const email = input.clientEmail?.trim().toLowerCase();
+        const phone = input.clientPhone?.replace(/\D/g, "");
+        if (email && email.includes("@")) {
+          identityKey = `email:${email}`;
+        } else if (phone && phone.length >= 8) {
+          identityKey = `phone:${phone}`;
+        }
+        if (!identityKey) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message:
+              "Esta clinica exige seu e-mail ou WhatsApp para realizar a analise. Preencha os dados de contato.",
+          });
+        }
+        const windowDays = channel.identityWindowDays ?? 0;
+        const since =
+          windowDays > 0 ? new Date(Date.now() - windowDays * 86_400_000) : new Date(0);
+        const used = await ctx.db.analysis.count({
+          where: {
+            channelId: channel.id,
+            identityKey,
+            createdAt: { gte: since },
+          },
+        });
+        if (used >= channel.identityLimit) {
+          // Find the oldest analysis in the window to compute when the
+          // patient gets a free slot back.
+          const oldest =
+            windowDays > 0
+              ? await ctx.db.analysis.findFirst({
+                  where: {
+                    channelId: channel.id,
+                    identityKey,
+                    createdAt: { gte: since },
+                  },
+                  orderBy: { createdAt: "asc" },
+                  select: { createdAt: true },
+                })
+              : null;
+          const nextAt =
+            oldest && windowDays > 0
+              ? new Date(oldest.createdAt.getTime() + windowDays * 86_400_000)
+              : null;
+          const dateStr = nextAt
+            ? nextAt.toLocaleDateString("pt-BR")
+            : null;
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message:
+              dateStr && windowDays > 0
+                ? `Voce ja realizou ${used} analise(s) neste canal nos ultimos ${windowDays} dias. Tente novamente apos ${dateStr}.`
+                : `Voce ja realizou ${used} analise(s) neste canal. Limite atingido.`,
+          });
         }
       }
 
@@ -146,6 +211,7 @@ export const analysisRouter = router({
         data: {
           tenantId: tenant.id,
           channelId: channel?.id ?? null,
+          identityKey,
           clientEmail: input.clientEmail,
           clientName: input.clientName,
           clientPhone: input.clientPhone,

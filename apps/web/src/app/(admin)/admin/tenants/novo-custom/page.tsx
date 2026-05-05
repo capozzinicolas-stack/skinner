@@ -11,6 +11,7 @@ type FormState = {
   maxUsers: string;
   skipSetupFee: boolean;
   planLabel: string;
+  allowIdentityLimit: boolean;
 };
 
 const initialForm: FormState = {
@@ -21,6 +22,7 @@ const initialForm: FormState = {
   maxUsers: "5",
   skipSetupFee: true,
   planLabel: "Custom",
+  allowIdentityLimit: true,
 };
 
 export default function NovoCustomPage() {
@@ -48,6 +50,7 @@ export default function NovoCustomPage() {
           maxUsers: Number(form.maxUsers),
           skipSetupFee: form.skipSetupFee,
           planLabel: form.planLabel.trim() || undefined,
+          allowIdentityLimit: form.allowIdentityLimit,
         }),
       });
       const data = await res.json();
@@ -198,6 +201,16 @@ export default function NovoCustomPage() {
             className="w-4 h-4"
           />
           Waivear setup fee (recomendado para clientes negociados manualmente)
+        </label>
+
+        <label className="flex items-center gap-3 text-sm text-carbone font-light">
+          <input
+            type="checkbox"
+            checked={form.allowIdentityLimit}
+            onChange={(e) => setForm({ ...form, allowIdentityLimit: e.target.checked })}
+            className="w-4 h-4"
+          />
+          Permitir limite de analises por identidade (e-mail/WhatsApp)
         </label>
 
         <div className="flex items-center gap-4 pt-2">

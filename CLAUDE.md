@@ -526,7 +526,32 @@ Anything outside the list is silently dropped — operational fields like `analy
 ### Nuvemshop channel attribution (May-2026)
 `lib/cart/dispatch.ts` now appends `channel_id={id}` to both the cart URL query string AND the `note=` parameter when the dispatchContext has a `channelId`. The order webhook handler (`/api/integrations/nuvemshop/webhooks/order`) scans `body.note` for `channel_id=...` and persists it to `UsageEvent.metadata.channel_id` alongside the existing `skr_ref`. Primary attribution still flows via `Recommendation → Analysis.channelId`; the note value is an audit trail / cross-check signal.
 
+### Identity-based limit (Nivel 1, May-2026)
+Anti-abuse + fairness control: a tenant can configure per-channel limits on how many analyses a single email/phone can run within a rolling time window. Plan-gated.
+
+**Schema**
+- `Plan.allowIdentityLimit Boolean @default(false)` — capability flag.
+- `Tenant.customAllowIdentityLimit Boolean?` — per-tenant override (NULL = inherit from plan), used when admin grants the capability to custom-priced tenants via `/admin/tenants/novo-custom`.
+- `AnalysisChannel.identityLimit Int?` + `identityWindowDays Int?` — per-channel knobs. NULL = no limit. windowDays NULL or 0 = forever.
+- `Analysis.identityKey String?` — `"email:lowercase@trim"` or `"phone:onlydigits"`. Indexed `(channelId, identityKey, createdAt)` for O(log n) count.
+
+**Backend (`analysis.run`)** — runs after tenant/channel guards, before Claude. When the channel has identityLimit > 0:
+1. Builds identityKey from `input.clientEmail` (priority) or `input.clientPhone` (fallback).
+2. If neither is present → throws BAD_REQUEST "Esta clinica exige seu e-mail ou WhatsApp..." — implicitly forces contact-capture for these channels.
+3. Counts analyses in the window matching `(channelId, identityKey, createdAt >= since)`.
+4. If `count >= identityLimit`, throws FORBIDDEN with informative message: "Voce ja realizou {N} analise(s) neste canal nos ultimos {M} dias. Tente novamente apos {data}." (date computed from oldest analysis in window).
+5. Persists `identityKey` to `Analysis.identityKey` for future counts.
+
+**Plan-gating** — `analysisChannel.update` re-checks effective capability (`Tenant.customAllowIdentityLimit ?? Plan.allowIdentityLimit`) server-side. If the tenant tries to enable without capability → FORBIDDEN with upgrade message.
+
+**Custom plan flow** — `/admin/tenants/novo-custom` form has "Permitir limite de analises por identidade" checkbox; the value rides in Stripe metadata as `customAllowIdentityLimit` and the webhook persists it to `Tenant.customAllowIdentityLimit` at signup.
+
+**UI** — `/dashboard/canais` → channel detail → "Personalizacao" tab gets a "Limite por identidade do paciente" section. Disabled with upgrade message when the plan doesn't include the capability. When enabled, requires limit (1-99) + window (Para sempre / 7d / 14d / 30d / 60d / 90d / 6m / 1ano). Warning displayed: "ao ativar este limite, a captura de contato vira obrigatoria neste canal".
+
+**Plan defaults migration (May-2026)**: `growth.allowIdentityLimit = false`, `pro.allowIdentityLimit = true`, `enterprise.allowIdentityLimit = true`.
+
 ### Deferred to follow-up sprints
+- Pre-registration / verified patient accounts (Nivel 2) — only when a paying tenant explicitly requests verified-only flows.
 - Per-channel questionnaire — Nivel C, build only when a paying tenant requests it.
 - Periodic cron to expire channels (today computed at read time only).
 - Per-channel logo/primaryColor overrides (today brand fields are tenant-level only).

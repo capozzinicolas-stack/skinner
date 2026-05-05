@@ -435,8 +435,31 @@ function ChannelOverridesForm({ channelId }: { channelId: string }) {
   const utils = trpc.useUtils();
   const channelsQuery = trpc.analysisChannel.list.useQuery();
   const channel = channelsQuery.data?.channels.find((c) => c.id === channelId);
+  const allowIdentityLimit = channelsQuery.data?.allowIdentityLimit ?? false;
   const [values, setValues] = useState<Record<string, string | boolean>>({});
   const [saved, setSaved] = useState(false);
+
+  // Identity limit local state (separate from overrides because it lives on
+  // dedicated columns, not the JSON blob).
+  const channelIdentityLimit =
+    (channel as { identityLimit?: number | null } | undefined)?.identityLimit ?? null;
+  const channelIdentityWindow =
+    (channel as { identityWindowDays?: number | null } | undefined)?.identityWindowDays ?? null;
+  const [identityEnabled, setIdentityEnabled] = useState<boolean>(false);
+  const [identityLimitValue, setIdentityLimitValue] = useState<string>("1");
+  const [identityWindowValue, setIdentityWindowValue] = useState<string>("30");
+  const [identityInitKey, setIdentityInitKey] = useState<string | null>(null);
+  const identityKey = `${channelId}::${channelIdentityLimit ?? ""}::${channelIdentityWindow ?? ""}`;
+  if (channel && identityInitKey !== identityKey) {
+    if (channelIdentityLimit && channelIdentityLimit > 0) {
+      setIdentityEnabled(true);
+      setIdentityLimitValue(String(channelIdentityLimit));
+      setIdentityWindowValue(String(channelIdentityWindow ?? 0));
+    } else {
+      setIdentityEnabled(false);
+    }
+    setIdentityInitKey(identityKey);
+  }
 
   // Initialize values from channel.overrides on first render / channel change.
   // Channel comes from the list query; we only init once when it appears.
@@ -492,9 +515,15 @@ function ChannelOverridesForm({ channelId }: { channelId: string }) {
         overrides[k] = v;
       }
     }
+    const identityLimit = identityEnabled ? Math.max(1, Number(identityLimitValue) || 1) : 0;
+    const identityWindowDays = identityEnabled
+      ? Math.max(0, Number(identityWindowValue) || 0)
+      : 0;
     updateMutation.mutate({
       id: channelId,
       overrides: Object.keys(overrides).length > 0 ? overrides : null,
+      identityLimit: identityEnabled ? identityLimit : null,
+      identityWindowDays: identityEnabled ? identityWindowDays : null,
     });
   }
 
@@ -505,6 +534,87 @@ function ChannelOverridesForm({ channelId }: { channelId: string }) {
           Personalize textos e comportamentos especificos deste canal. Campos vazios usam o
           padrao da clinica configurado em <strong>Analise</strong> e <strong>Marca</strong>.
         </p>
+      </div>
+
+      {/* Identity-based abuse limit. Plan-gated — disabled toggle when the
+          tenant's plan does not include this capability. */}
+      <div className="p-4 bg-white border border-sable/30 space-y-3">
+        <div>
+          <p className="text-sm text-carbone">Limite por identidade do paciente</p>
+          <p className="text-xs text-pierre font-light mt-1">
+            Restringe quantas analises um mesmo e-mail ou WhatsApp pode realizar neste canal
+            dentro de uma janela de tempo. Reduz abuso e garante que sua quota mensal nao seja
+            consumida por poucas pessoas.
+          </p>
+        </div>
+
+        {!allowIdentityLimit ? (
+          <div className="p-3 bg-ivoire border border-sable/30">
+            <p className="text-xs text-terre font-light">
+              Esta funcionalidade nao esta disponivel no seu plano atual. Faca upgrade para
+              Pro ou superior em <strong>Faturamento</strong>.
+            </p>
+          </div>
+        ) : (
+          <>
+            <label className="flex items-center gap-3 text-sm text-carbone font-light">
+              <input
+                type="checkbox"
+                checked={identityEnabled}
+                onChange={(e) => setIdentityEnabled(e.target.checked)}
+              />
+              Ativar limite por paciente neste canal
+            </label>
+
+            {identityEnabled && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-7">
+                <div>
+                  <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
+                    Maximo de analises por paciente
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={99}
+                    value={identityLimitValue}
+                    onChange={(e) => setIdentityLimitValue(e.target.value)}
+                    className="w-full px-3 py-2 border border-sable/30 bg-blanc-casse text-sm text-carbone font-light"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
+                    Janela de tempo
+                  </label>
+                  <select
+                    value={identityWindowValue}
+                    onChange={(e) => setIdentityWindowValue(e.target.value)}
+                    className="w-full px-3 py-2 border border-sable/30 bg-blanc-casse text-sm text-carbone font-light"
+                  >
+                    <option value="0">Para sempre</option>
+                    <option value="7">Ultimos 7 dias</option>
+                    <option value="14">Ultimas 2 semanas</option>
+                    <option value="30">Ultimos 30 dias</option>
+                    <option value="60">Ultimos 60 dias</option>
+                    <option value="90">Ultimos 90 dias</option>
+                    <option value="180">Ultimos 6 meses</option>
+                    <option value="365">Ultimo ano</option>
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {identityEnabled && (
+              <div className="p-3 bg-ivoire border border-sable/30">
+                <p className="text-xs text-pierre font-light">
+                  <strong className="text-carbone">Atencao:</strong> ao ativar este limite, a
+                  captura de contato (e-mail ou WhatsApp) vira obrigatoria neste canal. Pacientes
+                  sem contato nao conseguirao realizar a analise. Configure em <strong>Analise</strong> ou
+                  override neste canal abaixo se quiser ajustar mensagens.
+                </p>
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       {OVERRIDE_FIELDS.map((field) => {

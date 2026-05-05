@@ -148,6 +148,16 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const customMonthlyPriceParsed = session.metadata?.customMonthlyPriceBRL
     ? parseFloat(session.metadata.customMonthlyPriceBRL)
     : null;
+  // Capability override flag from /admin/tenants/novo-custom — "true" or
+  // "false" string means override Plan.allowIdentityLimit; absent means
+  // inherit from Plan. Persists to Tenant.customAllowIdentityLimit.
+  const customAllowIdentityLimitRaw = session.metadata?.customAllowIdentityLimit;
+  const customAllowIdentityLimit =
+    customAllowIdentityLimitRaw === "true"
+      ? true
+      : customAllowIdentityLimitRaw === "false"
+        ? false
+        : null;
   const isCustomPlan =
     customAnalysisLimit !== null && !Number.isNaN(customAnalysisLimit);
 
@@ -189,6 +199,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         skipSetupFee,
         planLabel: tenantPlanLabel,
         customMonthlyPriceBRL: tenantCustomPrice,
+        customAllowIdentityLimit: isCustomPlan ? customAllowIdentityLimit : null,
         tenantConfig: { create: {} },
       },
     });

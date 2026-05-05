@@ -24,6 +24,10 @@ export async function buildCustomCheckout(params: {
   maxUsers: number;
   skipSetupFee: boolean;
   planLabel?: string;
+  // Capability flags overrides for this custom-priced tenant. NULL/undefined
+  // means inherit from Plan; explicit true/false flips the override on the
+  // Tenant.customAllowIdentityLimit column at signup.
+  allowIdentityLimit?: boolean;
 }): Promise<{ url: string; priceId: string }> {
   const stripe = getStripe();
 
@@ -51,6 +55,9 @@ export async function buildCustomCheckout(params: {
       customMaxUsers: String(params.maxUsers),
       customPlanLabel: params.planLabel ?? "Custom",
       customMonthlyPriceBRL: String(params.monthlyPriceBRL),
+      ...(params.allowIdentityLimit !== undefined
+        ? { customAllowIdentityLimit: String(params.allowIdentityLimit) }
+        : {}),
     },
     subscription_data: {
       metadata: {
@@ -60,6 +67,9 @@ export async function buildCustomCheckout(params: {
         customCommissionRate: String(params.commissionRate),
         customMaxUsers: String(params.maxUsers),
         customPlanLabel: params.planLabel ?? "Custom",
+        ...(params.allowIdentityLimit !== undefined
+          ? { customAllowIdentityLimit: String(params.allowIdentityLimit) }
+          : {}),
       },
     },
   });

@@ -14,6 +14,7 @@ type PlanRow = {
   excessCostPerAnalysis: number;
   maxUsers: number;
   maxChannels: number;
+  allowIdentityLimit?: boolean;
   features: string;
   ctaText: string;
   visible: boolean;

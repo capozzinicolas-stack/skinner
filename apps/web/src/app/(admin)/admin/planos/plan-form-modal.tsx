@@ -13,6 +13,7 @@ type Plan = {
   excessCostPerAnalysis: number;
   maxUsers: number;
   maxChannels: number;
+  allowIdentityLimit?: boolean;
   features: string;
   ctaText: string;
   visible: boolean;
@@ -31,6 +32,7 @@ type FormState = {
   excessCostPerAnalysis: string;
   maxUsers: string;
   maxChannels: string;
+  allowIdentityLimit: boolean;
   features: string; // newline-separated
   ctaText: string;
   visible: boolean;
@@ -58,6 +60,7 @@ function planToForm(p: Plan): FormState {
     excessCostPerAnalysis: String(p.excessCostPerAnalysis),
     maxUsers: String(p.maxUsers),
     maxChannels: String((p as { maxChannels?: number }).maxChannels ?? 1),
+    allowIdentityLimit: !!(p as { allowIdentityLimit?: boolean }).allowIdentityLimit,
     features: features.join("\n"),
     ctaText: p.ctaText,
     visible: p.visible,
@@ -78,6 +81,7 @@ const EMPTY_FORM: FormState = {
   excessCostPerAnalysis: "0",
   maxUsers: "2",
   maxChannels: "1",
+  allowIdentityLimit: false,
   features: "",
   ctaText: "Inscrever-se",
   visible: true,
@@ -136,6 +140,7 @@ export function PlanFormModal({
       excessCostPerAnalysis: Number(form.excessCostPerAnalysis),
       maxUsers: Number(form.maxUsers),
       maxChannels: Number(form.maxChannels),
+      allowIdentityLimit: form.allowIdentityLimit,
       features: featuresArr,
       ctaText: form.ctaText,
       visible: form.visible,
@@ -265,6 +270,16 @@ export function PlanFormModal({
               className="w-4 h-4"
             />
             Plano customizado (Sob consulta) — sem Stripe Price, signup nao publico
+          </label>
+
+          <label className="flex items-center gap-3 text-sm text-carbone font-light">
+            <input
+              type="checkbox"
+              checked={form.allowIdentityLimit}
+              onChange={(e) => setForm({ ...form, allowIdentityLimit: e.target.checked })}
+              className="w-4 h-4"
+            />
+            Permite limites por identidade do paciente (anti-abuso por canal)
           </label>
 
           {!form.customAllowed && (
