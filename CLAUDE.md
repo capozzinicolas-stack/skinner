@@ -467,6 +467,14 @@ The cart can only contain items from one channel. If the patient tries to add a 
 ### Integration listing for the patient flow
 `integration.publicByTenantSlug` (publicProcedure, slug-keyed) returns active integrations as `{ platform, status, storeId }` — never tokens. Used by the resolver to pick channel. Added to `PUBLIC_PATHS` in middleware so the patient can call it without auth.
 
+### Nuvemshop end-to-end checkout
+- **Schema**: `Integration.storeUrl` and `Integration.matchStats` (JSON) added in May-2026.
+- **OAuth callback** (`/api/integrations/nuvemshop/callback`): after `exchangeCodeForToken`, calls `fetchStoreInfo(storeId, accessToken)` and persists `storeUrl`. Best-effort — failure leaves storeUrl null and the lazy backfill below recovers later.
+- **Lazy backfill**: `integration.publicByTenantSlug` (publicProcedure used by the patient `/analise/[slug]` page) detects active Nuvemshop rows with `storeUrl=null`, calls `fetchStoreInfo`, persists, and returns the enriched value. Self-heals legacy integrations without a one-off cron.
+- **Cart dispatcher** (`lib/cart/dispatch.ts` nuvemshop branch): builds `{storeUrl}/carrinho/adicionar?sku=A&qty=1&sku=B&qty=1&skr_ref={ref}&note=skr_ref%3D{ref}`. The double-attribution (`skr_ref` query + `note` param) belt-and-suspenders against Nuvemshop dropping the query string mid-flow — the order webhook scans both.
+- **Conversion attribution** (`/api/integrations/nuvemshop/webhooks/order`): unchanged, still scans `body.note` and `permalink` for `skr_ref=...`. With the dispatcher now propagating both, the existing webhook handler matches conversions correctly.
+- **Match status**: `integration.refreshNuvemshopMatch` (tenantProcedure mutation) re-fetches Nuvemshop products, compares SKUs against `Product.sku` rows, and persists `{skinnerCount, externalCount, matchedCount, lastChecked}` in `Integration.matchStats`. UI in `/dashboard/integracao` (NuvemshopCard) shows the storeUrl + match snapshot + "Atualizar match" button. Manual trigger only — no cron.
+
 ### Pages NOT yet wired to cart (deliberate)
 - `/kit/[kitId]` and `/kit/manual/[tenantSlug]/[kitSlug]` are Server Components rendering legacy buttons. Refactoring to client + cart is a follow-up sprint. The patient who lands there from a shared kit link still gets WhatsApp/Pagar/external buttons that work as before. Conversion-critical flow (`/analise/[slug]` → results) IS wired.
 

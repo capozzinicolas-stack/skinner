@@ -653,12 +653,18 @@ model Integration {
 
   platform      String    // "nuvemshop" | "shopify" | etc
   storeId       String?   // external store ID
+  storeUrl      String?   // public storefront URL (e.g. "https://lojateste.lojavirtualnuvem.com.br")
+                          // Used by lib/cart/dispatch.ts to build cart deep-links.
+                          // Populated at OAuth callback (Nuvemshop GET /store) or via lazy backfill.
   accessToken   String?   // encrypted in production
   refreshToken  String?
   scopes        String?   // JSON array of granted scopes
   status        String    @default("pending") // pending, active, error, disconnected
   lastSyncAt    DateTime?
   metadata      String?   // JSON for platform-specific data
+  matchStats    String?   // JSON: { skinnerCount, externalCount, matchedCount, lastChecked }
+                          // SKU-match snapshot between Skinner catalog and the platform.
+                          // Refreshed manually from /dashboard/integracao.
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

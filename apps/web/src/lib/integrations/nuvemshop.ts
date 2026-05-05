@@ -31,6 +31,46 @@ export async function exchangeCodeForToken(code: string): Promise<{
   return res.json();
 }
 
+/**
+ * Fetch the store's public info (name, URL, country). Used right after the
+ * OAuth callback to persist Integration.storeUrl, which the cart deep-link
+ * dispatcher needs to redirect the patient to the right storefront. Returns
+ * null on any error so the caller can degrade gracefully (the lazy backfill
+ * in integration.publicByTenantSlug will retry later).
+ */
+export async function fetchStoreInfo(
+  storeId: string,
+  accessToken: string
+): Promise<{ url: string | null; name: string | null; country: string | null } | null> {
+  try {
+    const res = await fetch(
+      `https://api.tiendanube.com/v1/${storeId}/store`,
+      {
+        headers: {
+          Authentication: `bearer ${accessToken}`,
+          "User-Agent": "Skinner (nicolas.capozzi@useimpulse.co)",
+        },
+      }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    // Nuvemshop API returns name as a localized object; pick pt or first key.
+    const nameObj = data?.name;
+    const name =
+      typeof nameObj === "string"
+        ? nameObj
+        : nameObj?.pt ?? nameObj?.es ?? Object.values(nameObj ?? {})[0] ?? null;
+    return {
+      url: typeof data?.url === "string" ? data.url : null,
+      name: typeof name === "string" ? name : null,
+      country: typeof data?.country === "string" ? data.country : null,
+    };
+  } catch (err) {
+    console.error("[nuvemshop] fetchStoreInfo failed:", err);
+    return null;
+  }
+}
+
 export async function fetchProducts(storeId: string, accessToken: string) {
   const res = await fetch(
     `https://api.tiendanube.com/v1/${storeId}/products?per_page=200`,

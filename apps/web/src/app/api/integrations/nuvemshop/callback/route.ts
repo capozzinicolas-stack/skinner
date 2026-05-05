@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@skinner/db";
 import {
   exchangeCodeForToken,
+  fetchStoreInfo,
   registerOrderWebhook,
   NUVEMSHOP_CALLBACK_URL,
 } from "@/lib/integrations/nuvemshop";
@@ -41,6 +42,12 @@ export async function GET(req: NextRequest) {
 
   const storeId = String(tokenData.user_id);
 
+  // Best-effort: fetch the store's public URL right after OAuth so the cart
+  // dispatcher can deep-link to the correct storefront. If this fails (Nuvemshop
+  // 5xx, network blip, rate limit), the integration still saves and the lazy
+  // backfill in integration.publicByTenantSlug will recover later.
+  const storeInfo = await fetchStoreInfo(storeId, tokenData.access_token);
+
   try {
     await db.integration.upsert({
       where: { tenantId_platform: { tenantId, platform: "nuvemshop" } },
@@ -48,12 +55,16 @@ export async function GET(req: NextRequest) {
         tenantId,
         platform: "nuvemshop",
         storeId,
+        storeUrl: storeInfo?.url ?? null,
         accessToken: tokenData.access_token,
         scopes: tokenData.scope ? JSON.stringify(tokenData.scope.split(" ")) : "[]",
         status: "active",
       },
       update: {
         storeId,
+        // Only overwrite storeUrl if we successfully fetched it — never wipe a
+        // previously-good value with a null from a transient API failure.
+        ...(storeInfo?.url ? { storeUrl: storeInfo.url } : {}),
         accessToken: tokenData.access_token,
         scopes: tokenData.scope ? JSON.stringify(tokenData.scope.split(" ")) : "[]",
         status: "active",

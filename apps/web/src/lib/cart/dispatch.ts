@@ -43,7 +43,12 @@ export function buildCartCheckoutUrl(
         };
       }
       // Nuvemshop cart deep-link: /carrinho/adicionar?sku=A&qty=1&sku=B&qty=1
-      // Skus and quantities come from items.channelRef.
+      // Skus and quantities come from items.channelRef. We also pass the
+      // tracking ref TWICE: once as `skr_ref` for direct attribution and once
+      // as `note=skr_ref%3D...` because Nuvemshop preserves the `note` field
+      // through cart → checkout → order webhook (where the order handler at
+      // /api/integrations/nuvemshop/webhooks/order scans body.note for
+      // "skr_ref=" matches). Belt-and-suspenders for conversion attribution.
       const params = new URLSearchParams();
       for (const item of items) {
         if (!item.channelRef) continue;
@@ -51,7 +56,10 @@ export function buildCartCheckoutUrl(
         params.append("qty", "1");
       }
       const trackingRef = items[0].trackingRef;
-      if (trackingRef) params.append("skr_ref", trackingRef);
+      if (trackingRef) {
+        params.append("skr_ref", trackingRef);
+        params.append("note", `skr_ref=${trackingRef}`);
+      }
       const base = ctx.nuvemshopBaseUrl.replace(/\/+$/, "");
       return { url: `${base}/carrinho/adicionar?${params.toString()}` };
     }

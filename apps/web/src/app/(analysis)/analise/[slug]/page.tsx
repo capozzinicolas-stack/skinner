@@ -332,10 +332,12 @@ export default function AnalysisPage({
                 whatsappTemplate: cfg?.whatsappMessage ?? null,
                 mercadoPagoEmail: cfg?.mercadoPagoEmail ?? null,
                 tenantName,
-                // nuvemshopBaseUrl / shopifyBaseUrl are TODO — not persisted
-                // on the integration row yet. Dispatcher returns a graceful
-                // warning when nuvemshop/shopify is selected without a base
-                // URL configured.
+                nuvemshopBaseUrl:
+                  integrations.data?.find((i) => i.platform === "nuvemshop")
+                    ?.storeUrl ?? null,
+                shopifyBaseUrl:
+                  integrations.data?.find((i) => i.platform === "shopify")
+                    ?.storeUrl ?? null,
               }}
               routineCandidates={result.recommendations
                 .filter((r) => (r.type ?? "product") === "product")

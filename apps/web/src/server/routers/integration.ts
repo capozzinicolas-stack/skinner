@@ -1,7 +1,11 @@
 import { z } from "zod/v4";
 import { TRPCError } from "@trpc/server";
 import { router, tenantProcedure, publicProcedure } from "../trpc";
-import { getAuthUrl } from "@/lib/integrations/nuvemshop";
+import {
+  getAuthUrl,
+  fetchProducts as fetchNuvemshopProducts,
+  fetchStoreInfo,
+} from "@/lib/integrations/nuvemshop";
 import { getAuthUrl as getShopifyAuthUrl } from "@/lib/integrations/shopify";
 
 // Normalize a shop domain input from the user. Accepts:
@@ -20,7 +24,10 @@ function normalizeShopDomain(input: string): string | null {
 export const integrationRouter = router({
   // Public list of active integrations for a tenant slug. Used by the patient
   // analise/kit pages to resolve which checkout channel each product card
-  // should use. Only returns the platform/status/storeId — never tokens.
+  // should use. Only returns the platform/status/storeId/storeUrl — never tokens.
+  // Lazy backfill: any active Nuvemshop integration with storeUrl=null gets
+  // fetched on demand here and persisted, so legacy tenants who connected
+  // before storeUrl existed self-heal on the next patient pageview.
   publicByTenantSlug: publicProcedure
     .input(z.object({ slug: z.string().min(1) }))
     .query(async ({ ctx, input }) => {
@@ -29,10 +36,47 @@ export const integrationRouter = router({
         select: { id: true },
       });
       if (!tenant) return [];
-      return ctx.db.integration.findMany({
+      const rows = await ctx.db.integration.findMany({
         where: { tenantId: tenant.id, status: "active" },
-        select: { platform: true, status: true, storeId: true },
+        select: {
+          id: true,
+          platform: true,
+          status: true,
+          storeId: true,
+          storeUrl: true,
+          accessToken: true,
+        },
       });
+      // Backfill any nuvemshop row that's missing storeUrl. Best-effort —
+      // failure leaves the row as-is and the dispatcher returns its
+      // friendly warning.
+      const enriched = await Promise.all(
+        rows.map(async (r) => {
+          if (
+            r.platform === "nuvemshop" &&
+            !r.storeUrl &&
+            r.storeId &&
+            r.accessToken
+          ) {
+            const info = await fetchStoreInfo(r.storeId, r.accessToken);
+            if (info?.url) {
+              await ctx.db.integration.update({
+                where: { id: r.id },
+                data: { storeUrl: info.url },
+              });
+              return { ...r, storeUrl: info.url };
+            }
+          }
+          return r;
+        })
+      );
+      // Strip accessToken before returning publicly.
+      return enriched.map((r) => ({
+        platform: r.platform,
+        status: r.status,
+        storeId: r.storeId,
+        storeUrl: r.storeUrl,
+      }));
     }),
 
   // Returns the current integration record for "nuvemshop" (or null if not connected).
@@ -48,9 +92,62 @@ export const integrationRouter = router({
         status: true,
         lastSyncAt: true,
         storeId: true,
+        storeUrl: true,
+        matchStats: true,
         createdAt: true,
       },
     });
+  }),
+
+  // Recompute SKU-match between Skinner catalog and Nuvemshop catalog. Caches
+  // the result on Integration.matchStats. Tenant-triggered from /dashboard/integracao
+  // — no cron yet to keep API hits bounded. Returns the stored shape directly
+  // so the UI invalidates and re-renders with fresh numbers.
+  refreshNuvemshopMatch: tenantProcedure.mutation(async ({ ctx }) => {
+    const integration = await ctx.db.integration.findUnique({
+      where: {
+        tenantId_platform: { tenantId: ctx.tenantId, platform: "nuvemshop" },
+      },
+    });
+    if (!integration || integration.status !== "active" || !integration.storeId || !integration.accessToken) {
+      throw new TRPCError({
+        code: "PRECONDITION_FAILED",
+        message: "Integracao Nuvemshop nao esta ativa.",
+      });
+    }
+    let externalProducts: Array<{ variants?: Array<{ sku?: string }> }> = [];
+    try {
+      externalProducts = await fetchNuvemshopProducts(integration.storeId, integration.accessToken);
+    } catch (err) {
+      throw new TRPCError({
+        code: "BAD_GATEWAY",
+        message: "Falha ao consultar produtos da Nuvemshop. Tente novamente.",
+        cause: err,
+      });
+    }
+    const externalSkus = new Set<string>();
+    for (const p of externalProducts) {
+      const variants = Array.isArray(p.variants) ? p.variants : [];
+      for (const v of variants) {
+        if (v?.sku) externalSkus.add(String(v.sku));
+      }
+    }
+    const skinnerProducts = await ctx.db.product.findMany({
+      where: { tenantId: ctx.tenantId, isActive: true },
+      select: { sku: true },
+    });
+    const matchedCount = skinnerProducts.filter((p) => externalSkus.has(p.sku)).length;
+    const stats = {
+      skinnerCount: skinnerProducts.length,
+      externalCount: externalSkus.size,
+      matchedCount,
+      lastChecked: new Date().toISOString(),
+    };
+    await ctx.db.integration.update({
+      where: { id: integration.id },
+      data: { matchStats: JSON.stringify(stats) },
+    });
+    return stats;
   }),
 
   // Returns integration status for a specific platform

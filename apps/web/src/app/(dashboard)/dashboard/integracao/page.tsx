@@ -78,6 +78,12 @@ function NuvemshopCard() {
 
   const [syncResult, setSyncResult] = useState<{ synced: number; errors: string[] } | null>(null);
 
+  const matchMutation = trpc.integration.refreshNuvemshopMatch.useMutation({
+    onSuccess: () => {
+      utils.integration.getStatus.invalidate();
+    },
+  });
+
   // Handle ?nuvemshop=connected query param feedback
   useEffect(() => {
     const param = searchParams.get("nuvemshop");
@@ -127,11 +133,24 @@ function NuvemshopCard() {
 
       {isConnected && (
         <div className="mt-4 pt-4 border-t border-sable/20 space-y-3">
-          <div className="flex items-center gap-6 text-xs text-pierre font-light">
+          <div className="flex items-center gap-6 text-xs text-pierre font-light flex-wrap">
             <span>
               Loja ID:{" "}
               <span className="text-carbone">{integration?.storeId ?? "—"}</span>
             </span>
+            {integration?.storeUrl && (
+              <span>
+                Loja:{" "}
+                <a
+                  href={integration.storeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-carbone hover:underline"
+                >
+                  {integration.storeUrl.replace(/^https?:\/\//, "")}
+                </a>
+              </span>
+            )}
             <span>
               Ultima sincronizacao:{" "}
               <span className="text-carbone">
@@ -139,6 +158,54 @@ function NuvemshopCard() {
               </span>
             </span>
           </div>
+
+          {/* SKU match status — refreshed manually. Helps the tenant see how
+              many of their Skinner-recommended products will actually deep-link
+              to the Nuvemshop cart vs fall back to per-product external links. */}
+          {(() => {
+            let stats: {
+              skinnerCount: number;
+              externalCount: number;
+              matchedCount: number;
+              lastChecked: string;
+            } | null = null;
+            try {
+              if (integration?.matchStats) {
+                stats = JSON.parse(integration.matchStats);
+              }
+            } catch {
+              stats = null;
+            }
+            return (
+              <div className="p-3 bg-ivoire border border-sable/20 flex items-center justify-between gap-4 flex-wrap">
+                <div className="text-xs text-pierre font-light">
+                  {stats ? (
+                    <>
+                      <span className="text-carbone">
+                        {stats.matchedCount} de {stats.skinnerCount}
+                      </span>{" "}
+                      produto{stats.skinnerCount !== 1 ? "s" : ""} do seu catalogo
+                      Skinner tem SKU correspondente em Nuvemshop ({stats.externalCount} produtos na loja).
+                      <br />
+                      <span className="text-pierre/70">
+                        Ultima verificacao: {formatDate(stats.lastChecked)}
+                      </span>
+                    </>
+                  ) : (
+                    <>Match SKU ainda nao verificado.</>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => matchMutation.mutate()}
+                  disabled={matchMutation.isPending}
+                  className="px-3 py-1.5 border border-sable text-pierre text-xs font-light tracking-wide hover:bg-blanc-casse disabled:opacity-50 transition-colors flex-shrink-0"
+                >
+                  {matchMutation.isPending ? "Verificando..." : "Atualizar match"}
+                </button>
+              </div>
+            );
+          })()}
 
           {syncResult && (
             <div className="p-3 bg-ivoire border border-sable/20">
