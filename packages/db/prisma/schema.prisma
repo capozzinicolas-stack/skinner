@@ -24,6 +24,15 @@ model Tenant {
   // for custom-plan tenants where the setup is waived as part of the negotiated deal.
   skipSetupFee Boolean @default(false)
 
+  // Custom-plan display overrides. Both are NULL for standard signups
+  // (growth/pro flow) — the UI falls back to Plan.name + Plan.monthlyPriceBRL.
+  // For tenants who came in via /admin/tenants/novo-custom, the webhook
+  // persists these from session metadata so /dashboard/faturamento shows
+  // the negotiated label + actual price the customer pays at Stripe,
+  // not the generic "enterprise" tier defaults.
+  planLabel              String?
+  customMonthlyPriceBRL  Float?
+
   // Branding
   logoUrl       String?
   primaryColor  String   @default("#0ea5e9")

@@ -92,7 +92,19 @@ export default function BillingPage() {
         </div>
       </div>
 
-      {/* Plans comparison */}
+      {/* Plans comparison — hidden for custom-plan tenants since their
+          plan is bespoke and the standard tiers do not represent options
+          they can self-serve switch to. */}
+      {b.isCustomPlan ? (
+        <div className="mt-12 p-6 bg-ivoire border border-sable/30">
+          <p className="text-sm text-carbone font-light">
+            Voce possui um plano personalizado ({b.planName}).
+          </p>
+          <p className="text-xs text-pierre font-light mt-2">
+            Para alteracoes no seu plano, entre em contato com nossa equipe comercial.
+          </p>
+        </div>
+      ) : (
       <div className="mt-12">
         <h2 className="font-serif text-lg text-carbone mb-4">Planos disponiveis</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -140,6 +152,7 @@ export default function BillingPage() {
           })}
         </div>
       </div>
+      )}
 
       {/* Usage history */}
       {usageHistory.data && usageHistory.data.length > 0 && (

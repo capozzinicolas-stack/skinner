@@ -35,6 +35,20 @@ export const billingRouter = router({
 
     const planConfig = await getPlan(tenant.plan);
 
+    // Custom-plan override: when the tenant signed up via /admin/tenants/novo-custom,
+    // the webhook persisted Tenant.planLabel + Tenant.customMonthlyPriceBRL from
+    // Stripe metadata. Apply them here so faturamento shows the negotiated label
+    // and the actual price the customer pays at Stripe — not the generic plan
+    // tier defaults that the custom signup mapped to (currently "enterprise").
+    const isCustomPlan = tenant.planLabel !== null;
+    const effectivePlanForBill = planConfig
+      ? {
+          ...planConfig,
+          monthlyPriceBRL:
+            tenant.customMonthlyPriceBRL ?? planConfig.monthlyPriceBRL,
+        }
+      : null;
+
     // Count conversions this period
     const periodStart = new Date();
     periodStart.setDate(1);
@@ -50,11 +64,16 @@ export const billingRouter = router({
     });
 
     const salesTotal = conversions._sum.saleValue ?? 0;
-    const bill = calculateMonthlyBill(planConfig, tenant.analysisUsed, salesTotal);
+    const bill = calculateMonthlyBill(
+      effectivePlanForBill,
+      tenant.analysisUsed,
+      salesTotal
+    );
 
     return {
       plan: tenant.plan,
-      planName: planConfig?.name ?? tenant.plan,
+      planName: tenant.planLabel ?? planConfig?.name ?? tenant.plan,
+      isCustomPlan,
       analysisLimit: tenant.analysisLimit,
       analysisUsed: tenant.analysisUsed,
       creditsRemaining: tenant.analysisLimit - tenant.analysisUsed,

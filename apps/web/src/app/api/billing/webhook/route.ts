@@ -144,6 +144,10 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const customCommissionRate = session.metadata?.customCommissionRate
     ? parseFloat(session.metadata.customCommissionRate)
     : null;
+  const customPlanLabel = session.metadata?.customPlanLabel ?? null;
+  const customMonthlyPriceParsed = session.metadata?.customMonthlyPriceBRL
+    ? parseFloat(session.metadata.customMonthlyPriceBRL)
+    : null;
   const isCustomPlan =
     customAnalysisLimit !== null && !Number.isNaN(customAnalysisLimit);
 
@@ -165,6 +169,16 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         excessCostPerAnalysis: planConfig.excessCostPerAnalysis,
       };
 
+  // Display overrides for custom-plan tenants. Both fields stay null for
+  // standard signups so the UI falls back to Plan.name + Plan.monthlyPriceBRL.
+  const tenantPlanLabel = isCustomPlan ? customPlanLabel : null;
+  const tenantCustomPrice =
+    isCustomPlan &&
+    customMonthlyPriceParsed !== null &&
+    !Number.isNaN(customMonthlyPriceParsed)
+      ? customMonthlyPriceParsed
+      : null;
+
   const tenant = await db.$transaction(async (tx) => {
     const created = await tx.tenant.create({
       data: {
@@ -173,6 +187,8 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         plan: planId,
         ...tenantLimits,
         skipSetupFee,
+        planLabel: tenantPlanLabel,
+        customMonthlyPriceBRL: tenantCustomPrice,
         tenantConfig: { create: {} },
       },
     });
