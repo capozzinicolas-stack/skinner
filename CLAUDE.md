@@ -478,6 +478,56 @@ The cart can only contain items from one channel. If the patient tries to add a 
 ### Pages NOT yet wired to cart (deliberate)
 - `/kit/[kitId]` and `/kit/manual/[tenantSlug]/[kitSlug]` are Server Components rendering legacy buttons. Refactoring to client + cart is a follow-up sprint. The patient who lands there from a shared kit link still gets WhatsApp/Pagar/external buttons that work as before. Conversion-critical flow (`/analise/[slug]` → results) IS wired.
 
+## Embed Widget
+
+Each tenant has a per-slug iframe-embeddable widget at `/embed/{slug}`. The widget renders the same Welcome → Consent → Contact → Questionnaire → Photo → Loading → Result flow as `/analise/{slug}` but with no top header so it sits cleanly inside any host site.
+
+### Distribution model
+Tenants copy a snippet from `/dashboard/canais` and paste it on their own sites (Nuvemshop, WordPress, Wix, Shopify, custom HTML, Notion, etc.). Each snippet hardcodes the tenant slug, so attribution + branding + cart all stay scoped to that tenant. Cero cross-tenant leak.
+
+### Routes + layout
+- `apps/web/src/app/embed/[slug]/page.tsx` — currently a deliberate copy of `/analise/[slug]/page.tsx` rather than a refactor to a shared component. Decoupled so embed-specific tweaks (compact mode, postMessage events, hidden header) don't risk the conversion-critical /analise route. Fold into a single `AnalysisFlowShell` once both surfaces stabilize.
+- `apps/web/src/app/embed/layout.tsx` — minimal wrapper, marks pages `robots: { index: false, follow: false }` so embed URLs don't dilute the Skinner brand in search results.
+
+### Query params (snippet builder)
+- `?contact=off` — skip the contact-capture step (host site already collected contact upstream).
+- `?compact=true` — reduced padding + shorter min-height, suited for iframes around 600x800.
+- `?lang=pt` — reserved (default pt-BR).
+
+### postMessage events (`lib/embed/post-message.ts`)
+Every milestone emits `parent.postMessage({ source: "skinner", type, data }, "*")`:
+- `skinner:ready` — widget mounted.
+- `skinner:started` — patient clicked "Iniciar".
+- `skinner:contact_captured` — passed contact step (data: `{ hasEmail, hasPhone, consent }`).
+- `skinner:photo_captured`.
+- `skinner:analysis_completed` — data: `{ analysisId }`.
+- `skinner:cart_added` (planned, not yet emitted by cart-floater).
+- `skinner:checkout_clicked` (planned).
+- `skinner:height_changed` — data: `{ height }`. Emitted via `ResizeObserver` debounced 100ms.
+
+**PII boundary**: events NEVER include patient email/phone/photo/answers — only milestone identifiers and the analysisId once persisted. Same posture as Calendly/Typeform embeds.
+
+### Iframe security headers (`next.config.js`)
+- `/embed/*` → `Content-Security-Policy: frame-ancestors *;` + `Permissions-Policy: camera=*, microphone=*`.
+- `/embed-helper.js` → `Access-Control-Allow-Origin: *` + `Cache-Control: public, max-age=3600, s-maxage=86400`.
+- All other routes inherit Next.js defaults (`X-Frame-Options: DENY`).
+- `/embed` and `/embed-helper.js` ALSO need to be in `middleware.ts` PUBLIC_PATHS — without that, the middleware redirects unauthenticated patients to `/login` and the iframe goes blank. This was the 5th time we hit that bug — keep it documented.
+
+### embed-helper.js (`apps/web/public/embed-helper.js`)
+Optional vanilla JS sidecar (~3KB unminified) hosted at `/embed-helper.js`. Tenants drop one `<script>` tag on their site to enable:
+- Auto-resize: listens for `skinner:height_changed` and adjusts every Skinner iframe's height.
+- `window.SkinnerWidget.{on, off, open, close}` API for advanced flows (subscribe to events, open the widget as a floating modal). Modal opens with backdrop, ESC-via-backdrop-click closes, restores body scroll.
+
+Functions without ANY framework dependency. Safe to drop into pages with strict CSP (no `eval`, no `new Function`).
+
+### `/dashboard/canais` UI
+The "Widget Embed" section now generates the snippet live from the tenant's slug + customization toggles (skip contact, compact, height). Includes copy buttons, preview link, helper-script snippet, and an event-listener sample. Documents HTTPS + CSP requirements at the bottom.
+
+### Deliberate omissions (sprint follow-ups)
+- `cart_added` / `checkout_clicked` events — cart-floater currently doesn't emit; wire after the cart refactor stabilizes.
+- Refactor embed page + analise page to a single `AnalysisFlowShell` — duplication is intentional today.
+- Patrón 2 (script with shadow DOM, Hotjar style) — not built. Iframe covers 90%+ of needs; add later if a tenant explicitly asks.
+
 ## Brand customization (per-tenant)
 
 Tenant brand fields configured at `/dashboard/marca` are now applied end-to-end in the patient-facing flow. All defaults preserve the Skinner Carbone/Terre palette so a tenant that never opens the page still gets a polished look.

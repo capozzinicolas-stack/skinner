@@ -20,6 +20,8 @@ const PUBLIC_PATHS = [
   "/privacidade",
   "/termos",
   "/integracoes",
+  "/embed",
+  "/embed-helper.js",
   "/api/auth",
   "/api/trpc/health",
   "/api/trpc/tenant.getBySlug",
