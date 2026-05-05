@@ -5,6 +5,8 @@ import type { FullAnalysisResult, MatchedProduct } from "@/lib/sae/types";
 import { AnnotatedPhoto } from "@/components/analysis/annotated-photo";
 import { SkinRadarChart } from "@/components/analysis/skin-radar-chart";
 import { SkinProjection } from "@/components/analysis/skin-projection";
+import { useCartSafe } from "@/lib/cart/cart-store";
+import { resolveProductChannel } from "@/lib/cart/resolve-channel";
 import {
   skinTypeLabels as skinTypeLabelsRaw,
   conditionLabels as conditionLabelsRaw,
@@ -128,6 +130,9 @@ function ProductCard({
   whatsappMessage,
   mercadoPagoEnabled,
   mercadoPagoEmail,
+  cartChannel,
+  primaryColor,
+  secondaryColor,
 }: {
   rec: MatchedProductExtended;
   idx: number;
@@ -140,21 +145,38 @@ function ProductCard({
   whatsappMessage?: string | null;
   mercadoPagoEnabled: boolean;
   mercadoPagoEmail?: string | null;
+  // Optional cart-driven flow. When cartChannel is provided AND cart context
+  // is available, the card renders a single Adicionar/No carrinho toggle
+  // instead of the legacy 1-3 channel-specific buttons. Falls back to legacy
+  // CTAs for any environment without the cart provider (kits manuais embed
+  // outside the new analise flow today).
+  cartChannel?: import("@/lib/cart/types").CartChannel;
+  primaryColor?: string;
+  secondaryColor?: string;
 }) {
+  const cartCtx = useCartSafe();
+  const useCartFlow = !!cartCtx && !!cartChannel;
+
   const showWhatsApp =
+    !useCartFlow &&
     storefrontEnabled &&
     (storefrontCtaMode === "whatsapp" || storefrontCtaMode === "both") &&
     !!whatsappNumber;
 
   const showMercadoPago =
+    !useCartFlow &&
     storefrontEnabled &&
     mercadoPagoEnabled &&
     (storefrontCtaMode === "mercadopago" || storefrontCtaMode === "both") &&
     !!mercadoPagoEmail;
 
-  const showExternal = storefrontCtaMode === "external" && !!rec.ecommerceLink;
+  const showExternal =
+    !useCartFlow && storefrontCtaMode === "external" && !!rec.ecommerceLink;
 
   const template = whatsappMessage || DEFAULT_WHATSAPP_MESSAGE;
+  const inCart = useCartFlow ? cartCtx!.hasItem(rec.productId) : false;
+  const brandPrimary = primaryColor || "#1C1917";
+  const brandSecondary = secondaryColor || brandPrimary;
 
   return (
     <div className="p-5 bg-white border border-sable/20">
@@ -206,33 +228,81 @@ function ProductCard({
             </div>
           )}
           <div className="flex flex-wrap gap-2 mt-3">
-            {showExternal && (
-              <a
-                href={`${rec.ecommerceLink}?skr_ref=${rec.productId}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block px-4 py-2 bg-carbone text-blanc-casse text-xs font-light tracking-wide hover:bg-terre transition-colors"
+            {useCartFlow ? (
+              <button
+                type="button"
+                onClick={() => {
+                  if (!cartCtx || !cartChannel) return;
+                  if (inCart) {
+                    cartCtx.removeItem(rec.productId);
+                    return;
+                  }
+                  const item = {
+                    productId: rec.productId,
+                    name: rec.name,
+                    price: rec.price ?? 0,
+                    imageUrl: rec.imageUrl ?? null,
+                    channel: cartChannel,
+                    channelRef: rec.sku || rec.ecommerceLink || "",
+                    trackingRef: rec.productId,
+                    recommendationTag: rec.recommendationTag,
+                  };
+                  const result = cartCtx.addItem(item);
+                  if (!result.ok && result.reason === "channel-mismatch") {
+                    const ok = window.confirm(
+                      `Você já tem itens de ${result.existingChannel}. Adicionar este item de ${cartChannel} vai substituir o carrinho. Confirmar?`
+                    );
+                    if (ok) cartCtx.replaceCart(item);
+                  }
+                }}
+                style={
+                  inCart
+                    ? { backgroundColor: brandPrimary }
+                    : { borderColor: brandPrimary, color: brandPrimary }
+                }
+                onMouseEnter={(e) => {
+                  if (inCart) e.currentTarget.style.backgroundColor = brandSecondary;
+                }}
+                onMouseLeave={(e) => {
+                  if (inCart) e.currentTarget.style.backgroundColor = brandPrimary;
+                }}
+                className={`inline-block px-4 py-2 text-xs font-light tracking-wide transition-colors ${
+                  inCart ? "text-blanc-casse" : "border bg-white"
+                }`}
               >
-                {ctaText}
-              </a>
-            )}
-            {showWhatsApp && (
-              <a
-                href={buildWhatsAppUrl(whatsappNumber!, template, rec.name, rec.price)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block px-4 py-2 bg-carbone text-blanc-casse text-xs font-light tracking-wide hover:bg-terre transition-colors"
-              >
-                Comprar via WhatsApp
-              </a>
-            )}
-            {showMercadoPago && (
-              <a
-                href={`mailto:${mercadoPagoEmail}?subject=Pagamento ${encodeURIComponent(rec.name)}`}
-                className="inline-block px-4 py-2 border border-sable/40 text-terre text-xs font-light tracking-wide hover:bg-ivoire transition-colors"
-              >
-                Pagar
-              </a>
+                {inCart ? "✓ No carrinho" : "Adicionar"}
+              </button>
+            ) : (
+              <>
+                {showExternal && (
+                  <a
+                    href={`${rec.ecommerceLink}?skr_ref=${rec.productId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block px-4 py-2 bg-carbone text-blanc-casse text-xs font-light tracking-wide hover:bg-terre transition-colors"
+                  >
+                    {ctaText}
+                  </a>
+                )}
+                {showWhatsApp && (
+                  <a
+                    href={buildWhatsAppUrl(whatsappNumber!, template, rec.name, rec.price)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block px-4 py-2 bg-carbone text-blanc-casse text-xs font-light tracking-wide hover:bg-terre transition-colors"
+                  >
+                    Comprar via WhatsApp
+                  </a>
+                )}
+                {showMercadoPago && (
+                  <a
+                    href={`mailto:${mercadoPagoEmail}?subject=Pagamento ${encodeURIComponent(rec.name)}`}
+                    className="inline-block px-4 py-2 border border-sable/40 text-terre text-xs font-light tracking-wide hover:bg-ivoire transition-colors"
+                  >
+                    Pagar
+                  </a>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -382,6 +452,7 @@ export function ResultsScreen({
   secondaryColor,
   config,
   photoBase64,
+  tenantIntegrations,
 }: {
   result: FullAnalysisResult;
   tenantName: string;
@@ -390,6 +461,10 @@ export function ResultsScreen({
   secondaryColor?: string;
   config?: ResultsConfig;
   photoBase64?: string;
+  // Active integrations on the tenant (passed from the parent page when the
+  // cart flow is enabled). Used to resolve which checkout channel each
+  // product card uses. When undefined, ProductCard falls back to legacy CTAs.
+  tenantIntegrations?: Array<{ platform: string; status: string; storeId?: string | null }>;
 }) {
   // brandHover falls back to primaryColor if the tenant didn't set a
   // secondary so we never get a flash of an unrelated color on hover.
@@ -630,22 +705,48 @@ export function ResultsScreen({
             Produtos Recomendados
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {productRecs.map((rec, idx) => (
-              <ProductCard
-                key={rec.productId}
-                rec={rec}
-                idx={idx}
-                showMatchScore={showMatchScore}
-                showPrice={showPrices}
-                ctaText={productCtaText}
-                storefrontCtaMode={storefrontCtaMode}
-                storefrontEnabled={storefrontEnabled}
-                whatsappNumber={whatsappNumber}
-                whatsappMessage={whatsappMessage}
-                mercadoPagoEnabled={mercadoPagoEnabled}
-                mercadoPagoEmail={mercadoPagoEmail}
-              />
-            ))}
+            {productRecs.map((rec, idx) => {
+              // Resolve the channel only when the parent passed integrations
+              // info AND there's a cart provider in scope. Otherwise the card
+              // falls back to its legacy CTA stack.
+              const channel = tenantIntegrations
+                ? resolveProductChannel({
+                    product: {
+                      type: rec.type,
+                      ecommerceLink: rec.ecommerceLink,
+                      bookingLink: rec.bookingLink,
+                      sku: rec.sku,
+                    },
+                    tenantConfig: {
+                      storefrontEnabled,
+                      storefrontCtaMode,
+                      whatsappNumber,
+                      mercadoPagoEnabled,
+                      mercadoPagoEmail,
+                    },
+                    integrations: tenantIntegrations,
+                  })
+                : undefined;
+              return (
+                <ProductCard
+                  key={rec.productId}
+                  rec={rec}
+                  idx={idx}
+                  showMatchScore={showMatchScore}
+                  showPrice={showPrices}
+                  ctaText={productCtaText}
+                  storefrontCtaMode={storefrontCtaMode}
+                  storefrontEnabled={storefrontEnabled}
+                  whatsappNumber={whatsappNumber}
+                  whatsappMessage={whatsappMessage}
+                  mercadoPagoEnabled={mercadoPagoEnabled}
+                  mercadoPagoEmail={mercadoPagoEmail}
+                  cartChannel={channel}
+                  primaryColor={primaryColor}
+                  secondaryColor={secondaryColor}
+                />
+              );
+            })}
           </div>
         </div>
       )}

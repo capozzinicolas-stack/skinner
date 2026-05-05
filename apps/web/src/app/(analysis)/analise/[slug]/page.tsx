@@ -7,6 +7,10 @@ import { PhotoCapture } from "@/components/analysis/photo-capture";
 import { LoadingScreen } from "@/components/analysis/loading-screen";
 import { ResultsScreen, type ResultsConfig } from "@/components/analysis/results-screen";
 import { ContactCapture, type ContactData } from "@/components/analysis/contact-capture";
+import { CartProvider } from "@/lib/cart/cart-store";
+import { CartFloater } from "@/components/analysis/cart-floater";
+import { resolveProductChannel } from "@/lib/cart/resolve-channel";
+import type { CartItem } from "@/lib/cart/types";
 import type { FullAnalysisResult } from "@/lib/sae/types";
 
 type Step = "welcome" | "consent" | "contact" | "questionnaire" | "photo" | "loading" | "result" | "error";
@@ -30,6 +34,10 @@ export default function AnalysisPage({
 
   const tenant = trpc.tenant.getBySlug.useQuery({ slug: params.slug });
   const analysisConfig = trpc.tenant.getAnalysisConfig.useQuery(
+    { slug: params.slug },
+    { enabled: !!params.slug }
+  );
+  const integrations = trpc.integration.publicByTenantSlug.useQuery(
     { slug: params.slug },
     { enabled: !!params.slug }
   );
@@ -302,15 +310,65 @@ export default function AnalysisPage({
         {step === "loading" && <LoadingScreen />}
 
         {step === "result" && result && (
-          <ResultsScreen
-            result={result}
-            tenantName={tenantName}
-            disclaimer={tenant.data.disclaimer ?? undefined}
-            primaryColor={tenant.data.primaryColor || "#1C1917"}
-            secondaryColor={tenant.data.secondaryColor || undefined}
-            config={resultsConfig}
-            photoBase64={capturedPhoto ?? undefined}
-          />
+          <CartProvider analysisId={result.analysisId}>
+            <ResultsScreen
+              result={result}
+              tenantName={tenantName}
+              disclaimer={tenant.data.disclaimer ?? undefined}
+              primaryColor={brandPrimary}
+              secondaryColor={tenant.data.secondaryColor || undefined}
+              config={resultsConfig}
+              photoBase64={capturedPhoto ?? undefined}
+              tenantIntegrations={integrations.data ?? []}
+            />
+            {/* Routine candidates for the "Adicionar rotina completa" bulk
+                action. Only physical products tagged "recomendado" qualify;
+                services keep their own legacy CTAs and are not added in bulk. */}
+            <CartFloater
+              primaryColor={brandPrimary}
+              secondaryColor={brandSecondary}
+              dispatchContext={{
+                whatsappNumber: cfg?.whatsappNumber ?? null,
+                whatsappTemplate: cfg?.whatsappMessage ?? null,
+                mercadoPagoEmail: cfg?.mercadoPagoEmail ?? null,
+                tenantName,
+                // nuvemshopBaseUrl / shopifyBaseUrl are TODO — not persisted
+                // on the integration row yet. Dispatcher returns a graceful
+                // warning when nuvemshop/shopify is selected without a base
+                // URL configured.
+              }}
+              routineCandidates={result.recommendations
+                .filter((r) => (r.type ?? "product") === "product")
+                .map<CartItem>((r) => {
+                  const channel = resolveProductChannel({
+                    product: {
+                      type: r.type,
+                      ecommerceLink: r.ecommerceLink,
+                      bookingLink: r.bookingLink,
+                      sku: r.sku,
+                    },
+                    tenantConfig: {
+                      storefrontEnabled: cfg?.storefrontEnabled ?? false,
+                      storefrontCtaMode: cfg?.storefrontCtaMode ?? null,
+                      whatsappNumber: cfg?.whatsappNumber ?? null,
+                      mercadoPagoEnabled: cfg?.mercadoPagoEnabled ?? false,
+                      mercadoPagoEmail: cfg?.mercadoPagoEmail ?? null,
+                    },
+                    integrations: integrations.data ?? [],
+                  });
+                  return {
+                    productId: r.productId,
+                    name: r.name,
+                    price: r.price ?? 0,
+                    imageUrl: r.imageUrl ?? null,
+                    channel,
+                    channelRef: r.sku || r.ecommerceLink || "",
+                    trackingRef: r.productId,
+                    recommendationTag: r.recommendationTag,
+                  };
+                })}
+            />
+          </CartProvider>
         )}
 
         {step === "error" && (

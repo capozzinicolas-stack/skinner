@@ -433,6 +433,43 @@ NextAuth defaults to **per-subdomain cookie scoping**, so cookies set on `app.sk
 
 When developing locally on `localhost`, both modes are accepted because there is no subdomain prefix — `detectMode()` falls back to "client" by default. To test admin login locally, navigate from a hostname that starts with `admin.` (use `/etc/hosts` to alias `admin.localhost` if needed).
 
+## Cart + checkout dispatcher
+
+The `/analise/[slug]` results screen now hosts a single-cart, single-channel checkout flow. The patient adds products one by one, sees a sticky footer with the running total, and clicks "Finalizar" to be sent to the channel-specific checkout (Nuvemshop, Shopify, MercadoPago, WhatsApp, or external link). The cart lives entirely in the browser (`localStorage`, 24h TTL, keyed by analysisId) — no DB tables, no server state.
+
+### Channel resolver
+`lib/cart/resolve-channel.ts` decides the checkout channel for each product. Priority order (first match wins):
+1. **Service** with `bookingLink` → `external` (or `whatsapp` if storefront ops via WhatsApp).
+2. Active Nuvemshop integration + product `ecommerceLink` matches `lojavirtualnuvem|tiendanube` → `nuvemshop`.
+3. Active Shopify integration + link matches `myshopify.com` → `shopify`.
+4. `mercadoPagoEnabled` + email + product has no external link → `mercadopago`.
+5. Storefront WhatsApp opt-in → `whatsapp`.
+6. Default → `external` (whatever `ecommerceLink` points to).
+
+When the future `/admin/canais` refactor lands, this function gets replaced by a lookup against an explicit per-tenant priority stack — consumers don't change.
+
+### Single-channel cart enforcement
+The cart can only contain items from one channel. If the patient tries to add a product whose channel differs from the items already in cart, the UI shows a `confirm()` dialog: "Você já tem itens de [canal A]. Adicionar este item de [canal B] vai substituir o carrinho. Confirmar?". On accept, the cart is replaced by the new item. This is **Opção A** from the multi-channel design — chosen for simplicity. Multi-channel split-checkout (sub-carts per channel) is deferred.
+
+### Dispatcher (`lib/cart/dispatch.ts`)
+`buildCartCheckoutUrl(items, ctx)` returns `{ url, warning? }` based on the cart's single channel:
+- **nuvemshop**: `{base}/carrinho/adicionar?sku=A&qty=1&sku=B&qty=1&skr_ref=...` (requires `nuvemshopBaseUrl` in ctx — currently null because we don't persist the store base URL on the Integration row; dispatcher returns a friendly warning).
+- **shopify**: `{base}/cart/{variantId}:1,{variantId}:1?skr_ref=...` (same `shopifyBaseUrl` gap).
+- **external**: opens the first item's URL. If multiple items, surfaces a warning that only the first opens.
+- **whatsapp**: pre-formatted message with item list, total, tracking ref, sent to `wa.me/{number}`.
+- **mercadopago**: today still falls back to `mailto:` with the item list — full MP API integration is a future sprint that swaps this branch.
+
+### Components
+- `components/analysis/cart-floater.tsx` — sticky footer (count + total + "Adicionar rotina completa" + "Finalizar"). Branded with tenant primaryColor/secondaryColor.
+- `components/analysis/results-screen.tsx` — `ProductCard` accepts `cartChannel` + `primaryColor`/`secondaryColor`. When in `<CartProvider>` AND a channel is resolved, renders a single "Adicionar / ✓ No carrinho" toggle. Falls back to legacy 3-button CTA (Comprar/WhatsApp/Pagar) when not. Service cards keep their legacy CTAs (services do not enter the cart by design).
+- `lib/cart/cart-store.tsx` — `<CartProvider analysisId>` + `useCart()` + `useCartSafe()` (returns null outside provider).
+
+### Integration listing for the patient flow
+`integration.publicByTenantSlug` (publicProcedure, slug-keyed) returns active integrations as `{ platform, status, storeId }` — never tokens. Used by the resolver to pick channel. Added to `PUBLIC_PATHS` in middleware so the patient can call it without auth.
+
+### Pages NOT yet wired to cart (deliberate)
+- `/kit/[kitId]` and `/kit/manual/[tenantSlug]/[kitSlug]` are Server Components rendering legacy buttons. Refactoring to client + cart is a follow-up sprint. The patient who lands there from a shared kit link still gets WhatsApp/Pagar/external buttons that work as before. Conversion-critical flow (`/analise/[slug]` → results) IS wired.
+
 ## Brand customization (per-tenant)
 
 Tenant brand fields configured at `/dashboard/marca` are now applied end-to-end in the patient-facing flow. All defaults preserve the Skinner Carbone/Terre palette so a tenant that never opens the page still gets a polished look.

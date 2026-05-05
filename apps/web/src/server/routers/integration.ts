@@ -1,6 +1,6 @@
 import { z } from "zod/v4";
 import { TRPCError } from "@trpc/server";
-import { router, tenantProcedure } from "../trpc";
+import { router, tenantProcedure, publicProcedure } from "../trpc";
 import { getAuthUrl } from "@/lib/integrations/nuvemshop";
 import { getAuthUrl as getShopifyAuthUrl } from "@/lib/integrations/shopify";
 
@@ -18,6 +18,23 @@ function normalizeShopDomain(input: string): string | null {
 }
 
 export const integrationRouter = router({
+  // Public list of active integrations for a tenant slug. Used by the patient
+  // analise/kit pages to resolve which checkout channel each product card
+  // should use. Only returns the platform/status/storeId — never tokens.
+  publicByTenantSlug: publicProcedure
+    .input(z.object({ slug: z.string().min(1) }))
+    .query(async ({ ctx, input }) => {
+      const tenant = await ctx.db.tenant.findUnique({
+        where: { slug: input.slug },
+        select: { id: true },
+      });
+      if (!tenant) return [];
+      return ctx.db.integration.findMany({
+        where: { tenantId: tenant.id, status: "active" },
+        select: { platform: true, status: true, storeId: true },
+      });
+    }),
+
   // Returns the current integration record for "nuvemshop" (or null if not connected).
   // Kept for backwards compatibility with the existing NuvemshopCard component.
   getStatus: tenantProcedure.query(async ({ ctx }) => {
