@@ -13,6 +13,7 @@ type PlanRow = {
   commissionRate: number;
   excessCostPerAnalysis: number;
   maxUsers: number;
+  maxChannels: number;
   features: string;
   ctaText: string;
   visible: boolean;

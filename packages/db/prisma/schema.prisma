@@ -419,6 +419,12 @@ model AnalysisChannel {
   expiresAt    DateTime?
   maxAnalyses  Int?
   status       String    @default("active") // active | paused | expired
+  // Per-channel UI/copy overrides serialized as JSON. When non-null, fields
+  // present in this object override the same-named TenantConfig fields for
+  // patients arriving via this channel slug. Whitelisted fields only — see
+  // CHANNEL_OVERRIDE_FIELDS in tenant.getBySlug for the authoritative list.
+  // Null or missing key → fall back to TenantConfig value (Tenant-wide default).
+  overrides    String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   analyses     Analysis[]

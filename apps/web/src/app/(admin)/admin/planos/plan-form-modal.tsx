@@ -12,6 +12,7 @@ type Plan = {
   commissionRate: number;
   excessCostPerAnalysis: number;
   maxUsers: number;
+  maxChannels: number;
   features: string;
   ctaText: string;
   visible: boolean;
@@ -29,6 +30,7 @@ type FormState = {
   commissionPct: string; // user-friendly % (commissionRate * 100)
   excessCostPerAnalysis: string;
   maxUsers: string;
+  maxChannels: string;
   features: string; // newline-separated
   ctaText: string;
   visible: boolean;
@@ -55,6 +57,7 @@ function planToForm(p: Plan): FormState {
     commissionPct: String(p.commissionRate * 100),
     excessCostPerAnalysis: String(p.excessCostPerAnalysis),
     maxUsers: String(p.maxUsers),
+    maxChannels: String((p as { maxChannels?: number }).maxChannels ?? 1),
     features: features.join("\n"),
     ctaText: p.ctaText,
     visible: p.visible,
@@ -74,6 +77,7 @@ const EMPTY_FORM: FormState = {
   commissionPct: "3",
   excessCostPerAnalysis: "0",
   maxUsers: "2",
+  maxChannels: "1",
   features: "",
   ctaText: "Inscrever-se",
   visible: true,
@@ -131,6 +135,7 @@ export function PlanFormModal({
       commissionRate: Number(form.commissionPct) / 100,
       excessCostPerAnalysis: Number(form.excessCostPerAnalysis),
       maxUsers: Number(form.maxUsers),
+      maxChannels: Number(form.maxChannels),
       features: featuresArr,
       ctaText: form.ctaText,
       visible: form.visible,
@@ -335,6 +340,25 @@ export function PlanFormModal({
                 required
                 className="w-full px-3 py-2 border border-sable/30 bg-blanc-casse text-sm text-carbone font-light focus:outline-none focus:border-pierre"
               />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
+                Max canais
+              </label>
+              <input
+                type="number"
+                min={1}
+                value={form.maxChannels}
+                onChange={(e) => setForm({ ...form, maxChannels: e.target.value })}
+                required
+                className="w-full px-3 py-2 border border-sable/30 bg-blanc-casse text-sm text-carbone font-light focus:outline-none focus:border-pierre"
+              />
+              <p className="text-[10px] text-pierre/70 font-light mt-1">
+                Numero maximo de canais (links/QRs/embeds) que o tenant pode criar.
+              </p>
             </div>
           </div>
 

@@ -12,7 +12,26 @@ import { router, tenantProcedure } from "../trpc";
 
 const periodInput = z.object({
   days: z.number().int().min(1).max(365).default(30),
+  // Optional filter — when provided, restricts every dashboard aggregation
+  // to analyses originated from this AnalysisChannel. Lets the UI segment
+  // metrics per channel without forking the routes.
+  channelId: z.string().optional(),
 });
+
+// Helper: builds the base WHERE for analyses scoped to ctx.tenantId + optional
+// channelId. All dashboard aggregations use this so the channel filter stays
+// uniform across overview, byRegion, etc.
+function analysesWhere(
+  tenantId: string,
+  channelId: string | undefined,
+  extra: Record<string, unknown> = {}
+): Record<string, unknown> {
+  return {
+    tenantId,
+    ...(channelId ? { channelId } : {}),
+    ...extra,
+  };
+}
 
 function safeParseArray(json: string | null | undefined): unknown[] {
   if (!json) return [];
@@ -70,6 +89,7 @@ export const dashboardRouter = router({
   overview: tenantProcedure.input(periodInput).query(async ({ ctx, input }) => {
     const since = new Date(Date.now() - input.days * 86_400_000);
     const tenantId = ctx.tenantId;
+    const channelId = input.channelId;
 
     const [
       analysesInPeriod,
@@ -79,10 +99,13 @@ export const dashboardRouter = router({
       pdfReportsInPeriod,
     ] = await Promise.all([
       ctx.db.analysis.count({
-        where: { tenantId, createdAt: { gte: since } },
+        where: analysesWhere(tenantId, channelId, { createdAt: { gte: since } }),
       }),
       ctx.db.analysis.count({
-        where: { tenantId, status: "completed", createdAt: { gte: since } },
+        where: analysesWhere(tenantId, channelId, {
+          status: "completed",
+          createdAt: { gte: since },
+        }),
       }),
       ctx.db.tenant.findUniqueOrThrow({
         where: { id: tenantId },
@@ -90,14 +113,19 @@ export const dashboardRouter = router({
       }),
       ctx.db.conversion.findMany({
         where: {
-          recommendation: { analysis: { tenantId } },
+          recommendation: {
+            analysis: channelId ? { tenantId, channelId } : { tenantId },
+          },
           type: "purchase",
           createdAt: { gte: since },
         },
         select: { saleValue: true },
       }),
       ctx.db.report.count({
-        where: { analysis: { tenantId }, createdAt: { gte: since } },
+        where: {
+          analysis: channelId ? { tenantId, channelId } : { tenantId },
+          createdAt: { gte: since },
+        },
       }),
     ]);
 
@@ -132,21 +160,30 @@ export const dashboardRouter = router({
 
   // ─── Monthly trend (last N months) ────────────────────────────────────────────────
   monthlyTrend: tenantProcedure
-    .input(z.object({ months: z.number().int().min(1).max(24).default(6) }))
+    .input(z.object({
+      months: z.number().int().min(1).max(24).default(6),
+      channelId: z.string().optional(),
+    }))
     .query(async ({ ctx, input }) => {
       const start = new Date();
       start.setMonth(start.getMonth() - input.months + 1);
       start.setDate(1);
       start.setHours(0, 0, 0, 0);
 
+      const channelId = input.channelId;
+
       const [analyses, conversions] = await Promise.all([
         ctx.db.analysis.findMany({
-          where: { tenantId: ctx.tenantId, createdAt: { gte: start } },
+          where: analysesWhere(ctx.tenantId, channelId, { createdAt: { gte: start } }),
           select: { createdAt: true },
         }),
         ctx.db.conversion.findMany({
           where: {
-            recommendation: { analysis: { tenantId: ctx.tenantId } },
+            recommendation: {
+              analysis: channelId
+                ? { tenantId: ctx.tenantId, channelId }
+                : { tenantId: ctx.tenantId },
+            },
             type: "purchase",
             createdAt: { gte: start },
           },
@@ -184,7 +221,7 @@ export const dashboardRouter = router({
     const since = new Date(Date.now() - input.days * 86_400_000);
     const grouped = await ctx.db.analysis.groupBy({
       by: ["clientRegion"],
-      where: { tenantId: ctx.tenantId, createdAt: { gte: since } },
+      where: analysesWhere(ctx.tenantId, input.channelId, { createdAt: { gte: since } }),
       _count: { _all: true },
       orderBy: { _count: { id: "desc" } },
     });
@@ -200,7 +237,7 @@ export const dashboardRouter = router({
     const since = new Date(Date.now() - input.days * 86_400_000);
     const grouped = await ctx.db.analysis.groupBy({
       by: ["clientCity", "clientRegion"],
-      where: { tenantId: ctx.tenantId, createdAt: { gte: since } },
+      where: analysesWhere(ctx.tenantId, input.channelId, { createdAt: { gte: since } }),
       _count: { _all: true },
       orderBy: { _count: { id: "desc" } },
       take: 10,
@@ -217,7 +254,7 @@ export const dashboardRouter = router({
     const since = new Date(Date.now() - input.days * 86_400_000);
     const grouped = await ctx.db.analysis.groupBy({
       by: ["skinType"],
-      where: { tenantId: ctx.tenantId, status: "completed", createdAt: { gte: since } },
+      where: analysesWhere(ctx.tenantId, input.channelId, { status: "completed", createdAt: { gte: since } }),
       _count: { _all: true },
     });
     const total = grouped.reduce((s, g) => s + g._count._all, 0);
@@ -235,7 +272,7 @@ export const dashboardRouter = router({
     const since = new Date(Date.now() - input.days * 86_400_000);
     const grouped = await ctx.db.analysis.groupBy({
       by: ["clientAge"],
-      where: { tenantId: ctx.tenantId, createdAt: { gte: since } },
+      where: analysesWhere(ctx.tenantId, input.channelId, { createdAt: { gte: since } }),
       _count: { _all: true },
     });
     const total = grouped.reduce((s, g) => s + g._count._all, 0);
@@ -258,7 +295,7 @@ export const dashboardRouter = router({
     const since = new Date(Date.now() - input.days * 86_400_000);
     const grouped = await ctx.db.analysis.groupBy({
       by: ["primaryObjective"],
-      where: { tenantId: ctx.tenantId, status: "completed", createdAt: { gte: since } },
+      where: analysesWhere(ctx.tenantId, input.channelId, { status: "completed", createdAt: { gte: since } }),
       _count: { _all: true },
       orderBy: { _count: { id: "desc" } },
     });
@@ -271,7 +308,7 @@ export const dashboardRouter = router({
     const since = new Date(Date.now() - input.days * 86_400_000);
     const grouped = await ctx.db.analysis.groupBy({
       by: ["barrierStatus"],
-      where: { tenantId: ctx.tenantId, status: "completed", createdAt: { gte: since } },
+      where: analysesWhere(ctx.tenantId, input.channelId, { status: "completed", createdAt: { gte: since } }),
       _count: { _all: true },
     });
     const total = grouped.reduce((s, g) => s + g._count._all, 0);
@@ -293,12 +330,13 @@ export const dashboardRouter = router({
       z.object({
         days: z.number().int().min(1).max(365).default(30),
         limit: z.number().int().min(1).max(50).default(10),
+        channelId: z.string().optional(),
       })
     )
     .query(async ({ ctx, input }) => {
       const since = new Date(Date.now() - input.days * 86_400_000);
       const rows = await ctx.db.analysis.findMany({
-        where: { tenantId: ctx.tenantId, status: "completed", createdAt: { gte: since } },
+        where: analysesWhere(ctx.tenantId, input.channelId, { status: "completed", createdAt: { gte: since } }),
         select: { conditions: true },
       });
       const tally = new Map<string, { count: number; severitySum: number }>();
@@ -329,7 +367,7 @@ export const dashboardRouter = router({
   skinTypeDiscrepancy: tenantProcedure.input(periodInput).query(async ({ ctx, input }) => {
     const since = new Date(Date.now() - input.days * 86_400_000);
     const rows = await ctx.db.analysis.findMany({
-      where: { tenantId: ctx.tenantId, status: "completed", createdAt: { gte: since } },
+      where: analysesWhere(ctx.tenantId, input.channelId, { status: "completed", createdAt: { gte: since } }),
       select: { questionnaireData: true, skinType: true },
     });
     let total = 0;
@@ -359,13 +397,18 @@ export const dashboardRouter = router({
       z.object({
         days: z.number().int().min(1).max(365).default(30),
         limit: z.number().int().min(1).max(50).default(10),
+        channelId: z.string().optional(),
       })
     )
     .query(async ({ ctx, input }) => {
       const since = new Date(Date.now() - input.days * 86_400_000);
       const grouped = await ctx.db.recommendation.groupBy({
         by: ["productId"],
-        where: { analysis: { tenantId: ctx.tenantId, createdAt: { gte: since } } },
+        where: {
+          analysis: input.channelId
+            ? { tenantId: ctx.tenantId, channelId: input.channelId, createdAt: { gte: since } }
+            : { tenantId: ctx.tenantId, createdAt: { gte: since } },
+        },
         _count: { _all: true },
         orderBy: { _count: { id: "desc" } },
         take: input.limit,
@@ -391,7 +434,7 @@ export const dashboardRouter = router({
     const since = new Date(Date.now() - input.days * 86_400_000);
     const [analyses, products] = await Promise.all([
       ctx.db.analysis.findMany({
-        where: { tenantId: ctx.tenantId, status: "completed", createdAt: { gte: since } },
+        where: analysesWhere(ctx.tenantId, input.channelId, { status: "completed", createdAt: { gte: since } }),
         select: { conditions: true },
       }),
       ctx.db.product.findMany({
@@ -430,11 +473,16 @@ export const dashboardRouter = router({
     const since = new Date(Date.now() - input.days * 86_400_000);
     const [completed, pdfsByChannel] = await Promise.all([
       ctx.db.analysis.count({
-        where: { tenantId: ctx.tenantId, status: "completed", createdAt: { gte: since } },
+        where: analysesWhere(ctx.tenantId, input.channelId, { status: "completed", createdAt: { gte: since } }),
       }),
       ctx.db.report.groupBy({
         by: ["channel"],
-        where: { analysis: { tenantId: ctx.tenantId }, createdAt: { gte: since } },
+        where: {
+          analysis: input.channelId
+            ? { tenantId: ctx.tenantId, channelId: input.channelId }
+            : { tenantId: ctx.tenantId },
+          createdAt: { gte: since },
+        },
         _count: { _all: true },
       }),
     ]);
@@ -472,7 +520,10 @@ export const dashboardRouter = router({
 
       // Pull all completed analyses with the dims we slice on, plus convert flag.
       const analyses = await ctx.db.analysis.findMany({
-        where: { tenantId, status: "completed", createdAt: { gte: since } },
+        where: analysesWhere(tenantId, input.channelId, {
+          status: "completed",
+          createdAt: { gte: since },
+        }),
         select: {
           id: true,
           skinType: true,
@@ -528,7 +579,11 @@ export const dashboardRouter = router({
    * Returns a matrix: { months[], series[{ condition, values[] }] }.
    */
   seasonalityByCondition: tenantProcedure
-    .input(z.object({ months: z.number().int().min(3).max(24).default(12), topConditions: z.number().int().min(2).max(8).default(5) }))
+    .input(z.object({
+      months: z.number().int().min(3).max(24).default(12),
+      topConditions: z.number().int().min(2).max(8).default(5),
+      channelId: z.string().optional(),
+    }))
     .query(async ({ ctx, input }) => {
       const start = new Date();
       start.setMonth(start.getMonth() - input.months + 1);
@@ -536,7 +591,7 @@ export const dashboardRouter = router({
       start.setHours(0, 0, 0, 0);
 
       const rows = await ctx.db.analysis.findMany({
-        where: { tenantId: ctx.tenantId, status: "completed", createdAt: { gte: start } },
+        where: analysesWhere(ctx.tenantId, input.channelId, { status: "completed", createdAt: { gte: start } }),
         select: { conditions: true, createdAt: true },
       });
 

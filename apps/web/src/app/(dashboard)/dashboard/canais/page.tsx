@@ -203,7 +203,7 @@ export default function ChannelsPage() {
 }
 
 function ChannelDetail({ channel }: { channel: ChannelRow }) {
-  const [tab, setTab] = useState<"link" | "qr" | "embed">("link");
+  const [tab, setTab] = useState<"link" | "qr" | "embed" | "personalize">("link");
   const [embedOpts, setEmbedOpts] = useState<EmbedOptions>(DEFAULT_EMBED_OPTIONS);
   const [copied, setCopied] = useState<string | null>(null);
   const utils = trpc.useUtils();
@@ -271,8 +271,8 @@ function ChannelDetail({ channel }: { channel: ChannelRow }) {
         </div>
       </div>
 
-      <div className="px-5 py-3 border-b border-sable/20 flex gap-1">
-        {(["link", "qr", "embed"] as const).map((t) => (
+      <div className="px-5 py-3 border-b border-sable/20 flex gap-1 flex-wrap">
+        {(["link", "qr", "embed", "personalize"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -280,7 +280,13 @@ function ChannelDetail({ channel }: { channel: ChannelRow }) {
               tab === t ? "bg-carbone text-blanc-casse" : "text-pierre hover:bg-ivoire/40"
             }`}
           >
-            {t === "link" ? "Link Direto" : t === "qr" ? "QR Code" : "Widget Embed"}
+            {t === "link"
+              ? "Link Direto"
+              : t === "qr"
+              ? "QR Code"
+              : t === "embed"
+              ? "Widget Embed"
+              : "Personalizacao"}
           </button>
         ))}
       </div>
@@ -394,6 +400,177 @@ function ChannelDetail({ channel }: { channel: ChannelRow }) {
               </button>
             </div>
           </div>
+        )}
+
+        {tab === "personalize" && <ChannelOverridesForm channelId={channel.id} />}
+      </div>
+    </div>
+  );
+}
+
+// Subset of TenantConfig fields that a channel can override. Keep aligned with
+// CHANNEL_OVERRIDE_FIELDS in apps/web/src/server/routers/analysis-channel.ts.
+const OVERRIDE_FIELDS: Array<{
+  key: string;
+  label: string;
+  type: "text" | "textarea" | "boolean";
+  hint?: string;
+}> = [
+  { key: "welcomeTitle", label: "Titulo da tela inicial", type: "text" },
+  { key: "welcomeDescription", label: "Descricao da tela inicial", type: "textarea" },
+  { key: "welcomeCtaText", label: "Texto do botao Iniciar", type: "text" },
+  { key: "welcomeSubtext", label: "Subtexto da tela inicial", type: "text" },
+  { key: "consentExtraText", label: "Texto extra do consentimento", type: "textarea" },
+  { key: "consentButtonText", label: "Texto do botao de consentimento", type: "text" },
+  { key: "contactCaptureEnabled", label: "Mostrar tela de captura de contato", type: "boolean" },
+  { key: "contactCaptureRequired", label: "Tornar contato obrigatorio", type: "boolean" },
+  { key: "contactCustomMessage", label: "Mensagem da tela de contato", type: "textarea" },
+  { key: "productCtaText", label: "Texto do botao do produto", type: "text" },
+  { key: "serviceCtaText", label: "Texto do botao do servico", type: "text" },
+  { key: "resultsTopMessage", label: "Mensagem topo do resultado", type: "textarea" },
+  { key: "resultsFooterText", label: "Mensagem rodape do resultado", type: "textarea" },
+];
+
+function ChannelOverridesForm({ channelId }: { channelId: string }) {
+  const utils = trpc.useUtils();
+  const channelsQuery = trpc.analysisChannel.list.useQuery();
+  const channel = channelsQuery.data?.channels.find((c) => c.id === channelId);
+  const [values, setValues] = useState<Record<string, string | boolean>>({});
+  const [saved, setSaved] = useState(false);
+
+  // Initialize values from channel.overrides on first render / channel change.
+  // Channel comes from the list query; we only init once when it appears.
+  const overridesJson = (channel as { overrides?: string | null } | undefined)?.overrides;
+  const overridesKey = `${channelId}::${overridesJson ?? ""}`;
+  const [initKey, setInitKey] = useState<string | null>(null);
+  if (channel && initKey !== overridesKey) {
+    let parsed: Record<string, unknown> = {};
+    try {
+      parsed = overridesJson ? JSON.parse(overridesJson) : {};
+    } catch {
+      parsed = {};
+    }
+    const next: Record<string, string | boolean> = {};
+    for (const f of OVERRIDE_FIELDS) {
+      const v = parsed[f.key];
+      if (v === undefined || v === null) continue;
+      if (f.type === "boolean") next[f.key] = !!v;
+      else next[f.key] = typeof v === "string" ? v : String(v);
+    }
+    setValues(next);
+    setInitKey(overridesKey);
+  }
+
+  const updateMutation = trpc.analysisChannel.update.useMutation({
+    onSuccess: () => {
+      utils.analysisChannel.list.invalidate();
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    },
+  });
+
+  function setField(key: string, val: string | boolean) {
+    setValues((prev) => ({ ...prev, [key]: val }));
+  }
+
+  function clearField(key: string) {
+    setValues((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  }
+
+  function handleSave() {
+    // Strip empty strings so they fall back to tenant defaults instead of
+    // overriding with an empty string.
+    const overrides: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(values)) {
+      if (typeof v === "string") {
+        if (v.trim() !== "") overrides[k] = v;
+      } else {
+        overrides[k] = v;
+      }
+    }
+    updateMutation.mutate({
+      id: channelId,
+      overrides: Object.keys(overrides).length > 0 ? overrides : null,
+    });
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="p-3 bg-ivoire border border-sable/30">
+        <p className="text-xs text-pierre font-light">
+          Personalize textos e comportamentos especificos deste canal. Campos vazios usam o
+          padrao da clinica configurado em <strong>Analise</strong> e <strong>Marca</strong>.
+        </p>
+      </div>
+
+      {OVERRIDE_FIELDS.map((field) => {
+        const v = values[field.key];
+        const isSet = v !== undefined;
+        return (
+          <div key={field.key} className="border-b border-sable/15 pb-3">
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <label className="block text-[10px] text-pierre uppercase tracking-wider font-light">
+                {field.label}
+              </label>
+              {isSet && (
+                <button
+                  type="button"
+                  onClick={() => clearField(field.key)}
+                  className="text-[10px] text-pierre hover:text-terre underline font-light"
+                >
+                  Voltar ao padrao
+                </button>
+              )}
+            </div>
+            {field.type === "boolean" ? (
+              <label className="flex items-center gap-3 text-sm text-carbone font-light">
+                <input
+                  type="checkbox"
+                  checked={typeof v === "boolean" ? v : false}
+                  onChange={(e) => setField(field.key, e.target.checked)}
+                />
+                {isSet ? (typeof v === "boolean" && v ? "ativado" : "desativado") : "usando padrao"}
+              </label>
+            ) : field.type === "textarea" ? (
+              <textarea
+                value={typeof v === "string" ? v : ""}
+                onChange={(e) => setField(field.key, e.target.value)}
+                placeholder="(usando padrao da clinica)"
+                rows={2}
+                className="w-full px-3 py-2 border border-sable/30 bg-blanc-casse text-sm text-carbone font-light"
+              />
+            ) : (
+              <input
+                type="text"
+                value={typeof v === "string" ? v : ""}
+                onChange={(e) => setField(field.key, e.target.value)}
+                placeholder="(usando padrao da clinica)"
+                className="w-full px-3 py-2 border border-sable/30 bg-blanc-casse text-sm text-carbone font-light"
+              />
+            )}
+            {field.hint && (
+              <p className="text-[10px] text-pierre/70 font-light mt-1">{field.hint}</p>
+            )}
+          </div>
+        );
+      })}
+
+      <div className="flex items-center gap-3 pt-2">
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={updateMutation.isPending}
+          className="px-4 py-2 bg-carbone text-blanc-casse text-sm font-light tracking-wide disabled:opacity-50"
+        >
+          {updateMutation.isPending ? "Salvando..." : "Salvar personalizacao"}
+        </button>
+        {saved && <span className="text-sm text-pierre font-light">Salvo.</span>}
+        {updateMutation.error && (
+          <span className="text-sm text-terre font-light">{updateMutation.error.message}</span>
         )}
       </div>
     </div>

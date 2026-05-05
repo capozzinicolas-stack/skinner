@@ -30,6 +30,13 @@ export const tenantRouter = router({
   //   2. Tenant.slug fallback → returns tenant with channelId=null (legacy).
   // Channel state is enforced here so paused/expired channels block before
   // the patient even sees the welcome screen.
+  //
+  // Per-channel overrides: AnalysisChannel.overrides is a JSON map of
+  // tenantConfig field overrides. We merge it onto the resolved tenantConfig
+  // so patients on channel "X" see channel-specific welcome / contact
+  // capture / CTA copy without changing the underlying tenant defaults.
+  // Whitelist enforced at write time (see analysisChannel.update); read time
+  // applies whatever's stored.
   getBySlug: publicProcedure
     .input(z.object({ slug: z.string() }))
     .query(async ({ ctx, input }) => {
@@ -43,6 +50,7 @@ export const tenantRouter = router({
           expiresAt: true,
           maxAnalyses: true,
           isDefault: true,
+          overrides: true,
           tenantId: true,
         },
       });
@@ -126,8 +134,26 @@ export const tenantRouter = router({
         else channelStatus = "active";
       }
 
+      // Merge channel overrides onto tenantConfig. Failure to parse leaves
+      // tenantConfig untouched — never crashes the patient flow.
+      let mergedTenantConfig = tenant.tenantConfig;
+      if (channel?.overrides && tenant.tenantConfig) {
+        try {
+          const parsed = JSON.parse(channel.overrides);
+          if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+            mergedTenantConfig = {
+              ...tenant.tenantConfig,
+              ...(parsed as Record<string, unknown>),
+            } as typeof tenant.tenantConfig;
+          }
+        } catch {
+          // Malformed overrides JSON — ignore silently.
+        }
+      }
+
       return {
         ...tenant,
+        tenantConfig: mergedTenantConfig,
         channelId: channel?.id ?? null,
         channelSlug: channel?.slug ?? input.slug,
         channelLabel: channel?.label ?? null,
@@ -138,12 +164,20 @@ export const tenantRouter = router({
 
   // Public query: returns the full TenantConfig for a given tenant slug.
   // Used by the unauthenticated B2C analysis flow to drive UI behaviour.
+  // When the slug matches an AnalysisChannel, the channel.overrides JSON is
+  // merged onto tenantConfig so per-channel UI variants take effect.
   getAnalysisConfig: publicProcedure
     .input(z.object({ slug: z.string() }))
     .query(async ({ ctx, input }) => {
+      // Resolve channel first (same precedence as getBySlug).
+      const channel = await ctx.db.analysisChannel.findUnique({
+        where: { slug: input.slug },
+        select: { tenantId: true, overrides: true },
+      });
+
       const [tenant, platformConfig] = await Promise.all([
         ctx.db.tenant.findUnique({
-          where: { slug: input.slug },
+          where: channel ? { id: channel.tenantId } : { slug: input.slug },
           select: { tenantConfig: true },
         }),
         ctx.db.platformConfig.findUnique({
@@ -152,7 +186,19 @@ export const tenantRouter = router({
         }),
       ]);
 
-      const tenantConfig = tenant?.tenantConfig ?? null;
+      let tenantConfig: Record<string, unknown> | null =
+        (tenant?.tenantConfig as unknown as Record<string, unknown>) ?? null;
+
+      // Merge channel overrides — channel keys win.
+      if (channel?.overrides && tenantConfig) {
+        try {
+          const parsed = JSON.parse(channel.overrides);
+          if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+            tenantConfig = { ...tenantConfig, ...(parsed as Record<string, unknown>) };
+          }
+        } catch { /* ignore malformed overrides */ }
+      }
+
       let questions = null;
       if (platformConfig?.questionnaireConfig) {
         try {

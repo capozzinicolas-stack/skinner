@@ -332,6 +332,7 @@ export default function AnalysisPage({
                 whatsappTemplate: cfg?.whatsappMessage ?? null,
                 mercadoPagoEmail: cfg?.mercadoPagoEmail ?? null,
                 tenantName,
+                channelId: tenant.data?.channelId ?? null,
                 nuvemshopBaseUrl:
                   integrations.data?.find((i) => i.platform === "nuvemshop")
                     ?.storeUrl ?? null,

@@ -570,24 +570,28 @@ function SeasonalityHeatmap({
 
 export default function TenantDashboard() {
   const [days, setDays] = useState<number>(30);
+  const [channelId, setChannelId] = useState<string | undefined>(undefined);
 
-  const overview = trpc.dashboard.overview.useQuery({ days });
-  const trend = trpc.dashboard.monthlyTrend.useQuery({ months: 6 });
-  const byRegion = trpc.dashboard.byRegion.useQuery({ days });
-  const byCity = trpc.dashboard.byCity.useQuery({ days });
-  const bySkinType = trpc.dashboard.bySkinType.useQuery({ days });
-  const byAge = trpc.dashboard.byAgeRange.useQuery({ days });
-  const byObjective = trpc.dashboard.byObjective.useQuery({ days });
-  const byBarrier = trpc.dashboard.byBarrierStatus.useQuery({ days });
-  const topConditions = trpc.dashboard.topConditions.useQuery({ days, limit: 8 });
-  const discrepancy = trpc.dashboard.skinTypeDiscrepancy.useQuery({ days });
-  const topProducts = trpc.dashboard.topProducts.useQuery({ days, limit: 8 });
-  const gaps = trpc.dashboard.catalogGaps.useQuery({ days });
-  const engagement = trpc.dashboard.engagementMetrics.useQuery({ days });
-  const conversionLift = trpc.dashboard.conversionLiftByProfile.useQuery({ days });
-  const seasonality = trpc.dashboard.seasonalityByCondition.useQuery({ months: 12, topConditions: 5 });
-  const personas = trpc.dashboard.personas.useQuery({ days });
-  const geoMap = trpc.dashboard.geoBrazilMap.useQuery({ days });
+  const channelsQuery = trpc.analysisChannel.list.useQuery();
+
+  const overview = trpc.dashboard.overview.useQuery({ days, channelId });
+  const trend = trpc.dashboard.monthlyTrend.useQuery({ months: 6, channelId });
+  const byRegion = trpc.dashboard.byRegion.useQuery({ days, channelId });
+  const byCity = trpc.dashboard.byCity.useQuery({ days, channelId });
+  const bySkinType = trpc.dashboard.bySkinType.useQuery({ days, channelId });
+  const byAge = trpc.dashboard.byAgeRange.useQuery({ days, channelId });
+  const byObjective = trpc.dashboard.byObjective.useQuery({ days, channelId });
+  const byBarrier = trpc.dashboard.byBarrierStatus.useQuery({ days, channelId });
+  const topConditions = trpc.dashboard.topConditions.useQuery({ days, limit: 8, channelId });
+  const discrepancy = trpc.dashboard.skinTypeDiscrepancy.useQuery({ days, channelId });
+  const topProducts = trpc.dashboard.topProducts.useQuery({ days, limit: 8, channelId });
+  const gaps = trpc.dashboard.catalogGaps.useQuery({ days, channelId });
+  const engagement = trpc.dashboard.engagementMetrics.useQuery({ days, channelId });
+  const conversionLift = trpc.dashboard.conversionLiftByProfile.useQuery({ days, channelId });
+  const seasonality = trpc.dashboard.seasonalityByCondition.useQuery({ months: 12, topConditions: 5, channelId });
+  const personas = trpc.dashboard.personas.useQuery({ days, channelId });
+  const geoMap = trpc.dashboard.geoBrazilMap.useQuery({ days, channelId });
+  // Platform benchmark stays cross-tenant — channel filter does not apply.
   const benchmark = trpc.dashboard.platformBenchmark.useQuery({ days });
   const me = trpc.user.me.useQuery();
 
@@ -615,7 +619,19 @@ export default function TenantDashboard() {
             Visão estratégica do seu negócio.
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          <select
+            value={channelId ?? ""}
+            onChange={(e) => setChannelId(e.target.value || undefined)}
+            className="px-3 py-1.5 border border-sable/40 bg-white text-xs text-carbone font-light tracking-wide"
+          >
+            <option value="">Todos os canais</option>
+            {channelsQuery.data?.channels.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.label}
+              </option>
+            ))}
+          </select>
           <div className="flex gap-1 border border-sable/40">
             {PERIOD_OPTIONS.map((opt) => (
               <button

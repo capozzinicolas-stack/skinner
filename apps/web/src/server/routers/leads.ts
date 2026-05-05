@@ -17,6 +17,7 @@ export const leadsRouter = router({
       z.object({
         days: z.number().int().min(1).max(365).default(30),
         onlyConsented: z.boolean().default(true),
+        channelId: z.string().optional(),
       })
     )
     .query(async ({ ctx, input }) => {
@@ -24,6 +25,7 @@ export const leadsRouter = router({
       const leads = await ctx.db.analysis.findMany({
         where: {
           tenantId: ctx.tenantId,
+          ...(input.channelId ? { channelId: input.channelId } : {}),
           createdAt: { gte: since },
           contactCapturedAt: { not: null },
           ...(input.onlyConsented ? { consentToContact: true } : {}),
@@ -54,6 +56,7 @@ export const leadsRouter = router({
     .input(
       z.object({
         days: z.number().int().min(1).max(365).default(30),
+        channelId: z.string().optional(),
       })
     )
     .query(async ({ ctx, input }) => {
@@ -61,6 +64,7 @@ export const leadsRouter = router({
       const rows = await ctx.db.analysis.findMany({
         where: {
           tenantId: ctx.tenantId,
+          ...(input.channelId ? { channelId: input.channelId } : {}),
           createdAt: { gte: since },
           contactCapturedAt: { not: null },
           consentToContact: true,

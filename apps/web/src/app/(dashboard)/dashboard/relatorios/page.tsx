@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { trpc } from "@/lib/trpc/client";
 
 const skinTypeLabels: Record<string, string> = {
@@ -10,21 +11,37 @@ function safeParseArray(json: string | null | undefined): string[] {
   if (!json) return [];
   try {
     const parsed = JSON.parse(json);
-    if (Array.isArray(parsed)) return parsed.map((c: any) => c.name ?? c);
+    if (Array.isArray(parsed)) return parsed.map((c: { name?: string } | string) => (typeof c === "string" ? c : c.name ?? ""));
     return [];
   } catch { return []; }
 }
 
 export default function ReportsPage() {
-  const reports = trpc.report.list.useQuery();
+  const [channelId, setChannelId] = useState<string | undefined>(undefined);
+  const channelsQuery = trpc.analysisChannel.list.useQuery();
+  const reports = trpc.report.list.useQuery({ channelId });
 
   return (
     <div className="p-8">
-      <div>
-        <h1 className="font-serif text-2xl text-carbone">Relatorios</h1>
-        <p className="text-pierre text-sm font-light mt-1">
-          Historico de analises realizadas pelos seus clientes.
-        </p>
+      <div className="flex items-end justify-between flex-wrap gap-4">
+        <div>
+          <h1 className="font-serif text-2xl text-carbone">Relatorios</h1>
+          <p className="text-pierre text-sm font-light mt-1">
+            Historico de analises realizadas pelos seus clientes.
+          </p>
+        </div>
+        <select
+          value={channelId ?? ""}
+          onChange={(e) => setChannelId(e.target.value || undefined)}
+          className="px-3 py-1.5 border border-sable/40 bg-white text-xs text-carbone font-light tracking-wide"
+        >
+          <option value="">Todos os canais</option>
+          {channelsQuery.data?.channels.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.label}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="mt-8">
@@ -43,6 +60,9 @@ export default function ReportsPage() {
                 <tr className="border-b border-sable/20 bg-ivoire/50">
                   <th className="text-left px-5 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
                     Data
+                  </th>
+                  <th className="text-left px-5 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
+                    Canal
                   </th>
                   <th className="text-left px-5 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
                     Cliente
@@ -71,6 +91,9 @@ export default function ReportsPage() {
                     <tr key={analysis.id} className="hover:bg-ivoire/30">
                       <td className="px-5 py-4 text-sm text-carbone font-light">
                         {new Date(analysis.createdAt).toLocaleDateString("pt-BR")}
+                      </td>
+                      <td className="px-5 py-4 text-xs text-pierre font-light">
+                        {analysis.channel?.label ?? <span className="text-pierre/60">—</span>}
                       </td>
                       <td className="px-5 py-4">
                         <div>

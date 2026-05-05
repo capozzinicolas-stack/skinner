@@ -53,14 +53,16 @@ function downloadCsv(rows: Array<Record<string, string>>, days: number) {
 
 export default function LeadsPage() {
   const [days, setDays] = useState<number>(30);
+  const [channelId, setChannelId] = useState<string | undefined>(undefined);
   const utils = trpc.useUtils();
-  const leads = trpc.leads.list.useQuery({ days, onlyConsented: true });
+  const channelsQuery = trpc.analysisChannel.list.useQuery();
+  const leads = trpc.leads.list.useQuery({ days, onlyConsented: true, channelId });
   const [exporting, setExporting] = useState(false);
 
   async function handleExport() {
     setExporting(true);
     try {
-      const rows = await utils.leads.exportCsv.fetch({ days });
+      const rows = await utils.leads.exportCsv.fetch({ days, channelId });
       downloadCsv(rows, days);
     } finally {
       setExporting(false);
@@ -76,7 +78,19 @@ export default function LeadsPage() {
             Pacientes que autorizaram contato durante a analise.
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          <select
+            value={channelId ?? ""}
+            onChange={(e) => setChannelId(e.target.value || undefined)}
+            className="px-3 py-1.5 border border-sable/40 bg-white text-xs text-carbone font-light tracking-wide"
+          >
+            <option value="">Todos os canais</option>
+            {channelsQuery.data?.channels.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.label}
+              </option>
+            ))}
+          </select>
           <div className="flex gap-1 border border-sable/40">
             {PERIOD_OPTIONS.map((opt) => (
               <button

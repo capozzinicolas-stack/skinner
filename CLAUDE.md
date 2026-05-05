@@ -512,10 +512,24 @@ List of channels with status badges + per-channel detail panel with three tabs:
 
 Per-channel actions: pausar / reativar / excluir (locked for default channel). Slug auto-suggestion `${tenantSlug}-${labelSlugified}` to keep the global namespace clean.
 
+### Channel filter in analytics (May-2026)
+All `dashboardRouter` queries now accept an optional `channelId` input that adds `channelId` to the `Analysis.where` clause via the `analysesWhere(tenantId, channelId, extra)` helper. `leadsRouter.list/exportCsv` and `reportRouter.list` got the same input. The frontend (`/dashboard`, `/dashboard/relatorios`, `/dashboard/leads`) renders a "Todos os canais" dropdown sourced from `analysisChannel.list` and threads `channelId` into every query. `platformBenchmark` is intentionally exempt — it's a cross-tenant aggregate and channel filtering doesn't apply.
+
+### Per-channel branding overrides (Nivel B, May-2026)
+`AnalysisChannel.overrides` is a JSON map of TenantConfig field overrides serialized as a string. When a slug resolves to a channel, `tenant.getBySlug` and `tenant.getAnalysisConfig` parse `overrides` and merge it onto the resolved `tenantConfig` (channel keys win). Patients arriving via that channel see the channel-specific copy without changing the tenant's defaults.
+
+Whitelist enforced at write time in `analysisChannel.update` via `CHANNEL_OVERRIDE_FIELDS`:
+welcomeTitle, welcomeDescription, welcomeCtaText, welcomeSubtext, welcomeSubtextVisible, consentExtraText, consentButtonText, photoTitle, photoInstruction, photoExtraText, contactCaptureEnabled, contactCaptureRequired, contactCustomMessage, productCtaText, serviceCtaText, resultsTopMessage, resultsFooterText.
+
+Anything outside the list is silently dropped — operational fields like `analysisLimit`, `commissionRate`, `maxUsers` MUST NEVER be channel-overrideable. UI lives in `/dashboard/canais` → channel detail → "Personalizacao" tab.
+
+### Nuvemshop channel attribution (May-2026)
+`lib/cart/dispatch.ts` now appends `channel_id={id}` to both the cart URL query string AND the `note=` parameter when the dispatchContext has a `channelId`. The order webhook handler (`/api/integrations/nuvemshop/webhooks/order`) scans `body.note` for `channel_id=...` and persists it to `UsageEvent.metadata.channel_id` alongside the existing `skr_ref`. Primary attribution still flows via `Recommendation → Analysis.channelId`; the note value is an audit trail / cross-check signal.
+
 ### Deferred to follow-up sprints
-- Filter `/dashboard/relatorios` and `/dashboard/leads` by channel.
-- Per-channel branding overrides (Welcome message, logo, contact required, etc.) — covered by Nivel B in the design discussion.
 - Per-channel questionnaire — Nivel C, build only when a paying tenant requests it.
+- Periodic cron to expire channels (today computed at read time only).
+- Per-channel logo/primaryColor overrides (today brand fields are tenant-level only).
 
 ## Embed Widget
 

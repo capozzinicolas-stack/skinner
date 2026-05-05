@@ -56,6 +56,15 @@ export async function POST(req: NextRequest) {
     if (!skrRefs.includes(m[1])) skrRefs.push(m[1]);
   }
 
+  // Channel attribution: dispatch.ts adds channel_id=... to the cart URL +
+  // note. We log it on the conversion's UsageEvent so /dashboard/relatorios
+  // can group commissions by channel without an extra join. The Analysis
+  // already carries channelId through Recommendation→Analysis, so this is
+  // primarily an audit trail / sanity-check signal.
+  let originatingChannelId: string | null = null;
+  const channelMatch = orderNote.match(/channel_id=([a-z0-9]+)/i);
+  if (channelMatch) originatingChannelId = channelMatch[1];
+
   // For each found skr_ref, record a conversion and a commission usage event
   for (const ref of skrRefs) {
     const recommendation = await db.recommendation.findUnique({
@@ -83,7 +92,11 @@ export async function POST(req: NextRequest) {
         quantity: 1,
         unitPrice: commission,
         total: commission,
-        metadata: JSON.stringify({ skr_ref: ref, source: "nuvemshop" }),
+        metadata: JSON.stringify({
+          skr_ref: ref,
+          source: "nuvemshop",
+          channel_id: originatingChannelId,
+        }),
       },
     });
   }

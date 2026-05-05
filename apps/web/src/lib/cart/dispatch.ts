@@ -19,6 +19,10 @@ export type DispatchContext = {
   nuvemshopBaseUrl?: string | null;
   shopifyBaseUrl?: string | null;
   tenantName?: string | null;
+  // Channel that originated this checkout. Propagated to the host store via
+  // URL params + note attribute so /api/integrations/nuvemshop/webhooks/order
+  // can persist conversion attribution at the channel level (Conversion.metadata).
+  channelId?: string | null;
 };
 
 function brl(n: number): string {
@@ -56,9 +60,22 @@ export function buildCartCheckoutUrl(
         params.append("qty", "1");
       }
       const trackingRef = items[0].trackingRef;
+      // The note string carries BOTH skr_ref (recommendation attribution) and
+      // channel_id (channel attribution) so the order webhook can split
+      // conversion stats by channel without needing additional queries. The
+      // note is preserved through cart → checkout → order in Nuvemshop, while
+      // the standalone query params (skr_ref, channel_id) are best-effort.
+      const noteParts: string[] = [];
       if (trackingRef) {
         params.append("skr_ref", trackingRef);
-        params.append("note", `skr_ref=${trackingRef}`);
+        noteParts.push(`skr_ref=${trackingRef}`);
+      }
+      if (ctx.channelId) {
+        params.append("channel_id", ctx.channelId);
+        noteParts.push(`channel_id=${ctx.channelId}`);
+      }
+      if (noteParts.length > 0) {
+        params.append("note", noteParts.join("&"));
       }
       const base = ctx.nuvemshopBaseUrl.replace(/\/+$/, "");
       return { url: `${base}/carrinho/adicionar?${params.toString()}` };

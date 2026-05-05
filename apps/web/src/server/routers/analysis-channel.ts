@@ -21,6 +21,30 @@ import { getPlan } from "@/lib/billing/plans";
  */
 const slugRegex = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
 
+// Whitelist of TenantConfig fields a channel override may shadow. Anything
+// outside this list is silently dropped at update time so the override slot
+// can never be used to bypass tenant-wide limits (analysisLimit,
+// commissionRate, etc.) — those are operational fields, not UI copy.
+const CHANNEL_OVERRIDE_FIELDS = [
+  "welcomeTitle",
+  "welcomeDescription",
+  "welcomeCtaText",
+  "welcomeSubtext",
+  "welcomeSubtextVisible",
+  "consentExtraText",
+  "consentButtonText",
+  "photoTitle",
+  "photoInstruction",
+  "photoExtraText",
+  "contactCaptureEnabled",
+  "contactCaptureRequired",
+  "contactCustomMessage",
+  "productCtaText",
+  "serviceCtaText",
+  "resultsTopMessage",
+  "resultsFooterText",
+] as const;
+
 function slugify(input: string): string {
   return input
     .toLowerCase()
@@ -128,6 +152,11 @@ export const analysisChannelRouter = router({
         expiresAt: z.iso.datetime().optional().nullable(),
         maxAnalyses: z.number().int().positive().optional().nullable(),
         status: z.enum(["active", "paused"]).optional(),
+        // Per-channel UI overrides — only fields in CHANNEL_OVERRIDE_FIELDS
+        // are accepted; others are silently dropped before persistence so
+        // we never accidentally let a tenant override sensitive limits like
+        // analysisLimit or commissionRate via the channel overrides slot.
+        overrides: z.record(z.string(), z.unknown()).optional().nullable(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -143,6 +172,7 @@ export const analysisChannelRouter = router({
         expiresAt?: Date | null;
         maxAnalyses?: number | null;
         status?: "active" | "paused";
+        overrides?: string | null;
       } = {};
       if (input.label !== undefined) data.label = input.label;
       if (input.expiresAt !== undefined) {
@@ -160,6 +190,21 @@ export const analysisChannelRouter = router({
           });
         }
         data.status = input.status;
+      }
+      if (input.overrides !== undefined) {
+        if (input.overrides === null) {
+          data.overrides = null;
+        } else {
+          // Whitelist only — never let arbitrary tenantConfig fields slip in.
+          const filtered: Record<string, unknown> = {};
+          for (const key of CHANNEL_OVERRIDE_FIELDS) {
+            if (key in input.overrides && input.overrides[key] !== undefined) {
+              filtered[key] = input.overrides[key];
+            }
+          }
+          data.overrides =
+            Object.keys(filtered).length > 0 ? JSON.stringify(filtered) : null;
+        }
       }
       return ctx.db.analysisChannel.update({
         where: { id: input.id },
