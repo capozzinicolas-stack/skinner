@@ -86,11 +86,36 @@ export async function fetchProducts(storeId: string, accessToken: string) {
   return res.json();
 }
 
-export async function registerOrderWebhook(
+// Fetch a single product by id. Used by the product/updated webhook handler
+// to refresh just one row rather than re-syncing the whole catalog. Returns
+// null on 404 (product was deleted between webhook fire and our fetch) so the
+// caller can soft-disable the row instead of crashing.
+export async function fetchProduct(
   storeId: string,
   accessToken: string,
+  productId: string | number
+): Promise<Record<string, unknown> | null> {
+  const res = await fetch(
+    `https://api.tiendanube.com/v1/${storeId}/products/${productId}`,
+    {
+      headers: {
+        Authentication: `bearer ${accessToken}`,
+        "User-Agent": "Skinner (nicolas.capozzi@useimpulse.co)",
+      },
+    }
+  );
+  if (res.status === 404) return null;
+  if (!res.ok)
+    throw new Error(`Nuvemshop product fetch failed: ${res.status}`);
+  return res.json();
+}
+
+async function registerWebhook(
+  storeId: string,
+  accessToken: string,
+  event: string,
   callbackUrl: string
-) {
+): Promise<void> {
   const res = await fetch(
     `https://api.tiendanube.com/v1/${storeId}/webhooks`,
     {
@@ -100,16 +125,119 @@ export async function registerOrderWebhook(
         "Content-Type": "application/json",
         "User-Agent": "Skinner (nicolas.capozzi@useimpulse.co)",
       },
-      body: JSON.stringify({
-        event: "order/created",
-        url: callbackUrl,
-      }),
+      body: JSON.stringify({ event, url: callbackUrl }),
     }
   );
   if (!res.ok) {
     const text = await res.text();
-    console.error("Webhook registration failed:", text);
+    // 422 typically means "already registered" — Nuvemshop is idempotent at
+    // (event, url) so re-registering on every OAuth is a no-op the API rejects.
+    // We swallow it because the practical effect is identical to success.
+    console.error(`[nuvemshop] webhook ${event} registration:`, res.status, text);
   }
+}
+
+export async function registerOrderWebhook(
+  storeId: string,
+  accessToken: string,
+  callbackUrl: string
+) {
+  await registerWebhook(storeId, accessToken, "order/created", callbackUrl);
+}
+
+// Real-time catalog sync. Nuvemshop fires product/updated when the merchant
+// edits price, stock, name, images, etc. We re-fetch that single product and
+// upsert by SKU so /loja and /analise see fresh data without waiting for the
+// daily resync cron.
+export async function registerProductWebhooks(
+  storeId: string,
+  accessToken: string,
+  callbackUrl: string
+) {
+  await registerWebhook(storeId, accessToken, "product/created", callbackUrl);
+  await registerWebhook(storeId, accessToken, "product/updated", callbackUrl);
+}
+
+// Fired when the merchant uninstalls our app from the Nuvemshop admin. We
+// flip Integration.status to "disconnected" so the dispatcher stops trying
+// to deep-link to a store we can no longer write to.
+export async function registerUninstallWebhook(
+  storeId: string,
+  accessToken: string,
+  callbackUrl: string
+) {
+  await registerWebhook(storeId, accessToken, "app/uninstalled", callbackUrl);
+}
+
+// Shared upsert logic so the manual sync route, the syncProducts mutation, the
+// product webhook and the daily resync cron all write the same shape into
+// Skinner's Product table. Pulled into a helper to avoid drift — adding a new
+// field (e.g. stock) only touches this function.
+//
+// Note: the existing sync route + syncProducts mutation still inline their own
+// loop for backwards compatibility (those paths predate this helper). New code
+// should call this directly.
+export function mapNuvemshopProduct(p: Record<string, unknown>): {
+  sku: string;
+  name: string;
+  description: string | undefined;
+  imageUrl: string | undefined;
+  price: number | undefined;
+  ecommerceLink: string | undefined;
+} | null {
+  function stripHtml(html: string): string {
+    return html.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
+  }
+  function ptBr(field: unknown): string {
+    if (!field) return "";
+    if (typeof field === "string") return field;
+    if (typeof field === "object") {
+      const obj = field as Record<string, string>;
+      return obj["pt"] ?? obj["pt-BR"] ?? Object.values(obj)[0] ?? "";
+    }
+    return "";
+  }
+
+  const name = ptBr(p.name);
+  if (!name) return null;
+
+  const variants = Array.isArray(p.variants)
+    ? (p.variants as Array<Record<string, unknown>>)
+    : [];
+  const variant = variants[0] ?? {};
+  const sku =
+    typeof variant.sku === "string" && variant.sku
+      ? variant.sku
+      : String(p.id ?? "");
+  if (!sku) return null;
+
+  const priceRaw = variant.price;
+  const price =
+    typeof priceRaw === "string"
+      ? parseFloat(priceRaw)
+      : typeof priceRaw === "number"
+        ? priceRaw
+        : undefined;
+
+  // B1 (image strategy): reference the Nuvemshop CDN URL directly. Cheaper
+  // than copying to our bucket; risk is the lojista deleting the image and
+  // breaking the link, but Nuvemshop merchants rarely do that without
+  // replacing first.
+  const images = Array.isArray(p.images)
+    ? (p.images as Array<Record<string, unknown>>)
+    : [];
+  const imageUrl =
+    images[0] && typeof images[0].src === "string"
+      ? (images[0].src as string)
+      : undefined;
+
+  const ecommerceLink =
+    typeof p.permalink === "string" ? p.permalink : undefined;
+
+  const rawDesc = ptBr(p.description);
+  const description = rawDesc ? stripHtml(rawDesc) : undefined;
+
+  return { sku, name, description, imageUrl, price, ecommerceLink };
 }
 
 export { NUVEMSHOP_CALLBACK_URL };

@@ -4,6 +4,8 @@ import {
   exchangeCodeForToken,
   fetchStoreInfo,
   registerOrderWebhook,
+  registerProductWebhooks,
+  registerUninstallWebhook,
   NUVEMSHOP_CALLBACK_URL,
 } from "@/lib/integrations/nuvemshop";
 
@@ -77,10 +79,32 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  // Register order/created webhook — non-blocking, failures are logged
-  const webhookUrl = `${NUVEMSHOP_CALLBACK_URL.replace("/callback", "/webhooks/order")}`;
-  registerOrderWebhook(storeId, tokenData.access_token, webhookUrl).catch((err) =>
-    console.error("Nuvemshop: webhook registration error", err)
+  // Register webhooks — non-blocking, failures are logged. Re-registering on a
+  // reconnect is safe: Nuvemshop returns 422 for duplicate (event,url) and we
+  // swallow that in registerWebhook(). Order webhook drives commission
+  // attribution; product webhooks keep catalog fresh in real-time; uninstall
+  // webhook lets us flip status to "disconnected" automatically.
+  const baseWebhookUrl = NUVEMSHOP_CALLBACK_URL.replace("/callback", "/webhooks");
+  registerOrderWebhook(
+    storeId,
+    tokenData.access_token,
+    `${baseWebhookUrl}/order`
+  ).catch((err) =>
+    console.error("Nuvemshop: order webhook registration error", err)
+  );
+  registerProductWebhooks(
+    storeId,
+    tokenData.access_token,
+    `${baseWebhookUrl}/product`
+  ).catch((err) =>
+    console.error("Nuvemshop: product webhook registration error", err)
+  );
+  registerUninstallWebhook(
+    storeId,
+    tokenData.access_token,
+    `${baseWebhookUrl}/uninstall`
+  ).catch((err) =>
+    console.error("Nuvemshop: uninstall webhook registration error", err)
   );
 
   return NextResponse.redirect(
