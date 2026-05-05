@@ -480,6 +480,49 @@ The cart can only contain items from one channel. If the patient tries to add a 
 - **Image strategy (B1)**: `mapNuvemshopProduct` references the Nuvemshop CDN URL directly in `Product.imageUrl` (`p.images[0].src`). No copy to our Supabase bucket — cheaper, and Nuvemshop merchants rarely delete an image without replacing first. If image rot becomes an issue, switch to bucket-copy at sync time.
 - **Shared mapper**: `mapNuvemshopProduct(rawProduct)` in `lib/integrations/nuvemshop.ts` is the single source of truth for Nuvemshop → Skinner product mapping (sku, name, description, imageUrl, price, ecommerceLink). Used by the product webhook handler and the resync cron. The pre-existing manual-sync route + `integration.syncProducts` mutation still inline their own loop for backwards compat — new code should call `mapNuvemshopProduct` directly to avoid drift.
 
+### Shopify end-to-end checkout (May-2026 parity sprint)
+Brought Shopify to feature parity with Nuvemshop. Pre-sprint state had two
+critical bugs that silently broke conversion attribution since day 1:
+
+- **Bug fix #1**: `/api/integrations/shopify/webhooks/order/route.ts` queried
+  `db.recommendation.findFirst({ where: { productId: ref } })` — but `ref` is
+  a `trackingRef`, not a `productId`. Zero Shopify orders ever matched a
+  Recommendation. Fixed to `findUnique({ where: { trackingRef: ref } })`,
+  same as the Nuvemshop handler.
+- **Bug fix #2**: `lib/cart/dispatch.ts` shopify branch passed `?skr_ref=xxx`
+  as a top-level query param, which Shopify drops at the cart→checkout
+  transition. Fixed to use `?attributes[skr_ref]=xxx&attributes[channel_id]=yyy`
+  (which Shopify carries into `order.note_attributes`) PLUS `note=...` as a
+  belt-and-suspenders for headless checkouts that strip note_attributes.
+- **HMAC verification**: all Shopify webhooks (order, product, uninstall) now
+  verify `X-Shopify-Hmac-SHA256` against the raw request body using
+  `SHOPIFY_CLIENT_SECRET`. Mismatch returns 401. Without this, anyone could
+  POST fake orders/uninstalls. The verifier (`verifyWebhookHmac`) returns
+  `false` in production when the secret is missing; dev mode allows unsigned
+  bodies for local testing.
+- **Real-time catalog sync** (`/api/integrations/shopify/webhooks/product`):
+  handles `products/create`, `products/update`, `products/delete`. Re-fetches
+  via Admin API and upserts by SKU using `mapShopifyProduct`.
+  `products/delete` does soft-disable (`isActive=false`) to preserve
+  historical FKs.
+- **App uninstall handling** (`/api/integrations/shopify/webhooks/uninstall`):
+  on `app/uninstalled` flips `Integration.status="disconnected"` and clears
+  `accessToken`. Same posture as Nuvemshop.
+- **Daily resync cron** (`/api/cron/shopify-resync`): scheduled `30 3 * * *`
+  in `vercel.json` (offset 30 min from nuvemshop-resync to avoid hammering
+  both APIs simultaneously). Detects 401 on fetch and flips the integration
+  to `status="error"` (covers the case where uninstall webhook never fired).
+- **Storefront URL**: Shopify storeUrl is `https://{shop}` directly — no API
+  call needed. Persisted at OAuth callback. Lazy backfill in
+  `integration.publicByTenantSlug` heals legacy rows that connected before
+  storeUrl was being persisted.
+- **Shared mapper**: `mapShopifyProduct` + `resolveShopifyEcommerceLink` in
+  `lib/integrations/shopify.ts`. The pre-existing manual sync route +
+  `integration.syncShopifyProducts` mutation still inline their own loop for
+  backwards compat — new code should call the helpers directly.
+- **Image strategy (B1)**: same as Nuvemshop, references the Shopify CDN URL
+  (`p.images[0].src`) directly in `Product.imageUrl` — no bucket copy.
+
 ### Cron auth and middleware
 - **`/api/cron` is in `PUBLIC_PATHS` (May-2026 fix)**. Without this, Vercel Cron requests would hit middleware without an auth cookie and get 307'd to `/login`, silently failing every cron run. Added when introducing `nuvemshop-resync` — also implicitly fixes the latent bug for `usage-alerts`. Each cron route still validates `Authorization: Bearer ${CRON_SECRET}` at the handler level, so being public-by-middleware is safe.
 

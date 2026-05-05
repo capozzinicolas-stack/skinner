@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/nuvemshop-resync",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/shopify-resync",
+      "schedule": "30 3 * * *"
     }
   ]
 }

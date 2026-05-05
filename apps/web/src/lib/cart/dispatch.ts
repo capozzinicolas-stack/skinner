@@ -90,15 +90,40 @@ export function buildCartCheckoutUrl(
         };
       }
       // Shopify cart permalink: /cart/{variantId}:1,{variantId}:1
+      // Attribution requires `?attributes[skr_ref]=...&attributes[channel_id]=...`
+      // — these become `note_attributes` on the resulting order, which the
+      // /api/integrations/shopify/webhooks/order handler reads. We ALSO write
+      // a `note=skr_ref=xxx,channel_id=yyy` because some Shopify Plus / headless
+      // checkouts strip note_attributes but preserve `note`. Belt-and-suspenders,
+      // identical posture to the Nuvemshop branch above.
+      //
+      // The previous implementation passed `?skr_ref=xxx` as a top-level query
+      // param, which Shopify drops on the cart→checkout transition — that's why
+      // pre-May-2026 zero Shopify orders ever matched a Recommendation.
       const variants = items
         .map((i) => i.channelRef)
         .filter((v) => v.length > 0)
         .map((v) => `${v}:1`)
         .join(",");
       const trackingRef = items[0].trackingRef;
-      const refQuery = trackingRef ? `?skr_ref=${encodeURIComponent(trackingRef)}` : "";
+      const params = new URLSearchParams();
+      const noteParts: string[] = [];
+      if (trackingRef) {
+        params.append("attributes[skr_ref]", trackingRef);
+        noteParts.push(`skr_ref=${trackingRef}`);
+      }
+      if (ctx.channelId) {
+        params.append("attributes[channel_id]", ctx.channelId);
+        noteParts.push(`channel_id=${ctx.channelId}`);
+      }
+      if (noteParts.length > 0) {
+        params.append("note", noteParts.join(","));
+      }
+      const queryString = params.toString();
       const base = ctx.shopifyBaseUrl.replace(/\/+$/, "");
-      return { url: `${base}/cart/${variants}${refQuery}` };
+      return {
+        url: `${base}/cart/${variants}${queryString ? `?${queryString}` : ""}`,
+      };
     }
 
     case "external": {

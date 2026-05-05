@@ -4,6 +4,8 @@ import {
   decodeState,
   exchangeCodeForToken,
   registerOrderWebhook,
+  registerProductWebhooks,
+  registerUninstallWebhook,
   SHOPIFY_CALLBACK_URL,
 } from "@/lib/integrations/shopify";
 
@@ -58,12 +60,17 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    // Shopify storefront URL is `https://{shop}` directly — no separate API
+    // call needed (unlike Nuvemshop which has a localized `url` field). The
+    // dispatcher reads this to build cart permalinks.
+    const storeUrl = `https://${shop}`;
     await db.integration.upsert({
       where: { tenantId_platform: { tenantId, platform: "shopify" } },
       create: {
         tenantId,
         platform: "shopify",
         storeId: shop,
+        storeUrl,
         accessToken: tokenData.access_token,
         scopes: tokenData.scope
           ? JSON.stringify(tokenData.scope.split(","))
@@ -72,6 +79,7 @@ export async function GET(req: NextRequest) {
       },
       update: {
         storeId: shop,
+        storeUrl,
         accessToken: tokenData.access_token,
         scopes: tokenData.scope
           ? JSON.stringify(tokenData.scope.split(","))
@@ -86,10 +94,32 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  // Register webhook for orders/create (non-blocking)
-  const webhookUrl = `${SHOPIFY_CALLBACK_URL.replace("/callback", "/webhooks/order")}`;
-  registerOrderWebhook(shop, tokenData.access_token, webhookUrl).catch((err) =>
-    console.error("Shopify: webhook registration error", err)
+  // Register webhooks — non-blocking, errors logged. Re-OAuth is safe:
+  // Shopify returns 422 "address has already been taken" for duplicates and
+  // registerWebhook swallows it. Order webhook drives commission attribution;
+  // product webhooks keep catalog fresh in real-time; uninstall webhook lets
+  // us flip status to "disconnected" without a stale token sitting around.
+  const baseWebhookUrl = SHOPIFY_CALLBACK_URL.replace("/callback", "/webhooks");
+  registerOrderWebhook(
+    shop,
+    tokenData.access_token,
+    `${baseWebhookUrl}/order`
+  ).catch((err) =>
+    console.error("Shopify: order webhook registration error", err)
+  );
+  registerProductWebhooks(
+    shop,
+    tokenData.access_token,
+    `${baseWebhookUrl}/product`
+  ).catch((err) =>
+    console.error("Shopify: product webhook registration error", err)
+  );
+  registerUninstallWebhook(
+    shop,
+    tokenData.access_token,
+    `${baseWebhookUrl}/uninstall`
+  ).catch((err) =>
+    console.error("Shopify: uninstall webhook registration error", err)
   );
 
   return NextResponse.redirect(

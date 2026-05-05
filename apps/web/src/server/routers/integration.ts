@@ -47,9 +47,12 @@ export const integrationRouter = router({
           accessToken: true,
         },
       });
-      // Backfill any nuvemshop row that's missing storeUrl. Best-effort —
-      // failure leaves the row as-is and the dispatcher returns its
-      // friendly warning.
+      // Backfill any row that's missing storeUrl. Best-effort — failure
+      // leaves the row as-is and the dispatcher returns its friendly warning.
+      // - nuvemshop: fetch via API (storeUrl is dynamic per merchant).
+      // - shopify: derive directly from storeId (= `xxx.myshopify.com`).
+      //   This handles Shopify integrations that connected before May-2026
+      //   when storeUrl wasn't being persisted at OAuth time.
       const enriched = await Promise.all(
         rows.map(async (r) => {
           if (
@@ -66,6 +69,14 @@ export const integrationRouter = router({
               });
               return { ...r, storeUrl: info.url };
             }
+          }
+          if (r.platform === "shopify" && !r.storeUrl && r.storeId) {
+            const derived = `https://${r.storeId}`;
+            await ctx.db.integration.update({
+              where: { id: r.id },
+              data: { storeUrl: derived },
+            });
+            return { ...r, storeUrl: derived };
           }
           return r;
         })
