@@ -6,8 +6,8 @@ import {
   conditionLabels,
   skinTypeLabels,
   objectiveLabels,
-  barrierStatusLabels,
   tr,
+  barrierLabel,
 } from "@/lib/sae/labels";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────────
@@ -349,9 +349,8 @@ function PersonaCard({
   };
   rank: number;
 }) {
-  const concernLabel =
-    (conditionLabels[persona.topConcern] ?? persona.topConcern).charAt(0).toUpperCase() +
-    (conditionLabels[persona.topConcern] ?? persona.topConcern).slice(1);
+  const concernRaw = tr(conditionLabels, persona.topConcern) || persona.topConcern;
+  const concernLabel = concernRaw.charAt(0).toUpperCase() + concernRaw.slice(1);
   const skinLabel = tr(skinTypeLabels, persona.skinType) || "—";
   return (
     <div className="p-5 bg-white border border-sable/20">
@@ -530,8 +529,8 @@ function SeasonalityHeatmap({
           {series.map((s) => (
             <tr key={s.condition} className="border-t border-sable/10">
               <td className="text-sm text-carbone font-light py-2 pr-2">
-                {(conditionLabels[s.condition] ?? s.condition).charAt(0).toUpperCase() +
-                  (conditionLabels[s.condition] ?? s.condition).slice(1)}
+                {((tr(conditionLabels, s.condition) || s.condition).charAt(0).toUpperCase() +
+                  (tr(conditionLabels, s.condition) || s.condition).slice(1))}
               </td>
               {s.values.map((v, i) => {
                 const intensity = s.peak > 0 ? v / s.peak : 0;
@@ -969,7 +968,7 @@ export default function TenantDashboard() {
                   {byBarrier.data.map((b) => (
                     <HorizontalBar
                       key={b.status}
-                      label={barrierStatusLabels[b.status]?.short ?? b.status}
+                      label={barrierLabel(b.status)?.short ?? b.status}
                       value={b.count}
                       max={Math.max(...byBarrier.data!.map((x) => x.count))}
                       count={b.count}

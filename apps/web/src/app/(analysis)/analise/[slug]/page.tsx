@@ -12,6 +12,8 @@ import { CartFloater } from "@/components/analysis/cart-floater";
 import { resolveProductChannel } from "@/lib/cart/resolve-channel";
 import type { CartItem } from "@/lib/cart/types";
 import type { FullAnalysisResult } from "@/lib/sae/types";
+import { I18nProvider } from "@/lib/i18n/client";
+import { LOCALES, DEFAULT_LOCALE, type Locale } from "@/lib/i18n/types";
 
 type Step = "welcome" | "consent" | "contact" | "questionnaire" | "photo" | "loading" | "result" | "error";
 
@@ -188,7 +190,18 @@ export default function AnalysisPage({
     );
   }
 
+  // Effective locale wins over cookie / browser hint for the patient flow:
+  // the channel/tenant configures the patient's experience explicitly, never
+  // the patient. NOT a switcher exposed to the patient (that's a marketing
+  // / dashboard concern). Falls back to pt-BR if the field hasn't propagated.
+  const rawLocale = (tenant.data as { effectiveLocale?: string }).effectiveLocale;
+  const patientLocale: Locale =
+    rawLocale && (LOCALES as readonly string[]).includes(rawLocale)
+      ? (rawLocale as Locale)
+      : DEFAULT_LOCALE;
+
   return (
+    <I18nProvider locale={patientLocale}>
     <main className="min-h-screen bg-blanc-casse flex flex-col">
       {/* Top bar */}
       <header className="py-4 px-6 border-b border-sable/20 flex items-center justify-center bg-white">
@@ -391,5 +404,6 @@ export default function AnalysisPage({
         )}
       </div>
     </main>
+    </I18nProvider>
   );
 }

@@ -251,19 +251,136 @@ const s = StyleSheet.create({
   },
 });
 
-const severityLabels = ["", "Leve", "Moderado", "Severo"];
-const skinTypeLabels: Record<string, string> = {
-  oily: "Oleosa", dry: "Seca", combination: "Mista", normal: "Normal", sensitive: "Sensivel",
+// Localized PDF chrome strings. Per-locale block, looked up via `pdfStr(locale)`.
+// REVIEW_TRANSLATION_HUMAN: dermatology/medical terminology in es/en review
+// recommended. Severity scale and section headers are safe to AI-translate.
+type Locale = "pt-BR" | "es" | "en";
+
+const PDF_STRINGS: Record<
+  Locale,
+  {
+    severity: string[]; // index 1/2/3
+    skinType: Record<string, string>;
+    condition: Record<string, string>;
+    step: Record<string, string>;
+    barrier: Record<string, string>;
+    coverTitle: string;
+    coverSubtitle: string;
+    sectionDiagnosis: string;
+    sectionDiagnosisTitle: (skinType: string) => string;
+    barrierLabel: string;
+    skinTypeLabel: string;
+    conditionsLabel: string;
+    actionPlanLabel: string;
+    actionPlanTitle: string;
+    phasePeriod: { p1: string; p2: string; p3: string };
+    phaseName: { p1: string; p2: string; p3: string };
+    expectations: string;
+    weeks: { w4: string; w8: string; w12: string };
+    alertSigns: string;
+    recommendations: string;
+    productsTitle: string;
+    confidential: string;
+  }
+> = {
+  "pt-BR": {
+    severity: ["", "Leve", "Moderado", "Severo"],
+    skinType: { oily: "Oleosa", dry: "Seca", combination: "Mista", normal: "Normal", sensitive: "Sensivel" },
+    condition: {
+      acne: "Acne", hyperpigmentation: "Hiperpigmentacao", aging: "Envelhecimento",
+      dehydration: "Desidratacao", sensitivity: "Sensibilidade", rosacea: "Rosacea",
+      pores: "Poros dilatados", dullness: "Opacidade", dark_circles: "Olheiras", oiliness: "Oleosidade",
+    },
+    step: {
+      cleanser: "Limpeza", toner: "Tonico", serum: "Serum",
+      moisturizer: "Hidratante", SPF: "Protetor Solar", treatment: "Tratamento",
+    },
+    barrier: { healthy: "Saudavel", compromised: "Comprometida", needs_attention: "Atencao necessaria" },
+    coverTitle: "Analise de Pele",
+    coverSubtitle: "Skinner — Skin Tech",
+    sectionDiagnosis: "Diagnostico",
+    sectionDiagnosisTitle: (s) => `Sua pele e ${s}`,
+    barrierLabel: "Barreira cutanea",
+    skinTypeLabel: "Tipo de pele",
+    conditionsLabel: "Condicoes identificadas",
+    actionPlanLabel: "Plano de acao",
+    actionPlanTitle: "Tratamento personalizado",
+    phasePeriod: { p1: "Semanas 1-2", p2: "Semanas 3-8", p3: "Mes 3+" },
+    phaseName: { p1: "Fase 1", p2: "Fase 2", p3: "Fase 3" },
+    expectations: "Expectativas",
+    weeks: { w4: "4 semanas", w8: "8 semanas", w12: "12 semanas" },
+    alertSigns: "Sinais de Alerta",
+    recommendations: "Recomendacoes",
+    productsTitle: "Produtos selecionados",
+    confidential: "Confidencial",
+  },
+  es: {
+    severity: ["", "Leve", "Moderado", "Severo"],
+    skinType: { oily: "Grasa", dry: "Seca", combination: "Mixta", normal: "Normal", sensitive: "Sensible" },
+    condition: {
+      acne: "Acne", hyperpigmentation: "Hiperpigmentacion", aging: "Envejecimiento",
+      dehydration: "Deshidratacion", sensitivity: "Sensibilidad", rosacea: "Rosacea",
+      pores: "Poros dilatados", dullness: "Opacidad", dark_circles: "Ojeras", oiliness: "Oleosidad",
+    },
+    step: {
+      cleanser: "Limpieza", toner: "Tonico", serum: "Serum",
+      moisturizer: "Hidratante", SPF: "Protector Solar", treatment: "Tratamiento",
+    },
+    barrier: { healthy: "Saludable", compromised: "Comprometida", needs_attention: "Necesita atencion" },
+    coverTitle: "Analisis de Piel",
+    coverSubtitle: "Skinner — Skin Tech",
+    sectionDiagnosis: "Diagnostico",
+    sectionDiagnosisTitle: (s) => `Tu piel es ${s}`,
+    barrierLabel: "Barrera cutanea",
+    skinTypeLabel: "Tipo de piel",
+    conditionsLabel: "Condiciones identificadas",
+    actionPlanLabel: "Plan de accion",
+    actionPlanTitle: "Tratamiento personalizado",
+    phasePeriod: { p1: "Semanas 1-2", p2: "Semanas 3-8", p3: "Mes 3+" },
+    phaseName: { p1: "Fase 1", p2: "Fase 2", p3: "Fase 3" },
+    expectations: "Expectativas",
+    weeks: { w4: "4 semanas", w8: "8 semanas", w12: "12 semanas" },
+    alertSigns: "Senales de Alerta",
+    recommendations: "Recomendaciones",
+    productsTitle: "Productos seleccionados",
+    confidential: "Confidencial",
+  },
+  en: {
+    severity: ["", "Mild", "Moderate", "Severe"],
+    skinType: { oily: "Oily", dry: "Dry", combination: "Combination", normal: "Normal", sensitive: "Sensitive" },
+    condition: {
+      acne: "Acne", hyperpigmentation: "Hyperpigmentation", aging: "Aging",
+      dehydration: "Dehydration", sensitivity: "Sensitivity", rosacea: "Rosacea",
+      pores: "Enlarged pores", dullness: "Dullness", dark_circles: "Dark circles", oiliness: "Oiliness",
+    },
+    step: {
+      cleanser: "Cleanser", toner: "Toner", serum: "Serum",
+      moisturizer: "Moisturizer", SPF: "Sunscreen", treatment: "Treatment",
+    },
+    barrier: { healthy: "Healthy", compromised: "Compromised", needs_attention: "Needs attention" },
+    coverTitle: "Skin Analysis",
+    coverSubtitle: "Skinner — Skin Tech",
+    sectionDiagnosis: "Diagnosis",
+    sectionDiagnosisTitle: (s) => `Your skin is ${s}`,
+    barrierLabel: "Skin barrier",
+    skinTypeLabel: "Skin type",
+    conditionsLabel: "Identified conditions",
+    actionPlanLabel: "Action plan",
+    actionPlanTitle: "Personalized treatment",
+    phasePeriod: { p1: "Weeks 1-2", p2: "Weeks 3-8", p3: "Month 3+" },
+    phaseName: { p1: "Phase 1", p2: "Phase 2", p3: "Phase 3" },
+    expectations: "Expectations",
+    weeks: { w4: "4 weeks", w8: "8 weeks", w12: "12 weeks" },
+    alertSigns: "Alert signs",
+    recommendations: "Recommendations",
+    productsTitle: "Selected products",
+    confidential: "Confidential",
+  },
 };
-const conditionLabels: Record<string, string> = {
-  acne: "Acne", hyperpigmentation: "Hiperpigmentacao", aging: "Envelhecimento",
-  dehydration: "Desidratacao", sensitivity: "Sensibilidade", rosacea: "Rosacea",
-  pores: "Poros dilatados", dullness: "Opacidade", dark_circles: "Olheiras", oiliness: "Oleosidade",
-};
-const stepLabels: Record<string, string> = {
-  cleanser: "Limpeza", toner: "Tonico", serum: "Serum",
-  moisturizer: "Hidratante", SPF: "Protetor Solar", treatment: "Tratamento",
-};
+
+function pdfStr(locale: Locale = "pt-BR") {
+  return PDF_STRINGS[locale] ?? PDF_STRINGS["pt-BR"];
+}
 
 type ReportData = {
   tenantName: string;
@@ -291,13 +408,17 @@ type ReportData = {
   }[];
 };
 
-export function SkinReport({ data }: { data: ReportData }) {
+export function SkinReport({
+  data,
+  locale = "pt-BR",
+}: {
+  data: ReportData;
+  locale?: Locale;
+}) {
   const { analysis, recommendations } = data;
-  const barrierLabel = {
-    healthy: "Saudavel",
-    compromised: "Comprometida",
-    needs_attention: "Atencao necessaria",
-  }[analysis.barrier_status] ?? analysis.barrier_status;
+  const L = pdfStr(locale);
+  const skinTypeText = L.skinType[analysis.skin_type] ?? analysis.skin_type;
+  const barrierText = L.barrier[analysis.barrier_status] ?? analysis.barrier_status;
 
   return (
     <Document>
@@ -310,8 +431,8 @@ export function SkinReport({ data }: { data: ReportData }) {
           // a friendly Portuguese error rather than corrupting the PDF stream.
           <Image src={data.tenantLogoUrl} style={s.coverLogo} />
         )}
-        <Text style={s.coverTitle}>Analise de Pele</Text>
-        <Text style={s.coverSubtitle}>Skinner — Skin Tech</Text>
+        <Text style={s.coverTitle}>{L.coverTitle}</Text>
+        <Text style={s.coverSubtitle}>{L.coverSubtitle}</Text>
         <View style={s.coverLine} />
         {data.clientName && <Text style={s.coverInfo}>{data.clientName}</Text>}
         <Text style={s.coverInfo}>{data.date}</Text>
@@ -320,32 +441,28 @@ export function SkinReport({ data }: { data: ReportData }) {
 
       {/* Diagnosis page */}
       <Page size="A4" style={s.page}>
-        <Text style={s.label}>Diagnostico</Text>
-        <Text style={s.sectionTitle}>
-          Sua pele e {skinTypeLabels[analysis.skin_type] ?? analysis.skin_type}
-        </Text>
+        <Text style={s.label}>{L.sectionDiagnosis}</Text>
+        <Text style={s.sectionTitle}>{L.sectionDiagnosisTitle(skinTypeText)}</Text>
         <Text style={s.cardText}>{analysis.summary}</Text>
         <View style={s.divider} />
 
         <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 16 }}>
           <View>
-            <Text style={s.label}>Barreira cutanea</Text>
-            <Text style={{ fontSize: 10, color: colors.carbone }}>{barrierLabel}</Text>
+            <Text style={s.label}>{L.barrierLabel}</Text>
+            <Text style={{ fontSize: 10, color: colors.carbone }}>{barrierText}</Text>
           </View>
           <View>
-            <Text style={s.label}>Tipo de pele</Text>
-            <Text style={{ fontSize: 10, color: colors.carbone }}>
-              {skinTypeLabels[analysis.skin_type] ?? analysis.skin_type}
-            </Text>
+            <Text style={s.label}>{L.skinTypeLabel}</Text>
+            <Text style={{ fontSize: 10, color: colors.carbone }}>{skinTypeText}</Text>
           </View>
         </View>
 
-        <Text style={s.label}>Condicoes identificadas</Text>
+        <Text style={s.label}>{L.conditionsLabel}</Text>
         {analysis.conditions.map((c) => (
           <View key={c.name} style={s.card}>
             <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-              <Text style={s.cardTitle}>{conditionLabels[c.name] ?? c.name}</Text>
-              <Text style={{ fontSize: 7, color: colors.pierre }}>{severityLabels[c.severity]}</Text>
+              <Text style={s.cardTitle}>{L.condition[c.name] ?? c.name}</Text>
+              <Text style={{ fontSize: 7, color: colors.pierre }}>{L.severity[c.severity]}</Text>
             </View>
             <Text style={s.cardText}>{c.description}</Text>
             <View style={s.severityBar}>
@@ -364,19 +481,19 @@ export function SkinReport({ data }: { data: ReportData }) {
 
         <View style={s.footer}>
           <Text style={s.footerText}>Skinner — Skin Tech</Text>
-          <Text style={s.footerText}>Confidencial</Text>
+          <Text style={s.footerText}>{L.confidential}</Text>
         </View>
       </Page>
 
       {/* Action plan page */}
       <Page size="A4" style={s.page}>
-        <Text style={s.label}>Plano de acao</Text>
-        <Text style={s.sectionTitle}>Tratamento personalizado</Text>
+        <Text style={s.label}>{L.actionPlanLabel}</Text>
+        <Text style={s.sectionTitle}>{L.actionPlanTitle}</Text>
 
         {[
-          { phase: "Fase 1", period: "Semanas 1-2", text: analysis.action_plan.phase1 },
-          { phase: "Fase 2", period: "Semanas 3-8", text: analysis.action_plan.phase2 },
-          { phase: "Fase 3", period: "Mes 3+", text: analysis.action_plan.phase3 },
+          { phase: L.phaseName.p1, period: L.phasePeriod.p1, text: analysis.action_plan.phase1 },
+          { phase: L.phaseName.p2, period: L.phasePeriod.p2, text: analysis.action_plan.phase2 },
+          { phase: L.phaseName.p3, period: L.phasePeriod.p3, text: analysis.action_plan.phase3 },
         ].map(({ phase, period, text }) => (
           <View key={phase} style={s.phaseCard}>
             <Text style={s.phaseLabel}>{phase}</Text>
@@ -387,23 +504,23 @@ export function SkinReport({ data }: { data: ReportData }) {
 
         <View style={s.divider} />
 
-        <Text style={s.label}>Expectativas</Text>
+        <Text style={s.label}>{L.expectations}</Text>
         <View style={s.card}>
-          <Text style={{ ...s.phaseLabel, marginBottom: 4 }}>4 semanas</Text>
+          <Text style={{ ...s.phaseLabel, marginBottom: 4 }}>{L.weeks.w4}</Text>
           <Text style={s.cardText}>{analysis.timeline.weeks4}</Text>
         </View>
         <View style={s.card}>
-          <Text style={{ ...s.phaseLabel, marginBottom: 4 }}>8 semanas</Text>
+          <Text style={{ ...s.phaseLabel, marginBottom: 4 }}>{L.weeks.w8}</Text>
           <Text style={s.cardText}>{analysis.timeline.weeks8}</Text>
         </View>
         <View style={s.card}>
-          <Text style={{ ...s.phaseLabel, marginBottom: 4 }}>12 semanas</Text>
+          <Text style={{ ...s.phaseLabel, marginBottom: 4 }}>{L.weeks.w12}</Text>
           <Text style={s.cardText}>{analysis.timeline.weeks12}</Text>
         </View>
 
         {analysis.alert_signs.length > 0 && (
           <View style={s.alertBox}>
-            <Text style={s.alertTitle}>Sinais de Alerta</Text>
+            <Text style={s.alertTitle}>{L.alertSigns}</Text>
             {analysis.alert_signs.map((sign, i) => (
               <Text key={i} style={s.alertItem}>{sign}</Text>
             ))}
@@ -412,15 +529,15 @@ export function SkinReport({ data }: { data: ReportData }) {
 
         <View style={s.footer}>
           <Text style={s.footerText}>Skinner — Skin Tech</Text>
-          <Text style={s.footerText}>Confidencial</Text>
+          <Text style={s.footerText}>{L.confidential}</Text>
         </View>
       </Page>
 
       {/* Products page */}
       {recommendations.length > 0 && (
         <Page size="A4" style={s.page}>
-          <Text style={s.label}>Recomendacoes</Text>
-          <Text style={s.sectionTitle}>Produtos selecionados</Text>
+          <Text style={s.label}>{L.recommendations}</Text>
+          <Text style={s.sectionTitle}>{L.productsTitle}</Text>
 
           {recommendations.map((rec, idx) => (
             <View key={idx} style={s.productRow}>
@@ -430,7 +547,7 @@ export function SkinReport({ data }: { data: ReportData }) {
               <View style={s.productInfo}>
                 <Text style={s.productName}>{rec.name}</Text>
                 <Text style={s.productMeta}>
-                  {rec.stepRoutine ? stepLabels[rec.stepRoutine] ?? rec.stepRoutine : ""}{" "}
+                  {rec.stepRoutine ? L.step[rec.stepRoutine] ?? rec.stepRoutine : ""}{" "}
                   {rec.sku}
                 </Text>
                 <Text style={s.productReason}>{rec.reason}</Text>

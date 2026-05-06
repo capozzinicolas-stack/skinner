@@ -68,6 +68,7 @@ export const tenantRouter = router({
           secondaryColor: true,
           brandVoice: true,
           disclaimer: true,
+          defaultLocale: true,
           tenantConfig: {
             select: {
               questionAllergiesEnabled: true,
@@ -137,19 +138,35 @@ export const tenantRouter = router({
       // Merge channel overrides onto tenantConfig. Failure to parse leaves
       // tenantConfig untouched — never crashes the patient flow.
       let mergedTenantConfig = tenant.tenantConfig;
+      // Channel-level locale override (Commit 4 May-2026). Lives in
+      // overrides.locale because we don't add a column for every per-channel
+      // knob; the UI/whitelist controls what's safe to override.
+      let channelLocaleOverride: string | null = null;
       if (channel?.overrides && tenant.tenantConfig) {
         try {
           const parsed = JSON.parse(channel.overrides);
           if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+            const obj = parsed as Record<string, unknown>;
+            if (typeof obj.locale === "string") {
+              channelLocaleOverride = obj.locale;
+            }
+            // locale is NOT a TenantConfig field, so strip it before merging
+            // into tenantConfig (would break Prisma type assertions).
+            const { locale: _drop, ...rest } = obj;
             mergedTenantConfig = {
               ...tenant.tenantConfig,
-              ...(parsed as Record<string, unknown>),
+              ...(rest as Record<string, unknown>),
             } as typeof tenant.tenantConfig;
           }
         } catch {
           // Malformed overrides JSON — ignore silently.
         }
       }
+
+      // Effective locale: channel override → tenant default → "pt-BR" fallback.
+      // Used by Commit 5 to drive Claude prompt + by client to set i18n provider.
+      const effectiveLocale =
+        channelLocaleOverride ?? tenant.defaultLocale ?? "pt-BR";
 
       return {
         ...tenant,
@@ -159,6 +176,7 @@ export const tenantRouter = router({
         channelLabel: channel?.label ?? null,
         channelStatus,
         channelMaxAnalyses: channel?.maxAnalyses ?? null,
+        effectiveLocale,
       };
     }),
 

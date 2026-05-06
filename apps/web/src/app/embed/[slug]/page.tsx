@@ -13,6 +13,8 @@ import { CartFloater } from "@/components/analysis/cart-floater";
 import { resolveProductChannel } from "@/lib/cart/resolve-channel";
 import { postToParent, isInsideIframe } from "@/lib/embed/post-message";
 import type { CartItem } from "@/lib/cart/types";
+import { I18nProvider } from "@/lib/i18n/client";
+import { LOCALES, DEFAULT_LOCALE, type Locale } from "@/lib/i18n/types";
 import type { FullAnalysisResult } from "@/lib/sae/types";
 
 /**
@@ -252,7 +254,16 @@ function EmbedAnalysisFlow({ params }: { params: { slug: string } }) {
     );
   }
 
+  // Same patient locale resolution as the analise page — channel/tenant wins,
+  // patient never picks. See analise/[slug]/page.tsx for full rationale.
+  const rawLocale = (tenant.data as { effectiveLocale?: string }).effectiveLocale;
+  const patientLocale: Locale =
+    rawLocale && (LOCALES as readonly string[]).includes(rawLocale)
+      ? (rawLocale as Locale)
+      : DEFAULT_LOCALE;
+
   return (
+    <I18nProvider locale={patientLocale}>
     <main
       ref={(el) => { rootRef.current = el; }}
       className={`bg-blanc-casse flex flex-col ${compact ? "min-h-[600px]" : "min-h-screen"}`}
@@ -458,6 +469,7 @@ function EmbedAnalysisFlow({ params }: { params: { slug: string } }) {
         )}
       </div>
     </main>
+    </I18nProvider>
   );
 }
 

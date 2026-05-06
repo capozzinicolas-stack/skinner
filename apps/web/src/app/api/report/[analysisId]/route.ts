@@ -88,8 +88,16 @@ export async function GET(
       })),
     };
 
+    // PDF locale: tenant default. We don't currently look up the analysis's
+    // originating channel.locale because Analysis only stores channelId and
+    // the JOIN would require an extra query — for MVP, tenant.defaultLocale
+    // is enough. Sprint follow-up: thread channel locale through here too.
+    const tenantLocale =
+      analysis.tenant.defaultLocale === "es" || analysis.tenant.defaultLocale === "en"
+        ? analysis.tenant.defaultLocale
+        : "pt-BR";
     const buffer = await renderToBuffer(
-      React.createElement(SkinReport, { data: reportData }) as any
+      React.createElement(SkinReport, { data: reportData, locale: tenantLocale }) as any
     );
 
     // Save report record if not exists

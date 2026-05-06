@@ -43,6 +43,10 @@ const CHANNEL_OVERRIDE_FIELDS = [
   "serviceCtaText",
   "resultsTopMessage",
   "resultsFooterText",
+  // Per-channel locale override. When present, supersedes Tenant.defaultLocale
+  // for patient-facing copy + AI analysis output. Validated as a Locale value
+  // at update time below so we don't persist garbage.
+  "locale",
 ] as const;
 
 function slugify(input: string): string {
@@ -211,6 +215,16 @@ export const analysisChannelRouter = router({
           const filtered: Record<string, unknown> = {};
           for (const key of CHANNEL_OVERRIDE_FIELDS) {
             if (key in input.overrides && input.overrides[key] !== undefined) {
+              // Special validation for `locale`: must be one of our supported
+              // codes, otherwise drop silently. Prevents persisting "fr" or
+              // "xx" via the overrides slot.
+              if (key === "locale") {
+                const v = input.overrides[key];
+                if (v === "pt-BR" || v === "es" || v === "en") {
+                  filtered[key] = v;
+                }
+                continue;
+              }
               filtered[key] = input.overrides[key];
             }
           }
