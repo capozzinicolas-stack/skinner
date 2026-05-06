@@ -16,6 +16,7 @@ type DictShape = {
   language: Record<string, string>;
   home: Record<string, string>;
   auth: Record<string, string>;
+  dashboard: Record<string, string>;
 };
 export const ptBR: DictShape = {
   // ── Marketing header / footer / switcher ───────────────────────────
@@ -104,6 +105,28 @@ export const ptBR: DictShape = {
     reset_error_short: "A senha deve ter ao menos 8 caracteres.",
     reset_error_token: "Link invalido ou expirado.",
     reset_success: "Senha alterada. Redirecionando para login...",
+  },
+
+  // ── Dashboard B2B ───────────────────────────────────────────────────
+  // Sidebar nav labels + section titles. Page bodies stay in pt-BR for now —
+  // migrated incrementally as content stabilizes.
+  dashboard: {
+    portal_subtitle: "Portal B2B",
+    nav_onboarding: "Onboarding",
+    nav_dashboard: "Painel",
+    nav_catalog: "Catalogo",
+    nav_reports: "Relatorios",
+    nav_leads: "Leads",
+    nav_kits: "Kits",
+    nav_analysis: "Analise",
+    nav_brand: "Marca",
+    nav_channels: "Canais",
+    nav_integrations: "Integracoes",
+    nav_users: "Usuarios",
+    nav_billing: "Faturamento",
+    nav_organization: "Organizacao",
+    nav_account: "Minha Conta",
+    nav_logout: "Sair",
   },
 };
 

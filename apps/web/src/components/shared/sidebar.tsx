@@ -14,10 +14,14 @@ export function Sidebar({
   items,
   title,
   subtitle,
+  logoutLabel,
 }: {
   items: NavItem[];
   title: string;
   subtitle?: string;
+  // Optional translation override. Admin sidebar (always pt-BR) keeps
+  // the default; dashboard sidebar passes a localized string.
+  logoutLabel?: string;
 }) {
   const pathname = usePathname();
 
@@ -58,7 +62,7 @@ export function Sidebar({
           className="flex items-center gap-3 px-3 py-2.5 text-sm font-light text-pierre hover:text-carbone w-full transition-colors"
         >
           <span className="text-base">&#x2190;</span>
-          Sair
+          {logoutLabel ?? "Sair"}
         </button>
       </div>
     </aside>

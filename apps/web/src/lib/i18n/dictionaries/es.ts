@@ -89,4 +89,23 @@ export const es: Dictionary = {
     reset_error_token: "Enlace invalido o expirado.",
     reset_success: "Contrasena actualizada. Redirigiendo al login...",
   },
+
+  dashboard: {
+    portal_subtitle: "Portal B2B",
+    nav_onboarding: "Onboarding",
+    nav_dashboard: "Panel",
+    nav_catalog: "Catalogo",
+    nav_reports: "Reportes",
+    nav_leads: "Leads",
+    nav_kits: "Kits",
+    nav_analysis: "Analisis",
+    nav_brand: "Marca",
+    nav_channels: "Canales",
+    nav_integrations: "Integraciones",
+    nav_users: "Usuarios",
+    nav_billing: "Facturacion",
+    nav_organization: "Organizacion",
+    nav_account: "Mi cuenta",
+    nav_logout: "Salir",
+  },
 };

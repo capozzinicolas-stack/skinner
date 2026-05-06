@@ -89,4 +89,23 @@ export const en: Dictionary = {
     reset_error_token: "Invalid or expired link.",
     reset_success: "Password updated. Redirecting to sign-in...",
   },
+
+  dashboard: {
+    portal_subtitle: "B2B Portal",
+    nav_onboarding: "Onboarding",
+    nav_dashboard: "Dashboard",
+    nav_catalog: "Catalog",
+    nav_reports: "Reports",
+    nav_leads: "Leads",
+    nav_kits: "Kits",
+    nav_analysis: "Analysis",
+    nav_brand: "Brand",
+    nav_channels: "Channels",
+    nav_integrations: "Integrations",
+    nav_users: "Users",
+    nav_billing: "Billing",
+    nav_organization: "Organization",
+    nav_account: "My Account",
+    nav_logout: "Sign out",
+  },
 };
