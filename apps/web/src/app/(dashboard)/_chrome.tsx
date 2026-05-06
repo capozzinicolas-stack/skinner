@@ -10,8 +10,12 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
   // pages renders <OrganizationTabs /> at the top so users can move between
   // them. URLs unchanged (Stripe success_url, OAuth callbacks, email links
   // all point to the original paths). See components/shared/organization-tabs.tsx.
+  //
+  // Onboarding entry temporarily removed (2026-05-06) — page content is
+  // outdated. URL /dashboard/onboarding stays accessible (page file untouched)
+  // so we can re-enable the sidebar item by adding the line back when the
+  // content is refreshed.
   const dashboardNav = [
-    { label: t.dashboard.nav_onboarding, href: "/dashboard/onboarding", icon: "❋" },
     { label: t.dashboard.nav_dashboard, href: "/dashboard", icon: "⌂" },
     { label: t.dashboard.nav_catalog, href: "/dashboard/catalogo", icon: "☰" },
     { label: t.dashboard.nav_reports, href: "/dashboard/relatorios", icon: "☷" },
