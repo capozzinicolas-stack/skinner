@@ -303,7 +303,16 @@ export default function AnalysisPage({
           <ContactCapture
             tenantName={tenantName}
             customMessage={cfg?.contactCustomMessage ?? null}
-            required={cfg?.contactCaptureRequired === true}
+            // Required when:
+            // (a) tenant explicitly forces it via /dashboard/analise, OR
+            // (b) the channel has an identity limit active (analysis.run
+            //     enforces it server-side and needs email+phone to build
+            //     a stable identityKey).
+            required={
+              cfg?.contactCaptureRequired === true ||
+              ((tenant.data as { channelIdentityLimit?: number | null })
+                ?.channelIdentityLimit ?? 0) > 0
+            }
             onComplete={handleContactDone}
           />
         )}

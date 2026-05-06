@@ -97,26 +97,32 @@ export const analysisRouter = router({
       }
 
       // 1.5 Identity-based abuse limit (Nivel 1). Build identityKey from
-      // contact data when the channel enforces a per-identity cap. Email
-      // beats phone (more stable). Without contact, the run is rejected
-      // because the count check would be unsafe — implicitly forces
-      // contact-capture for channels with this limit on.
+      // contact data when the channel enforces a per-identity cap.
+      //
+      // May-2026 update: BOTH e-mail AND WhatsApp are required when the limit
+      // is on. Reasons:
+      //   1. Reduces ambiguity — a patient who used phone last time and email
+      //      this time would otherwise look like two distinct identities and
+      //      bypass the cap.
+      //   2. Better lead quality for the tenant.
+      //   3. Matches the contact-capture frontend rule (UI also requires
+      //      both when channel.identityLimit > 0).
+      // identityKey itself still prefers email (more stable across devices).
       let identityKey: string | null = null;
       if (channel?.identityLimit != null && channel.identityLimit > 0) {
         const email = input.clientEmail?.trim().toLowerCase();
         const phone = input.clientPhone?.replace(/\D/g, "");
-        if (email && email.includes("@")) {
-          identityKey = `email:${email}`;
-        } else if (phone && phone.length >= 8) {
-          identityKey = `phone:${phone}`;
-        }
-        if (!identityKey) {
+        const hasValidEmail = !!email && email.includes("@");
+        const hasValidPhone = !!phone && phone.length >= 8;
+        if (!hasValidEmail || !hasValidPhone) {
           throw new TRPCError({
             code: "BAD_REQUEST",
             message:
-              "Esta clinica exige seu e-mail ou WhatsApp para realizar a analise. Preencha os dados de contato.",
+              "Esta clinica exige seu e-mail E seu WhatsApp para realizar a analise. Preencha ambos os dados de contato.",
           });
         }
+        // Email beats phone for the identityKey — more stable across devices.
+        identityKey = `email:${email}`;
         const windowDays = channel.identityWindowDays ?? 0;
         const since =
           windowDays > 0 ? new Date(Date.now() - windowDays * 86_400_000) : new Date(0);

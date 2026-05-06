@@ -52,6 +52,13 @@ export const tenantRouter = router({
           isDefault: true,
           overrides: true,
           tenantId: true,
+          // Identity limit knobs (May-2026). Exposed publicly so the patient
+          // page can force contact capture (email + phone) BEFORE the user
+          // skips and hits the backend rejection. Without this, the
+          // contact-capture screen shows OPCIONAL + "Pular" and only the
+          // backend rejects after — terrible UX.
+          identityLimit: true,
+          identityWindowDays: true,
         },
       });
 
@@ -176,6 +183,12 @@ export const tenantRouter = router({
         channelLabel: channel?.label ?? null,
         channelStatus,
         channelMaxAnalyses: channel?.maxAnalyses ?? null,
+        // Identity limit fields exposed for the patient flow. NULL or 0 = no
+        // limit. When > 0, the contact-capture screen must REQUIRE both
+        // email and WhatsApp so analysis.run can build a stable identityKey
+        // and enforce the cap.
+        channelIdentityLimit: channel?.identityLimit ?? null,
+        channelIdentityWindowDays: channel?.identityWindowDays ?? null,
         effectiveLocale,
       };
     }),

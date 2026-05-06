@@ -19,9 +19,17 @@ const EMPTY: ContactData = {
 /**
  * Contact-capture step shown between consent and questionnaire when the
  * tenant enables it. All fields are optional by default — the patient can
- * skip and continue anonymously. When `required` is true, at least one
- * contact channel (email or phone) plus the LGPD consent checkbox are
- * required to continue (no skip button).
+ * skip and continue anonymously.
+ *
+ * When `required` is true:
+ *   - Both e-mail AND WhatsApp are mandatory (not "either / or"). Required
+ *     mode is triggered EITHER by TenantConfig.contactCaptureRequired OR
+ *     by the channel having an identityLimit > 0 (May-2026 rule). In both
+ *     cases we want a stable identityKey for analysis.run, so collecting
+ *     both channels reduces ambiguity (a patient who used phone last time
+ *     and email this time would otherwise look like two distinct people).
+ *   - LGPD consent checkbox is mandatory.
+ *   - "Pular" (skip) button is hidden.
  */
 export function ContactCapture({
   tenantName,
@@ -39,6 +47,8 @@ export function ContactCapture({
 
   const hasAnyContact =
     data.clientEmail.trim().length > 0 || data.clientPhone.trim().length > 0;
+  const hasBothContacts =
+    data.clientEmail.trim().length > 0 && data.clientPhone.trim().length > 0;
   const needsConsent = hasAnyContact && !data.consentToContact;
 
   function handleSkip() {
@@ -49,8 +59,9 @@ export function ContactCapture({
     e.preventDefault();
     setError(null);
     if (required) {
-      if (!hasAnyContact) {
-        setError("Informe ao menos um meio de contato (e-mail ou WhatsApp).");
+      // Both e-mail AND WhatsApp required — see component docstring for why.
+      if (!hasBothContacts) {
+        setError("Informe seu e-mail E seu WhatsApp para continuar.");
         return;
       }
       if (!data.consentToContact) {
@@ -87,7 +98,7 @@ export function ContactCapture({
       <form onSubmit={handleContinue} className="space-y-4">
         <div>
           <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
-            Nome {required ? "" : "(opcional)"}
+            Nome (opcional)
           </label>
           <input
             type="text"
@@ -99,25 +110,29 @@ export function ContactCapture({
         </div>
         <div>
           <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
-            E-mail {required ? "" : "(opcional)"}
+            E-mail {required ? "(obrigatorio)" : "(opcional)"}
           </label>
           <input
             type="email"
             value={data.clientEmail}
             onChange={(e) => setData((d) => ({ ...d, clientEmail: e.target.value }))}
             placeholder="seu@email.com"
+            required={required}
+            aria-required={required}
             className="w-full px-3 py-2 border border-sable/40 bg-white text-sm text-carbone font-light focus:outline-none focus:border-pierre"
           />
         </div>
         <div>
           <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
-            WhatsApp {required ? "" : "(opcional)"}
+            WhatsApp {required ? "(obrigatorio)" : "(opcional)"}
           </label>
           <input
             type="tel"
             value={data.clientPhone}
             onChange={(e) => setData((d) => ({ ...d, clientPhone: e.target.value }))}
             placeholder="(11) 99999-9999"
+            required={required}
+            aria-required={required}
             className="w-full px-3 py-2 border border-sable/40 bg-white text-sm text-carbone font-light focus:outline-none focus:border-pierre"
           />
         </div>

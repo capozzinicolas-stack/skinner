@@ -368,7 +368,11 @@ function EmbedAnalysisFlow({ params }: { params: { slug: string } }) {
           <ContactCapture
             tenantName={tenantName}
             customMessage={cfg?.contactCustomMessage ?? null}
-            required={cfg?.contactCaptureRequired === true}
+            required={
+              cfg?.contactCaptureRequired === true ||
+              ((tenant.data as { channelIdentityLimit?: number | null })
+                ?.channelIdentityLimit ?? 0) > 0
+            }
             onComplete={handleContactDone}
           />
         )}

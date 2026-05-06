@@ -601,6 +601,23 @@ Anti-abuse + fairness control: a tenant can configure per-channel limits on how 
 
 **Plan defaults migration (May-2026)**: `growth.allowIdentityLimit = false`, `pro.allowIdentityLimit = true`, `enterprise.allowIdentityLimit = true`.
 
+**Bug fix (2026-05-06): contact capture wasn't actually required when channel
+identityLimit was on.** Three issues compounded:
+- `tenant.getBySlug` didn't return `identityLimit` / `identityWindowDays`,
+  so the patient page had no way to know the channel had a cap.
+- The patient flow's `<ContactCapture required={...}>` only checked
+  `cfg.contactCaptureRequired`, ignoring channel-level identity limits.
+- Backend rule was "email OR phone" but UI showed both as opcional.
+
+Fixed: tenant.getBySlug now exposes `channelIdentityLimit` /
+`channelIdentityWindowDays`. Patient page (analise + embed) sets
+`required = cfg.contactCaptureRequired || channel.identityLimit > 0`.
+ContactCapture in required-mode now demands BOTH e-mail AND WhatsApp
+(not "either / or"), labels switch to "(obrigatorio)", "Pular" button
+hidden, HTML5 `required` attr added to inputs. Backend `analysis.run`
+mirrors: rejects unless both contacts are valid; identityKey still
+prefers email for stability.
+
 ### Deferred to follow-up sprints
 - Pre-registration / verified patient accounts (Nivel 2) — only when a paying tenant explicitly requests verified-only flows.
 - Per-channel questionnaire — Nivel C, build only when a paying tenant requests it.
