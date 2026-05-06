@@ -32,6 +32,11 @@ export default function AnalysisPage({
   });
   const [result, setResult] = useState<FullAnalysisResult | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
+  // True when the error is permanent (limit reached, channel paused, quota
+  // exhausted, missing contact). Retrying won't help, so we hide the
+  // "Tentar novamente" button to avoid confusing the patient. False = transient
+  // (Claude hiccup, network blip) → button shown.
+  const [errorBlocking, setErrorBlocking] = useState(false);
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
 
   const tenant = trpc.tenant.getBySlug.useQuery({ slug: params.slug });
@@ -50,6 +55,13 @@ export default function AnalysisPage({
     },
     onError: (err) => {
       setErrorMsg(err.message);
+      // FORBIDDEN = channel paused/expired/maxAnalyses, tenant quota exhausted,
+      //            identity limit reached.
+      // BAD_REQUEST = missing contact when channel requires identity.
+      // All of these are persistent — retrying right now won't change the
+      // outcome, so we hide the retry button.
+      const code = err.data?.code;
+      setErrorBlocking(code === "FORBIDDEN" || code === "BAD_REQUEST");
       setStep("error");
     },
   });
@@ -174,6 +186,7 @@ export default function AnalysisPage({
         });
         if (!check.allowed) {
           setErrorMsg(check.message ?? "Limite atingido para este canal.");
+          setErrorBlocking(true);
           setStep("error");
           return;
         }
@@ -431,17 +444,21 @@ export default function AnalysisPage({
 
         {step === "error" && (
           <div className="w-full max-w-lg mx-auto px-4 text-center space-y-4">
-            <h2 className="font-serif text-xl text-terre">Erro na analise</h2>
+            <h2 className="font-serif text-xl text-terre">
+              {errorBlocking ? "Nao foi possivel realizar a analise" : "Erro na analise"}
+            </h2>
             <p className="text-sm text-pierre font-light">{errorMsg}</p>
-            <button
-              onClick={() => setStep("photo")}
-              style={{ backgroundColor: brandPrimary }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = brandSecondary)}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = brandPrimary)}
-              className="px-6 py-2 text-blanc-casse text-sm font-light tracking-wide transition-colors"
-            >
-              Tentar novamente
-            </button>
+            {!errorBlocking && (
+              <button
+                onClick={() => setStep("photo")}
+                style={{ backgroundColor: brandPrimary }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = brandSecondary)}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = brandPrimary)}
+                className="px-6 py-2 text-blanc-casse text-sm font-light tracking-wide transition-colors"
+              >
+                Tentar novamente
+              </button>
+            )}
           </div>
         )}
       </div>

@@ -48,6 +48,8 @@ function EmbedAnalysisFlow({ params }: { params: { slug: string } }) {
   });
   const [result, setResult] = useState<FullAnalysisResult | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
+  // See analise/[slug]/page.tsx for full rationale on errorBlocking.
+  const [errorBlocking, setErrorBlocking] = useState(false);
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
 
   const tenant = trpc.tenant.getBySlug.useQuery({ slug: params.slug });
@@ -67,6 +69,8 @@ function EmbedAnalysisFlow({ params }: { params: { slug: string } }) {
     },
     onError: (err) => {
       setErrorMsg(err.message);
+      const code = err.data?.code;
+      setErrorBlocking(code === "FORBIDDEN" || code === "BAD_REQUEST");
       setStep("error");
     },
   });
@@ -227,6 +231,7 @@ function EmbedAnalysisFlow({ params }: { params: { slug: string } }) {
         });
         if (!check.allowed) {
           setErrorMsg(check.message ?? "Limite atingido para este canal.");
+          setErrorBlocking(true);
           setStep("error");
           return;
         }
@@ -481,17 +486,21 @@ function EmbedAnalysisFlow({ params }: { params: { slug: string } }) {
 
         {step === "error" && (
           <div className="w-full max-w-lg mx-auto px-4 text-center space-y-4">
-            <h2 className="font-serif text-xl text-terre">Erro na analise</h2>
+            <h2 className="font-serif text-xl text-terre">
+              {errorBlocking ? "Nao foi possivel realizar a analise" : "Erro na analise"}
+            </h2>
             <p className="text-sm text-pierre font-light">{errorMsg}</p>
-            <button
-              onClick={() => setStep("photo")}
-              style={{ backgroundColor: brandPrimary }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = brandSecondary)}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = brandPrimary)}
-              className="px-6 py-2 text-blanc-casse text-sm font-light tracking-wide transition-colors"
-            >
-              Tentar novamente
-            </button>
+            {!errorBlocking && (
+              <button
+                onClick={() => setStep("photo")}
+                style={{ backgroundColor: brandPrimary }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = brandSecondary)}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = brandPrimary)}
+                className="px-6 py-2 text-blanc-casse text-sm font-light tracking-wide transition-colors"
+              >
+                Tentar novamente
+              </button>
+            )}
           </div>
         )}
       </div>
