@@ -681,6 +681,109 @@ react-pdf uses `Image src={url}` which fetches the asset at render time. An inva
 - Anything that lives in `(marketing)` route group is still subject to the middleware — the route group is purely a Next.js folder convention and does not bypass middleware.
 - The matcher at the bottom of `middleware.ts` excludes static assets (`_next/static`, `_next/image`, `favicon.ico`, `brand/`, `uploads/`) but everything else passes through.
 
+## Internationalization (i18n)
+
+Multi-locale rolled out in May-2026 across 5 phased commits. Architecture
+decision: cookie + dictionary + manual `t()` lookups instead of `next-intl`
+URL routing. Avoids moving every route into `[locale]/...` and rewriting
+the middleware. Trade-off: SEO doesn't separate Spanish/English Google
+indexes — acceptable for MVP, escalates to URL routing in a dedicated
+sprint when LATAM traction justifies it.
+
+### Four locale contexts (decoupled)
+
+| Surface | Decided by | Resolver |
+|---|---|---|
+| Marketing site (skinner.lat) | Cookie + browser `Accept-Language` + manual switcher in header | `lib/i18n/server.ts:resolveLocale()` |
+| Dashboard B2B | `User.locale` → `Tenant.defaultLocale` → cookie → browser | `lib/i18n/dashboard-locale.ts` |
+| Patient flow (`/analise/[slug]`, `/embed/[slug]`) | `AnalysisChannel.overrides.locale` → `Tenant.defaultLocale` → "pt-BR" | `tenant.getBySlug` returns `effectiveLocale` |
+| AI analysis output (Claude) | Same as patient flow | `analysis.run` resolves + passes `input.locale` to `claudeAnalyze` |
+
+Critical: staff dashboard locale (`User.locale`) NEVER affects what
+patients see. A Mexican analyst at a Brazilian clinic can run their panel
+in Spanish while patients keep getting Portuguese analyses. The four
+contexts are independently configurable.
+
+### Schema fields
+- `Tenant.country` (ISO-3166 alpha-2), `Tenant.timezone` (IANA),
+  `Tenant.defaultLocale` (default "pt-BR")
+- `User.locale` (nullable; null = inherit)
+- `AnalysisChannel.overrides.locale` — lives inside the JSON overrides
+  blob, validated as enum at write time in `analysisChannel.update`
+  (drops silently if not "pt-BR" / "es" / "en")
+
+### Dictionary structure
+- `lib/i18n/types.ts`: LOCALES, Locale type, LOCALE_COOKIE name
+- `lib/i18n/dictionaries/{pt-BR,es,en}.ts`: typed via shared `DictShape`
+  with sections `nav / footer / language / home / auth / dashboard`
+- `lib/i18n/server.ts:resolveLocale()`: reads cookie → Accept-Language → default
+- `lib/i18n/client.tsx:I18nProvider + useI18n()`: wraps client trees,
+  hydrates with server-resolved locale, exposes setter that writes the
+  cookie + reloads
+- `lib/i18n/dashboard-locale.ts:resolveDashboardLocale()`: dashboard-specific
+  resolver that prefers User → Tenant before falling back to generic
+
+### Component-level translations
+- Marketing chrome (header/footer/switcher): TRANSLATED via `t.nav` /
+  `t.footer`. Page bodies (/, /como-funciona, /planos, etc.) still
+  hardcoded pt-BR — incremental migration as content stabilizes.
+- Dashboard sidebar: TRANSLATED via `t.dashboard.nav_*`. Page bodies
+  hardcoded pt-BR.
+- Patient flow components (welcome-screen, consent-screen, photo-capture,
+  results-screen, contact-capture, cart-floater): defaults still pt-BR.
+  When tenants need es/en they should configure
+  `welcomeTitle`/`welcomeDescription`/etc. via the channel
+  `CHANNEL_OVERRIDE_FIELDS` in their target language.
+
+### Email + PDF
+- `lib/email.ts`: every builder accepts optional `locale` param;
+  `EMAIL_STRINGS` dictionary covers welcome / password reset / lead
+  notification / usage alert / analysis delivery in all 3 locales.
+  Callers should pass tenant.defaultLocale.
+- `lib/pdf/report-template.tsx`: `SkinReport` accepts optional `locale`
+  prop; `PDF_STRINGS` dict covers cover / diagnosis / action plan /
+  expectations / alert signs / recommendations sections.
+  `/api/report/[analysisId]` passes `analysis.tenant.defaultLocale`.
+
+### SAE labels (`lib/sae/labels.ts`)
+- Backwards-compatible flat exports (`skinTypeLabels`, `conditionLabels`,
+  etc.) return pt-BR — all ~10 pre-existing callers keep working.
+- New `*Localized` exports return LocalizedMap keyed by Locale → key.
+- `tr(map, key, locale?)` and `trList(map, keys, locale?)` accept either
+  flat or LocalizedMap and the optional locale param. Falls back through
+  requested locale → pt-BR → raw key.
+- `barrierLabel(status, locale?)` returns localized {short, explanation}.
+
+### Claude prompt locale (Commit 5)
+- `AnalysisInput.locale` resolved by `analysis.run` from
+  channel.overrides.locale → tenant.defaultLocale → "pt-BR" (same chain
+  as the patient flow's effectiveLocale). Passed to `claudeAnalyze`.
+- Prompt itself stays in pt-BR (validated, KB references, tone block).
+  We add a final IDIOMA DA RESPOSTA directive that tells Claude to
+  write patient-facing fields in the target language WHILE preserving
+  KB IDs (conditions[].name, skin_type, barrier_status, etc.) untranslated
+  so the matcher keeps working. Conservative approach: change output
+  language without retranslating the prompt scaffolding.
+- The directive overrides any tone/brand instructions earlier in the
+  prompt and is positioned at the end where it has highest priority.
+
+### Translation review status
+All es/en strings carry `REVIEW_TRANSLATION_HUMAN` markers. They were
+AI-translated and need native-speaker validation (especially medical /
+dermatological terminology) BEFORE going live to real hispanophone or
+anglophone clients. Use the LATAM/EN locales today only for internal
+testing and demo purposes until a translator review completes.
+
+### Known gaps (intentional, follow-up sprints)
+- tRPC error messages / Zod validation messages remain pt-BR
+- `matcher.ts` reasons ("Trata: acne...") remain pt-BR — matcher doesn't
+  know the locale; passing it through requires expanding the matcher API
+- Marketing page bodies (/, /como-funciona, /planos) — translate
+  incrementally as content stabilizes
+- Dashboard page bodies — same; translate when a paying customer requests
+- PDF locale uses tenant default only; channel-locale override would
+  require an extra DB join in `/api/report`
+
 ## Conventions
 
 - All user-facing text in Portuguese (Brazilian)

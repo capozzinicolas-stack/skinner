@@ -55,6 +55,10 @@ export const analysisRouter = router({
           identityLimit: true,
           identityWindowDays: true,
           tenantId: true,
+          // overrides JSON contains optional `locale` field (Commit 4 May-2026).
+          // Parsed below to drive the AI prompt locale and override the
+          // tenant-default for this specific patient.
+          overrides: true,
         },
       });
 
@@ -168,10 +172,31 @@ export const analysisRouter = router({
       }
 
       // 3. Run analysis (mock or Claude)
+      // Resolve locale: channel override → tenant default → "pt-BR".
+      // Same precedence as the patient flow's effectiveLocale (tenant.getBySlug)
+      // so the analysis output matches what the patient sees on screen.
+      let resolvedLocale: "pt-BR" | "es" | "en" = "pt-BR";
+      const tenantLocale = (tenant as { defaultLocale?: string }).defaultLocale;
+      if (tenantLocale === "es" || tenantLocale === "en") {
+        resolvedLocale = tenantLocale;
+      }
+      if (channel?.overrides) {
+        try {
+          const parsed = JSON.parse(channel.overrides);
+          const channelLocale = parsed?.locale;
+          if (channelLocale === "pt-BR" || channelLocale === "es" || channelLocale === "en") {
+            resolvedLocale = channelLocale;
+          }
+        } catch {
+          // Malformed overrides — silently use tenant locale.
+        }
+      }
+
       const analysisInput: AnalysisInput = {
         tenantId: tenant.id,
         photoBase64: input.photoBase64,
         questionnaire: input.questionnaire,
+        locale: resolvedLocale,
       };
 
       // Use Claude API if key is available, otherwise fall back to mock

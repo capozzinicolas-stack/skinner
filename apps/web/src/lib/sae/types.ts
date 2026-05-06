@@ -2,6 +2,12 @@ export type AnalysisInput = {
   tenantId: string;
   photoBase64: string;
   questionnaire: Record<string, string | string[]>;
+  // Locale for patient-facing output text (summary, conditions[].description,
+  // action_plan, alert_signs, etc.). Default pt-BR. Resolved by analysis.run
+  // from channel.overrides.locale → tenant.defaultLocale → "pt-BR".
+  // The KB IDs (conditions[].name) are NEVER translated — they're identifiers
+  // used by the matcher.
+  locale?: "pt-BR" | "es" | "en";
 };
 
 export type FaceZone =

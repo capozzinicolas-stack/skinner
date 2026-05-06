@@ -56,6 +56,19 @@ export async function claudeAnalyze(input: AnalysisInput): Promise<AnalysisOutpu
   // "technical" → full clinical terminology (for B2B clinics that prefer medical credibility).
   const tone = tenantConfig?.analysisTone === "technical" ? "technical" : "humanized";
 
+  // Locale for patient-facing output. Defaults to pt-BR. Caller resolves it
+  // from the channel/tenant before passing in. The prompt (rules, KB,
+  // toneBlock) stays in pt-BR — we add an explicit final directive telling
+  // Claude to write the OUTPUT fields in the requested language. Validated
+  // approach for changing output language without retranslating the prompt.
+  const locale = input.locale ?? "pt-BR";
+  const localeName =
+    locale === "es"
+      ? "espanol (Espana / America Latina)"
+      : locale === "en"
+        ? "English (US)"
+        : "portugues brasileiro";
+
   const toneBlock =
     tone === "humanized"
       ? `
@@ -115,14 +128,21 @@ REGRAS:
 7. Crie um plano de acao em 3 fases progressivas
 8. Seja honesto mas acolhedor - nao alarme, mas nao minimize
 9. Se detectar algo que requer atencao medica, indique claramente
-10. Todas as respostas devem ser em portugues brasileiro
+10. (Idioma da resposta definido no bloco IDIOMA DA RESPOSTA abaixo. NAO escreva neste passo.)
 11. Para zone_annotations: analise CADA zona facial individualmente. Inclua pelo menos 5 zonas. Use "good" para areas saudaveis, "attention" para areas com leve preocupacao, "concern" para areas que precisam de tratamento. Sempre inclua pelo menos 1-2 zonas "good" para equilibrar o diagnostico.
 12. DISCREPANCIA DE TIPO DE PELE: Compare o tipo de pele que o paciente auto-relatou com o que voce observa na foto. Se forem diferentes, preencha "skin_type_self_reported" com o tipo que o paciente disse e "skin_type_discrepancy" com uma explicacao gentil e educativa de por que sua observacao profissional difere da percepcao do paciente. Se forem iguais, deixe esses campos como null.
 ${platformConfig?.analysisGlobalRules ? `\nREGRAS GLOBAIS DA PLATAFORMA:\n${platformConfig.analysisGlobalRules}` : ""}
 ${platformConfig?.analysisRestrictedConditions ? `\nCONDICOES RESTRITAS GLOBALMENTE (NAO MENCIONAR): ${platformConfig.analysisRestrictedConditions}` : ""}
 ${tenantConfig?.customPromptSuffix ? `\nINSTRUCOES ADICIONAIS DO CLIENTE: ${tenantConfig.customPromptSuffix}` : ""}
 ${tenantConfig?.restrictedConditions ? `\nCONDICOES RESTRITAS PELO CLIENTE (NAO MENCIONAR): ${tenantConfig.restrictedConditions}` : ""}
-${brandVoice ? `\nVOZ DE MARCA DA CLINICA (use como inspiracao adicional ao escrever os campos voltados ao paciente, mantendo as regras de seguranca clinica e o tom configurado acima): ${brandVoice}` : ""}`;
+${brandVoice ? `\nVOZ DE MARCA DA CLINICA (use como inspiracao adicional ao escrever os campos voltados ao paciente, mantendo as regras de seguranca clinica e o tom configurado acima): ${brandVoice}` : ""}
+
+IDIOMA DA RESPOSTA (CRITICO):
+- Escreva TODOS os campos voltados ao paciente em ${localeName}.
+- Campos a traduzir: "summary", "conditions[].description", "skin_type_discrepancy", "action_plan.phase1/phase2/phase3", "timeline.weeks4/weeks8/weeks12", "alert_signs[]", "zone_annotations[].observation", "zone_annotations[].title".
+- NAO traduza NUNCA os identificadores tecnicos: "conditions[].name" (usado pelo motor de recomendacao para casar produtos — deve manter o ID exato da base de conhecimento, ex: "acne", "hyperpigmentation", "envelhecimento_cronologico"), "skin_type" (ex: "oily", "combination"), "barrier_status" (ex: "healthy", "compromised"), "fitzpatrick", "primary_objective", "zone_annotations[].zone" e "zone_annotations[].status".
+- Mantenha exatamente a mesma estrutura JSON. Apenas o conteudo textual dos campos visiveis muda de idioma.
+- Esta diretiva tem prioridade sobre quaisquer instrucoes de tom ou marca anteriores.`;
 
   const userPrompt = `QUESTIONARIO DO PACIENTE:
 - Tipo de pele auto-relatado: ${q.skin_type ?? "nao informado"}
