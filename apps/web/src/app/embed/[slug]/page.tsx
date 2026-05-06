@@ -204,13 +204,36 @@ function EmbedAnalysisFlow({ params }: { params: { slug: string } }) {
     });
   }
 
-  function handleContactDone(data: ContactData) {
+  const utils = trpc.useUtils();
+
+  async function handleContactDone(data: ContactData) {
     setContact(data);
     postToParent("skinner:contact_captured", {
       hasEmail: !!data.clientEmail,
       hasPhone: !!data.clientPhone,
       consent: data.consentToContact,
     });
+    // Pre-validate identity limit when the channel has one. Same logic
+    // as the analise page — see there for full rationale.
+    const channelLimit =
+      ((tenant.data as { channelIdentityLimit?: number | null })
+        ?.channelIdentityLimit ?? 0);
+    if (channelLimit > 0) {
+      try {
+        const check = await utils.analysis.checkIdentityLimit.fetch({
+          slug: params.slug,
+          email: data.clientEmail || undefined,
+          phone: data.clientPhone || undefined,
+        });
+        if (!check.allowed) {
+          setErrorMsg(check.message ?? "Limite atingido para este canal.");
+          setStep("error");
+          return;
+        }
+      } catch (err) {
+        console.error("[identity-limit precheck] failed:", err);
+      }
+    }
     if (cfg?.photoOnlyMode) {
       setStep("photo");
     } else {

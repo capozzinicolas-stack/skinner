@@ -601,6 +601,29 @@ Anti-abuse + fairness control: a tenant can configure per-channel limits on how 
 
 **Plan defaults migration (May-2026)**: `growth.allowIdentityLimit = false`, `pro.allowIdentityLimit = true`, `enterprise.allowIdentityLimit = true`.
 
+**UX improvement (2026-05-06): pre-check identity limit before questionnaire.**
+Without this, a patient over the limit completes the entire flow (welcome →
+consent → contact → questionnaire → photo → loading) before seeing the
+rejection at `analysis.run` — wasting 2-3 minutes and burning a Claude
+API call we'd need to cancel.
+
+New endpoint `analysis.checkIdentityLimit({ slug, email, phone })`
+(publicProcedure, query) replicates the count logic but doesn't create
+anything. Returns `{ allowed, message?, blockedUntil? }`. Patient page
+(both `/analise/[slug]` and `/embed/[slug]`) calls it from
+`handleContactDone` right after the contact-capture step. If
+`!allowed`, the page transitions to the existing error step with the
+limit message.
+
+The pre-check ONLY fires when `channelIdentityLimit > 0` (saves a
+round-trip on every other patient flow). Network failures fail open —
+the backend `analysis.run` still hard-enforces the cap, so we don't
+lose protection. Both code paths share `buildIdentityKey()` so the
+key construction stays consistent.
+
+Added `/api/trpc/analysis.checkIdentityLimit` to middleware
+PUBLIC_PATHS so anonymous patient calls go through.
+
 **Bug fix (2026-05-06): contact capture wasn't actually required when channel
 identityLimit was on.** Three issues compounded:
 - `tenant.getBySlug` didn't return `identityLimit` / `identityWindowDays`,

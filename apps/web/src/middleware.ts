@@ -28,6 +28,7 @@ const PUBLIC_PATHS = [
   "/api/trpc/tenant.getAnalysisConfig",
   "/api/trpc/tenant.getStorefrontConfig",
   "/api/trpc/analysis.run",
+  "/api/trpc/analysis.checkIdentityLimit",
   "/api/trpc/dermatology.listConditions",
   "/api/trpc/dermatology.listIngredients",
   "/api/trpc/billing.publicPlans",

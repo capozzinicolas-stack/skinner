@@ -12,7 +12,127 @@ import {
   buildNewLeadNotificationEmail,
 } from "@/lib/email";
 
+/**
+ * Build an identityKey from contact fields the same way analysis.run does.
+ * Returns null when neither contact is valid — caller decides whether that's
+ * an error (run rejects) or just "no key to check" (pre-check returns allowed).
+ *
+ * Email beats phone for stability across devices. Mirror the validation in
+ * the patient flow's contact-capture component (>=8 digits for phone,
+ * "@" for email) so a borderline value rejected client-side is also
+ * rejected here.
+ */
+function buildIdentityKey(
+  email: string | undefined,
+  phone: string | undefined
+): { key: string | null; hasValidEmail: boolean; hasValidPhone: boolean } {
+  const e = email?.trim().toLowerCase();
+  const p = phone?.replace(/\D/g, "");
+  const hasValidEmail = !!e && e.includes("@");
+  const hasValidPhone = !!p && p.length >= 8;
+  if (hasValidEmail) return { key: `email:${e}`, hasValidEmail, hasValidPhone };
+  if (hasValidPhone) return { key: `phone:${p}`, hasValidEmail, hasValidPhone };
+  return { key: null, hasValidEmail, hasValidPhone };
+}
+
 export const analysisRouter = router({
+  /**
+   * Pre-validate the identity limit BEFORE the patient completes the
+   * questionnaire / photo / Claude run. Without this pre-check, a patient
+   * over the limit does the entire flow and only sees the rejection at
+   * the loading step — wasting 2-3 minutes of their time and burning a
+   * Claude API call we'll need to cancel.
+   *
+   * Called by the patient page right after the contact-capture step.
+   * Returns:
+   *   - { allowed: true } when no limit configured OR within quota
+   *   - { allowed: false, message, blockedUntil } when over the cap
+   *
+   * Public procedure (patient is anonymous). Path added to middleware
+   * PUBLIC_PATHS so unauthenticated calls go through.
+   */
+  checkIdentityLimit: publicProcedure
+    .input(
+      z.object({
+        slug: z.string().min(1),
+        email: z.string().optional(),
+        phone: z.string().optional(),
+      })
+    )
+    .query(async ({ ctx, input }): Promise<{
+      allowed: boolean;
+      message?: string;
+      blockedUntil?: string | null;
+    }> => {
+      const channel = await ctx.db.analysisChannel.findUnique({
+        where: { slug: input.slug },
+        select: {
+          id: true,
+          identityLimit: true,
+          identityWindowDays: true,
+        },
+      });
+      // No channel or no limit → patient can continue. The patient slug
+      // might be a tenant.slug (legacy), in which case there's no channel
+      // row to enforce against; the run mutation handles that case too.
+      if (!channel || !channel.identityLimit || channel.identityLimit <= 0) {
+        return { allowed: true };
+      }
+      const { key } = buildIdentityKey(input.email, input.phone);
+      if (!key) {
+        // Frontend should have already required both fields. Defensive: if
+        // somehow we get here without a contact, fail closed so the user
+        // gets the right error before wasting the questionnaire.
+        return {
+          allowed: false,
+          message:
+            "Esta clinica exige seu e-mail E seu WhatsApp para realizar a analise. Volte ao passo anterior e preencha os dois.",
+          blockedUntil: null,
+        };
+      }
+      const windowDays = channel.identityWindowDays ?? 0;
+      const since =
+        windowDays > 0 ? new Date(Date.now() - windowDays * 86_400_000) : new Date(0);
+      const used = await ctx.db.analysis.count({
+        where: {
+          channelId: channel.id,
+          identityKey: key,
+          createdAt: { gte: since },
+        },
+      });
+      if (used < channel.identityLimit) {
+        return { allowed: true };
+      }
+      // Over the cap. Compute the unblock date from the oldest analysis in
+      // the window, same as run() does — this stays consistent across both
+      // code paths.
+      const oldest =
+        windowDays > 0
+          ? await ctx.db.analysis.findFirst({
+              where: {
+                channelId: channel.id,
+                identityKey: key,
+                createdAt: { gte: since },
+              },
+              orderBy: { createdAt: "asc" },
+              select: { createdAt: true },
+            })
+          : null;
+      const nextAt =
+        oldest && windowDays > 0
+          ? new Date(oldest.createdAt.getTime() + windowDays * 86_400_000)
+          : null;
+      const dateStr = nextAt ? nextAt.toLocaleDateString("pt-BR") : null;
+      return {
+        allowed: false,
+        message:
+          dateStr && windowDays > 0
+            ? `Voce ja realizou ${used} analise(s) neste canal nos ultimos ${windowDays} dias. Tente novamente apos ${dateStr}.`
+            : `Voce ja realizou ${used} analise(s) neste canal. Limite atingido.`,
+        blockedUntil: nextAt?.toISOString() ?? null,
+      };
+    }),
+
   run: publicProcedure
     .input(
       z.object({

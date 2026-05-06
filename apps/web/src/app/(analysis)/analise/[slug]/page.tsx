@@ -149,8 +149,41 @@ export default function AnalysisPage({
     });
   }
 
-  function handleContactDone(data: ContactData) {
+  // Manual lazy fetch for the identity-limit pre-check. We can't use the
+  // hook form because we want to trigger ONLY when the patient clicks
+  // Continuar in contact-capture (not on every render), and we want to
+  // await the result before changing step.
+  const utils = trpc.useUtils();
+
+  async function handleContactDone(data: ContactData) {
     setContact(data);
+    // Pre-validate the identity limit BEFORE letting the patient burn
+    // 2-3 minutes on the questionnaire + photo + Claude call. The endpoint
+    // returns { allowed: true } when no limit configured OR within quota.
+    // Skip when the channel doesn't have a limit (channelIdentityLimit
+    // missing or zero) — saves a round-trip on every patient flow.
+    const channelLimit =
+      ((tenant.data as { channelIdentityLimit?: number | null })
+        ?.channelIdentityLimit ?? 0);
+    if (channelLimit > 0) {
+      try {
+        const check = await utils.analysis.checkIdentityLimit.fetch({
+          slug: params.slug,
+          email: data.clientEmail || undefined,
+          phone: data.clientPhone || undefined,
+        });
+        if (!check.allowed) {
+          setErrorMsg(check.message ?? "Limite atingido para este canal.");
+          setStep("error");
+          return;
+        }
+      } catch (err) {
+        // Network / 5xx → fail open. Backend run() still enforces the
+        // hard cap on the actual analysis creation, so we don't lose
+        // protection. Logged for ops visibility.
+        console.error("[identity-limit precheck] failed:", err);
+      }
+    }
     if (cfg?.photoOnlyMode) {
       setStep("photo");
     } else {
