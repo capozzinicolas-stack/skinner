@@ -202,7 +202,11 @@ export default function TenantsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <span className="text-[10px] uppercase tracking-wider font-light text-pierre">
-                        {planLabels[tenant.plan] ?? tenant.plan}
+                        {/* Custom plans (signed up via /admin/tenants/novo-custom)
+                            carry their own planLabel — show that instead of the
+                            generic tier name (Enterprise) so the listing matches
+                            the contract. */}
+                        {tenant.planLabel ?? planLabels[tenant.plan] ?? tenant.plan}
                       </span>
                     </td>
                     <td className="px-6 py-4">

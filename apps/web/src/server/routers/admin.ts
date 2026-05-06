@@ -174,7 +174,23 @@ export const adminRouter = router({
 
       const salesTotal = conversions._sum.saleValue ?? 0;
       const planForBill = await getPlan(tenant.plan);
-      const bill = calculateMonthlyBill(planForBill, tenant.analysisUsed, salesTotal);
+      // Custom-plan override: same posture as billing.ts (B2B side). When the
+      // tenant signed up via /admin/tenants/novo-custom the webhook persisted
+      // Tenant.customMonthlyPriceBRL — without this override admin would show
+      // the generic enterprise tier price (R$ 3.299) instead of the negotiated
+      // price the customer is actually paying at Stripe (e.g. R$ 445).
+      const effectivePlanForBill = planForBill
+        ? {
+            ...planForBill,
+            monthlyPriceBRL:
+              tenant.customMonthlyPriceBRL ?? planForBill.monthlyPriceBRL,
+          }
+        : null;
+      const bill = calculateMonthlyBill(
+        effectivePlanForBill,
+        tenant.analysisUsed,
+        salesTotal
+      );
 
       return {
         tenant,

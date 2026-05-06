@@ -236,7 +236,11 @@ export default function TenantDetailPage() {
                     Plano
                   </p>
                   <p className="text-sm text-carbone font-light mt-1">
-                    {planLabels[d.tenant.plan] ?? d.tenant.plan}
+                    {/* Custom plans persist a tenant-specific label (e.g.
+                        "Plano Custom Beta") that overrides the generic
+                        Enterprise tier name. Standard signups have planLabel
+                        null → fall through to the dict + raw value. */}
+                    {d.tenant.planLabel ?? planLabels[d.tenant.plan] ?? d.tenant.plan}
                   </p>
                 </div>
                 <div>
