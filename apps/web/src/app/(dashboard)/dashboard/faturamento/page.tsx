@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { trpc } from "@/lib/trpc/client";
+import { OrganizationTabs } from "@/components/shared/organization-tabs";
 
 export default function BillingPage() {
   const utils = trpc.useUtils();
@@ -43,6 +44,8 @@ export default function BillingPage() {
   const b = billing.data;
 
   return (
+    <>
+      <OrganizationTabs />
     <div className="p-8 max-w-4xl">
       <h1 className="font-serif text-2xl text-carbone">Faturamento</h1>
       <p className="text-pierre text-sm font-light mt-1">
@@ -189,5 +192,6 @@ export default function BillingPage() {
         </div>
       )}
     </div>
+    </>
   );
 }

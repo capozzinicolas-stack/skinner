@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { trpc } from "@/lib/trpc/client";
+import { OrganizationTabs } from "@/components/shared/organization-tabs";
 
 // Static lists kept inline so we don't fetch them on every page hit.
 // Country list focused on LATAM + key Skinner-targeted markets.
@@ -90,7 +91,9 @@ export default function MinhaOrganizacaoPage() {
   }
 
   return (
-    <div className="p-8 max-w-3xl">
+    <div>
+      <OrganizationTabs />
+      <div className="p-8 max-w-3xl">
       <div className="border-b border-sable/20 pb-6 mb-8">
         <h1 className="font-serif text-2xl text-carbone">Minha Organizacao</h1>
         <p className="text-sm text-pierre font-light mt-1">
@@ -253,6 +256,7 @@ export default function MinhaOrganizacaoPage() {
           )}
         </form>
       </section>
+      </div>
     </div>
   );
 }

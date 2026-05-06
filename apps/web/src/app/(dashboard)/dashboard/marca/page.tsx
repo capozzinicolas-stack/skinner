@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { trpc } from "@/lib/trpc/client";
+import { OrganizationTabs } from "@/components/shared/organization-tabs";
 
 export default function BrandConfigPage() {
   const utils = trpc.useUtils();
@@ -79,10 +80,15 @@ export default function BrandConfigPage() {
 
   if (tenant.isLoading)
     return (
-      <div className="p-8 text-pierre font-light text-sm">Carregando...</div>
+      <>
+        <OrganizationTabs />
+        <div className="p-8 text-pierre font-light text-sm">Carregando...</div>
+      </>
     );
 
   return (
+    <>
+      <OrganizationTabs />
     <div className="p-8 max-w-2xl">
       <h1 className="font-serif text-2xl text-carbone">Configuracao de Marca</h1>
       <p className="text-pierre text-sm font-light mt-1">
@@ -327,5 +333,6 @@ export default function BrandConfigPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

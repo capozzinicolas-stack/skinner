@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { trpc } from "@/lib/trpc/client";
+import { OrganizationTabs } from "@/components/shared/organization-tabs";
 
 const PUBLIC_ORIGIN =
   typeof window !== "undefined" && window.location.hostname === "localhost"
@@ -97,10 +98,17 @@ export default function ChannelsPage() {
     null;
 
   if (tenant.isLoading || channelsQuery.isLoading) {
-    return <div className="p-8 text-pierre font-light text-sm">Carregando...</div>;
+    return (
+      <>
+        <OrganizationTabs />
+        <div className="p-8 text-pierre font-light text-sm">Carregando...</div>
+      </>
+    );
   }
 
   return (
+    <>
+      <OrganizationTabs />
     <div className="p-8 max-w-4xl">
       <div className="border-b border-sable/20 pb-6 mb-8 flex items-end justify-between">
         <div>
@@ -199,6 +207,7 @@ export default function ChannelsPage() {
       {/* Channel detail (link / qr / embed) */}
       {activeChannel && <ChannelDetail channel={activeChannel} />}
     </div>
+    </>
   );
 }
 

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { trpc } from "@/lib/trpc/client";
+import { OrganizationTabs } from "@/components/shared/organization-tabs";
 
 const roleLabels: Record<string, string> = {
   b2b_admin: "Admin",
@@ -32,6 +33,8 @@ export default function UsersPage() {
   });
 
   return (
+    <>
+      <OrganizationTabs />
     <div className="p-8">
       <div className="flex items-center justify-between">
         <div>
@@ -173,5 +176,6 @@ export default function UsersPage() {
         )}
       </div>
     </div>
+    </>
   );
 }

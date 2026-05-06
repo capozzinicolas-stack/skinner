@@ -681,6 +681,29 @@ react-pdf uses `Image src={url}` which fetches the asset at render time. An inva
 - Anything that lives in `(marketing)` route group is still subject to the middleware — the route group is purely a Next.js folder convention and does not bypass middleware.
 - The matcher at the bottom of `middleware.ts` excludes static assets (`_next/static`, `_next/image`, `favicon.ico`, `brand/`, `uploads/`) but everything else passes through.
 
+## Dashboard sidebar IA (May-2026)
+
+The dashboard sidebar groups org-level pages under a single "Organização"
+entry. The URL of each page is unchanged — `/dashboard/marca`,
+`/dashboard/canais`, `/dashboard/integracao`, `/dashboard/usuarios`,
+`/dashboard/faturamento`, `/dashboard/organizacao` all stay at their
+original paths so external integrations keep working:
+
+- Stripe `success_url` / `cancel_url` / `return_url` → `/dashboard/faturamento`
+- Nuvemshop / Shopify OAuth callback redirects → `/dashboard/integracao?...`
+- Usage-alerts cron email upgradeUrl → `/dashboard/faturamento`
+
+Internal navigation between these 6 pages happens via a shared tab bar
+(`components/shared/organization-tabs.tsx`) that each page renders at
+the top of its JSX. Adding a new org-level page: drop a new entry in
+the TABS array AND import `<OrganizationTabs />` at the top of the new
+page.
+
+`Minha Conta` (`/dashboard/conta`) stays SEPARATE from Organização
+because it's personal (user.email, user.password, user.locale, account
+deletion request) — not org-level. Standard SaaS pattern (Stripe,
+Linear, Notion all decouple personal account from workspace settings).
+
 ## Internationalization (i18n)
 
 Multi-locale rolled out in May-2026 across 5 phased commits. Architecture

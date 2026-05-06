@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { trpc } from "@/lib/trpc/client";
+import { OrganizationTabs } from "@/components/shared/organization-tabs";
 
 const DEFAULT_WHATSAPP_MESSAGE =
   "Ola, gostaria de adquirir o produto {produto} (R$ {preco}) recomendado pela analise Skinner.";
@@ -501,6 +502,8 @@ export default function IntegracaoPage() {
   }
 
   return (
+    <>
+      <OrganizationTabs />
     <div className="p-8 max-w-2xl">
       <h1 className="font-serif text-2xl text-carbone">Integracoes e Vendas</h1>
       <p className="text-pierre text-sm font-light mt-1">
@@ -764,5 +767,6 @@ export default function IntegracaoPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }
