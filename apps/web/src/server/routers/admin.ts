@@ -49,6 +49,12 @@ export const adminRouter = router({
           plan: true,
           analysisUsed: true,
           analysisLimit: true,
+          // Custom-plan price override. Tenants who came in via
+          // /admin/tenants/novo-custom carry the negotiated monthly here;
+          // without including it the MRR sum used the generic plan tier
+          // price (e.g. R$ 3.299 for "enterprise") instead of the actual
+          // R$ 445 the customer pays at Stripe — overstating MRR.
+          customMonthlyPriceBRL: true,
         },
       }),
     ]);
@@ -57,7 +63,8 @@ export const adminRouter = router({
     const planMap = new Map(allPlans.map((p) => [p.id, p]));
     const totalMRR = allActiveTenants.reduce((sum, t) => {
       const plan = planMap.get(t.plan);
-      return sum + (plan?.monthlyPriceBRL ?? 0);
+      // Mirror the override pattern from billing.ts and tenantDetail above.
+      return sum + (t.customMonthlyPriceBRL ?? plan?.monthlyPriceBRL ?? 0);
     }, 0);
 
     const tenantsAtRisk = allActiveTenants.filter(
