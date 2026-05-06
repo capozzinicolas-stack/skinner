@@ -242,6 +242,49 @@ export const tenantRouter = router({
     });
   }),
 
+  // Self-service organization metadata update. Tenant-admin only — analysts
+  // and viewers see the page in read-only mode but can't save. The fields
+  // here are intentionally NOT plan/limit related — those live on /admin only.
+  updateOrganization: tenantProcedure
+    .input(
+      z.object({
+        name: z.string().min(2).max(100).optional(),
+        country: z.string().length(2).nullable().optional(), // ISO-3166 alpha-2
+        timezone: z.string().max(50).nullable().optional(), // IANA tz
+        defaultLocale: z.enum(["pt-BR", "es", "en"]).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Role guard: only b2b_admin can edit org settings.
+      const me = await ctx.db.user.findUniqueOrThrow({
+        where: { id: ctx.userId },
+        select: { role: true },
+      });
+      if (me.role !== "b2b_admin" && me.role !== "skinner_admin") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Apenas administradores podem alterar dados da organizacao.",
+        });
+      }
+      const data: Record<string, unknown> = {};
+      if (input.name !== undefined) data.name = input.name;
+      if (input.country !== undefined) data.country = input.country;
+      if (input.timezone !== undefined) data.timezone = input.timezone;
+      if (input.defaultLocale !== undefined)
+        data.defaultLocale = input.defaultLocale;
+      return ctx.db.tenant.update({
+        where: { id: ctx.tenantId },
+        data,
+        select: {
+          id: true,
+          name: true,
+          country: true,
+          timezone: true,
+          defaultLocale: true,
+        },
+      });
+    }),
+
   create: adminProcedure
     .input(
       z.object({

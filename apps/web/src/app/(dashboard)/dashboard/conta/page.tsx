@@ -14,6 +14,18 @@ export default function MinhaContaPage() {
   const [pwd, setPwd] = useState({ current: "", next: "", confirm: "" });
   const [pwdMsg, setPwdMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
+  const [locale, setLocale] = useState<"pt-BR" | "es" | "en" | "">("");
+  const [localeMsg, setLocaleMsg] = useState<string | null>(null);
+  const updateLocale = trpc.user.updateLocale.useMutation({
+    onSuccess: () => {
+      setLocaleMsg("Preferencia salva. Recarregando...");
+      // Hard reload so server-rendered i18n picks up the new locale on next nav.
+      // Wired in Commit 3 — for now persists the choice but UI stays in pt-BR.
+      setTimeout(() => window.location.reload(), 800);
+    },
+    onError: (err) => setLocaleMsg(err.message),
+  });
+
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deleteMsg, setDeleteMsg] = useState<string | null>(null);
 
@@ -28,6 +40,9 @@ export default function MinhaContaPage() {
   useEffect(() => {
     if (me.data) {
       setProfile({ name: me.data.name, email: me.data.email });
+      const ml = me.data.locale;
+      if (ml === "pt-BR" || ml === "es" || ml === "en") setLocale(ml);
+      else setLocale("");
     }
   }, [me.data]);
 
@@ -128,6 +143,43 @@ export default function MinhaContaPage() {
             )}
           </div>
         </form>
+      </section>
+
+      {/* Idioma da interface */}
+      <section className="mb-12">
+        <h2 className="font-serif text-base text-carbone mb-4">Idioma da interface</h2>
+        <div className="bg-white border border-sable/20 p-6 space-y-4">
+          <p className="text-sm text-pierre font-light">
+            Defina o idioma do seu painel administrativo. Esta preferencia e
+            individual e nao afeta o que seus pacientes veem nas analises.
+          </p>
+          <div>
+            <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
+              Idioma
+            </label>
+            <select
+              value={locale}
+              onChange={(e) => {
+                const v = e.target.value as "pt-BR" | "es" | "en" | "";
+                setLocale(v);
+                setLocaleMsg(null);
+                updateLocale.mutate({ locale: v === "" ? null : v });
+              }}
+              className="w-full max-w-xs px-3 py-2 border border-sable/30 bg-blanc-casse text-sm text-carbone font-light focus:outline-none focus:border-pierre"
+            >
+              <option value="">Padrao da organizacao</option>
+              <option value="pt-BR">Portugues (Brasil)</option>
+              <option value="es">Espanol</option>
+              <option value="en">English</option>
+            </select>
+            <p className="text-[10px] text-pierre/70 font-light mt-2">
+              Em breve. A interface continua em portugues ate ativarmos as traducoes.
+            </p>
+          </div>
+          {localeMsg && (
+            <p className="text-sm text-pierre font-light">{localeMsg}</p>
+          )}
+        </div>
       </section>
 
       {/* Senha */}

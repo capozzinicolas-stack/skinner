@@ -13,6 +13,7 @@ const dashboardNav = [
   { label: "Integracoes", href: "/dashboard/integracao", icon: "◧" },
   { label: "Usuarios", href: "/dashboard/usuarios", icon: "☺" },
   { label: "Faturamento", href: "/dashboard/faturamento", icon: "∴" },
+  { label: "Organizacao", href: "/dashboard/organizacao", icon: "⌬" },
   { label: "Minha Conta", href: "/dashboard/conta", icon: "✦" },
 ];
 

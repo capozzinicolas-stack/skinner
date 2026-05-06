@@ -46,6 +46,19 @@ model Tenant {
   brandVoice    String?
   disclaimer    String?
 
+  // Organization metadata. Populated via /dashboard/organizacao. All optional
+  // for backwards compat — existing tenants stay null until they edit.
+  // - country: ISO-3166 alpha-2 ("BR", "AR", "MX", "US"...). Used for future
+  //   currency/tax decisions and as a hint for defaultLocale on first save.
+  // - timezone: IANA tz string ("America/Sao_Paulo"). Reserved for cron/email
+  //   scheduling — UI only stores it today.
+  // - defaultLocale: tenant-wide fallback for patient flow + AI analysis output
+  //   when AnalysisChannel doesn't override. Phase-0 stored but not yet
+  //   consumed by the analysis pipeline (Commit 4/5 wires it).
+  country         String?
+  timezone        String?
+  defaultLocale   String  @default("pt-BR") // "pt-BR" | "es" | "en"
+
   // Limits
   analysisLimit    Int @default(200)
   analysisUsed     Int @default(0)
@@ -204,6 +217,11 @@ model User {
   // welcome email, or seed). Frontend shows a banner asking them to change it
   // until this is set. Updated by user.changePassword.
   passwordChangedAt DateTime?
+
+  // Per-user dashboard language preference. Null = inherit from
+  // Tenant.defaultLocale. Wired in Commit 3 (dashboard translation). Doesn't
+  // affect patient-facing flow or AI output — those follow channel/tenant.
+  locale   String?
 
   tenantId String?
   tenant   Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)

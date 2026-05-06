@@ -15,12 +15,37 @@ export const userRouter = router({
         role: true,
         tenantId: true,
         passwordChangedAt: true,
+        locale: true,
         tenant: {
-          select: { name: true, slug: true, logoUrl: true, primaryColor: true },
+          select: {
+            name: true,
+            slug: true,
+            logoUrl: true,
+            primaryColor: true,
+            defaultLocale: true,
+          },
         },
       },
     });
   }),
+
+  // Self-service: update own dashboard language preference. Null = inherit
+  // from Tenant.defaultLocale. Persists immediately; the i18n provider re-reads
+  // on next page load (we don't push it through React context to keep MVP
+  // simple — a hard reload after save is acceptable UX for a settings page).
+  updateLocale: protectedProcedure
+    .input(
+      z.object({
+        locale: z.enum(["pt-BR", "es", "en"]).nullable(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db.user.update({
+        where: { id: ctx.userId },
+        data: { locale: input.locale },
+      });
+      return { success: true };
+    }),
 
   // Self-service: update own profile (name + email).
   // Email change does NOT trigger a confirmation flow yet (sprint-2 hardening).
