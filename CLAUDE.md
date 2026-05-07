@@ -746,6 +746,86 @@ because it's personal (user.email, user.password, user.locale, account
 deletion request) — not org-level. Standard SaaS pattern (Stripe,
 Linear, Notion all decouple personal account from workspace settings).
 
+## Admin impersonation (May-2026)
+
+Skinner admins can sign into a tenant's dashboard as a `b2b_admin` user
+without using the tenant's password. For support, configuration help,
+debugging — never for read-only browsing (use the admin tenant detail
+page for that).
+
+### Flow
+1. Admin clicks **"Acessar como admin do tenant"** on `/admin/tenants/[id]`.
+2. Confirms the warning dialog (this gets logged in UsageEvent).
+3. Browser POSTs `/api/admin/impersonate { tenantId }` from `admin.skinner.lat`.
+4. Endpoint validates caller is skinner_admin, picks the tenant's first
+   `b2b_admin` user (oldest by createdAt), generates a 64-char hex token,
+   stores its sha256 hash in `ImpersonationToken` with 30-min expiry.
+5. Returns `{ url: "https://app.skinner.lat/impersonate?token=xxx" }`.
+6. Admin browser opens the URL in a new tab — landing on `app.*` so cookies
+   are scoped to the right subdomain.
+7. The `/impersonate` page calls `signIn("impersonation", { token })`. The
+   impersonation `CredentialsProvider` re-validates EVERY constraint
+   (single-use, expiry, roles, tenant status), marks token used, writes
+   `UsageEvent("impersonation_started")` inside a transaction, returns the
+   target user with `impersonatedBy` markers.
+8. NextAuth issues a session JWT on `app.skinner.lat` with role=b2b_admin
+   plus `impersonatedBy` + `impersonatedByEmail` markers.
+9. Admin lands on `/dashboard` with full b2b_admin privileges. The
+   `<ImpersonationBanner>` (mounted in `(dashboard)/_chrome.tsx`) renders
+   a sticky terre banner: "Você está acessando como X (admin: y@skinner.lat)
+   · Sair da impersonação".
+10. Click **Sair** → `signOut({ callbackUrl: "https://admin.skinner.lat/admin" })`.
+    Cookie cleared on app.*; admin returns to admin.* with their original
+    session intact (different subdomain → different cookie scope).
+
+### Security contract (mirrored at issuance + redemption — defense in depth)
+- Plain token NEVER persisted; only sha256 hash stored.
+- Single use (`usedAt` stamped at redemption).
+- 30-min expiry from creation.
+- Caller must be `skinner_admin` at issuance AND at redemption (re-checked).
+- Target user must be `b2b_admin` (not analyst/viewer/skinner_admin) at
+  redemption — prevents privilege escalation between admins.
+- Tenant must not be `deleted` (LGPD).
+- Audit: `UsageEvent("impersonation_started")` written on each successful
+  redemption with `{ tokenId, skinnerAdminId, skinnerAdminEmail,
+  targetUserId, targetUserEmail }`. Use this for "who accessed my data"
+  LGPD requests.
+
+### Schema
+- `model ImpersonationToken { tokenHash, skinnerAdminId, tenantId,
+  targetUserId, expiresAt, usedAt }` — see schema.prisma docstring for
+  full contract.
+- Cascade deletes on User and Tenant — cleaning up either invalidates
+  pending tokens.
+
+### NextAuth integration
+- `lib/auth.ts` has TWO providers: regular credentials (id="credentials",
+  name="credentials", standard email+password) AND impersonation
+  (id="impersonation", takes only `token`). The impersonation provider
+  NEVER accepts a password — only redeems tokens from the DB.
+- JWT/session callbacks preserve `impersonatedBy` and `impersonatedByEmail`
+  so the banner + any future audit hook can read them.
+
+### Middleware
+- `/impersonate` added to PUBLIC_PATHS (the token IS the security gate;
+  the page itself doesn't need an auth cookie since it's the cookie-issuing
+  step).
+- `/api/admin/impersonate` is NOT public — relies on the standard JWT
+  middleware check + the route handler's own role gate (`jwt.role !==
+  "skinner_admin"` returns 401).
+
+### Known gaps (intentional)
+- We always impersonate the FIRST b2b_admin (oldest createdAt). Tenants
+  with multiple admins → pick is deterministic but you can't choose.
+  Add a picker UI on `/admin/tenants/[id]` later if multi-admin tenants
+  become common.
+- No automatic logout after N hours of impersonation — the JWT lasts as
+  long as a normal session (NextAuth default 30 days). If you want
+  enforced 4h sessions for impersonation specifically, add a check in
+  the JWT callback comparing `iat` vs now when `impersonatedBy` is set.
+- Tenants with NO b2b_admin users can't be impersonated. Endpoint returns
+  422 with a clear message.
+
 ## Internationalization (i18n)
 
 Multi-locale rolled out in May-2026 across 5 phased commits. Architecture

@@ -2,6 +2,7 @@
 
 import { Sidebar } from "@/components/shared/sidebar";
 import { useI18n } from "@/lib/i18n/client";
+import { ImpersonationBanner } from "@/components/shared/impersonation-banner";
 
 export function DashboardChrome({ children }: { children: React.ReactNode }) {
   const { t } = useI18n();
@@ -33,7 +34,13 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
         subtitle={t.dashboard.portal_subtitle}
         logoutLabel={t.dashboard.nav_logout}
       />
-      <main className="flex-1 overflow-auto">{children}</main>
+      <main className="flex-1 overflow-auto">
+        {/* Banner renders nothing for normal sessions; only fires when the
+            JWT carries impersonatedBy (set by the impersonation provider in
+            lib/auth.ts). */}
+        <ImpersonationBanner />
+        {children}
+      </main>
     </div>
   );
 }

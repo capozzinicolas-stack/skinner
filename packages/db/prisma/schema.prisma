@@ -83,6 +83,7 @@ model Tenant {
   kits           Kit[]
   integrations   Integration[]
   channels       AnalysisChannel[]
+  impersonationTokens ImpersonationToken[]
 
   @@map("tenants")
 }
@@ -228,10 +229,59 @@ model User {
 
   resetTokens PasswordResetToken[]
 
+  // Tokens this user (skinner_admin) has issued to impersonate tenants.
+  // Cascade so cleaning up an admin removes their pending tokens.
+  impersonationTokensIssued ImpersonationToken[] @relation("issuedBy")
+
+  // Tokens issued AGAINST this user (target). Cascade so deleting a tenant
+  // user invalidates any pending impersonation pointing to them.
+  impersonationTokensTarget ImpersonationToken[] @relation("targetUser")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("users")
+}
+
+// One-time tokens that let a skinner_admin sign into a tenant's dashboard
+// as a specific b2b_admin user, without using the tenant's password.
+// Read carefully before editing — this bypasses the normal credentials flow,
+// so the safety constraints below are non-negotiable:
+//
+//   - Plain token NEVER stored — only sha256 hash. A DB leak does not yield
+//     usable tokens (same posture as PasswordResetToken).
+//   - 30-minute expiry from creation. Single use (usedAt is stamped on
+//     redemption, second redemption rejected).
+//   - Issued only by skinner_admin. Validated again at redemption — a
+//     demoted admin's pending tokens stop working immediately.
+//   - Target user must be b2b_admin (not analyst/viewer/skinner_admin) at
+//     redemption time. Prevents privilege escalation between admins.
+//   - Tenant must not be deleted. Validated at redemption.
+//   - Audit trail: a UsageEvent("impersonation_started") is written on
+//     each successful redemption with the metadata needed for LGPD
+//     "who accessed my data" requests.
+model ImpersonationToken {
+  id              String    @id @default(cuid())
+  // sha256 hex of the plain token. Plain token only ever lives in the URL
+  // returned by /api/admin/impersonate and the browser request that
+  // redeems it; never persisted.
+  tokenHash       String    @unique
+  skinnerAdminId  String
+  skinnerAdmin    User      @relation("issuedBy", fields: [skinnerAdminId], references: [id], onDelete: Cascade)
+  tenantId        String
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  // The tenant b2b_admin user the impersonator will be signed in as.
+  // Resolved at token-creation time (we pick the tenant's first b2b_admin)
+  // and re-validated at redemption (in case role changed in the meantime).
+  targetUserId    String
+  targetUser      User      @relation("targetUser", fields: [targetUserId], references: [id], onDelete: Cascade)
+  expiresAt       DateTime
+  usedAt          DateTime?
+  createdAt       DateTime  @default(now())
+
+  @@index([tenantId])
+  @@index([skinnerAdminId])
+  @@map("impersonation_tokens")
 }
 
 // ============================================

@@ -337,6 +337,39 @@ export default function TenantDetailPage() {
                 </p>
 
                 <button
+                  onClick={async () => {
+                    if (
+                      !confirm(
+                        `Acessar o painel de "${d.tenant.name}" como admin do tenant?\n\nVoce sera registrado em UsageEvent e podera fazer mudancas em nome do cliente. Use somente para suporte.`
+                      )
+                    ) {
+                      return;
+                    }
+                    try {
+                      const res = await fetch("/api/admin/impersonate", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ tenantId: id }),
+                      });
+                      const data = await res.json();
+                      if (!res.ok) {
+                        alert(`Erro: ${data.error ?? "falha desconhecida"}`);
+                        return;
+                      }
+                      // Open in a new tab so the admin keeps their admin
+                      // panel session intact in the original window.
+                      // Cookie scoping is per-subdomain so this is safe.
+                      window.open(data.url, "_blank");
+                    } catch (err) {
+                      alert(`Erro ao gerar link: ${err instanceof Error ? err.message : err}`);
+                    }
+                  }}
+                  className="w-full px-4 py-2 bg-carbone text-blanc-casse text-sm font-light tracking-wide hover:bg-terre transition-colors text-left"
+                >
+                  Acessar como admin do tenant
+                </button>
+
+                <button
                   onClick={() => {
                     setNewPlan(d.tenant.plan as "growth" | "pro" | "enterprise");
                     setShowPlanModal(true);

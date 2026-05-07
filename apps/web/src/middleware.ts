@@ -22,6 +22,11 @@ const PUBLIC_PATHS = [
   "/integracoes",
   "/embed",
   "/embed-helper.js",
+  // Impersonation token redemption page lives on the app.* subdomain. Has
+  // to be reachable without auth so the signIn() call inside it can run —
+  // the token itself is the security boundary (validated server-side by
+  // the CredentialsProvider with id="impersonation" in lib/auth.ts).
+  "/impersonate",
   "/api/auth",
   "/api/trpc/health",
   "/api/trpc/tenant.getBySlug",
