@@ -16,7 +16,8 @@ export const es: Dictionary = {
   footer: {
     tagline_line1: "La piel son datos.",
     tagline_line2: "Nosotros los leemos.",
-    location: "São Paulo, Brasil · CDMX, México",
+    location_line1: "São Paulo, Brasil",
+    location_line2: "CDMX, México",
     section_product: "Producto",
     section_segments: "Segmentos",
     section_company: "Empresa",

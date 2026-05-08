@@ -55,12 +55,16 @@ export function MarketingChrome({ children }: { children: React.ReactNode }) {
       <footer className="bg-carbone text-blanc-casse pt-20 pb-6">
         <div className="max-w-[1200px] mx-auto px-8 grid grid-cols-1 md:grid-cols-5 gap-12">
           <div className="md:col-span-1">
-            <img src="/brand/logo-primary.png" alt="Skinner" className="h-16 object-contain brightness-0 invert" />
+            <img src="/brand/logo-primary.png" alt="Skinner" className="h-24 object-contain brightness-0 invert" />
             <p className="font-serif italic text-lg text-blanc-casse mt-4 mb-1">
               {t.footer.tagline_line1}<br />{t.footer.tagline_line2}
             </p>
-            <p className="font-mono text-[10px] tracking-[0.12em] uppercase text-sable mt-2">
-              {t.footer.location}
+            {/* Two-line location: São Paulo above, CDMX below. Stored as
+                separate keys in the dictionary so translators can decide
+                whether to keep both cities (e.g. omit one for an EN-only
+                rollout) or change the order. */}
+            <p className="font-mono text-[10px] tracking-[0.12em] uppercase text-sable mt-2 leading-relaxed">
+              {t.footer.location_line1}<br />{t.footer.location_line2}
             </p>
           </div>
           <div className="flex flex-col gap-2">
