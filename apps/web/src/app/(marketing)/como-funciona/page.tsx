@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 // Stack section — May-2026 redesign denationalized the cards to support
@@ -116,15 +117,17 @@ export default function ComoFuncionaPage() {
 
       {/* 03 — Recomendacao */}
       <section className="py-24 px-8">
-        <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-[1fr_1.1fr] gap-20 items-center">
+        <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+          {/* On mobile the text comes first (default flow); on desktop the
+              image sits to the right with order untouched. */}
           <div>
             <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-pierre mb-4">03 — Recomendação</p>
             <h2 className="font-serif text-[clamp(32px,4.2vw,52px)] leading-[1.08] text-carbone mb-6">
               Seu catálogo, <i className="text-terre">inteligente</i>.
             </h2>
             <p className="text-base font-light text-pierre leading-relaxed mb-6">
-              Faz upload do catálogo (CSV, integração com ERP ou marketplace). O motor cruza
-              ingredientes, indicações e contraindicações com cada análise.
+              Importa o catálogo via CSV ou conexão direta com a loja. Cada SKU é cruzado
+              com ingredientes, indicações e contraindicações antes de chegar à recomendação.
             </p>
             <ul className="flex flex-col gap-3">
               {[
@@ -139,6 +142,20 @@ export default function ComoFuncionaPage() {
                 </li>
               ))}
             </ul>
+          </div>
+          {/* Real screenshot of /dashboard/catalogo. JPEG (sips no escribe
+              webp en macOS); Next.js Image optimization sirve webp/avif al
+              browser cuando soportado. Editorial shadow via CSS, sin marco
+              de browser por estética Skinner. */}
+          <div className="relative w-full aspect-[1663/914] shadow-[0_30px_60px_-20px_rgba(28,25,23,0.18)]">
+            <Image
+              src="/marketing/screenshots/catalog-admin.jpg"
+              alt="Painel de gestão do catálogo Skinner com produtos, ingredientes e match score"
+              fill
+              sizes="(max-width: 1024px) 100vw, 50vw"
+              loading="lazy"
+              className="object-cover object-top border border-pierre/20"
+            />
           </div>
         </div>
       </section>
