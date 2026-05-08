@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 const steps = [
@@ -337,14 +338,46 @@ export default function HomePage() {
               É o gatilho de compra mais forte que existe: ver o resultado antes.
             </p>
           </div>
+          {/* AI-generated images, 796x1067 (~3:4), JPEG quality 70 to keep
+              total under target. Same fictitious face across the 3 to show
+              progression. Badges -52% / -81% stay as HTML overlay (NOT in
+              the image) so they can be localized + tweaked without
+              regenerating assets. LGPD: no real patient photo — IA elimina
+              o risco e padroniza o ativo. */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
-              { when: "Hoje · semana 0", title: "Estado atual", pct: null, grad: "from-ivoire to-[#d6cabb]" },
-              { when: "Projeção · 8 semanas", title: "Melhora moderada", pct: "-52%", grad: "from-ivoire to-[#d2c8b9]" },
-              { when: "Projeção · 12 semanas", title: "Aderência alta", pct: "-81%", grad: "from-ivoire to-[#ccc4b3]" },
+              {
+                when: "Hoje · semana 0",
+                title: "Estado atual",
+                pct: null,
+                src: "/marketing/projection/state-current.jpg",
+                alt: "Estado atual da pele com manchas e acne ativa",
+              },
+              {
+                when: "Projeção · 8 semanas",
+                title: "Melhora moderada",
+                pct: "-52%",
+                src: "/marketing/projection/state-week-8.jpg",
+                alt: "Projeção de melhora em 8 semanas",
+              },
+              {
+                when: "Projeção · 12 semanas",
+                title: "Aderência alta",
+                pct: "-81%",
+                src: "/marketing/projection/state-week-12.jpg",
+                alt: "Projeção de melhora em 12 semanas",
+              },
             ].map((p, i) => (
               <div key={i} className="bg-white border border-pierre/20">
-                <div className={`aspect-[4/5] bg-gradient-to-br ${p.grad} border-b border-pierre/15 relative`}>
+                <div className="relative aspect-[3/4] border-b border-pierre/15 bg-ivoire">
+                  <Image
+                    src={p.src}
+                    alt={p.alt}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 33vw"
+                    loading="lazy"
+                    className="object-cover"
+                  />
                   {p.pct && (
                     <span className="absolute top-3 right-3 font-mono text-[9px] tracking-[0.12em] text-carbone bg-white/90 px-2 py-1 border border-pierre/20">
                       {p.pct}
@@ -358,6 +391,11 @@ export default function HomePage() {
               </div>
             ))}
           </div>
+          {/* Disclaimer required by LGPD + good ad practice — make it
+              explicit that the visual is AI-generated and outcomes vary. */}
+          <p className="font-mono text-[10px] tracking-[0.12em] uppercase text-pierre/70 font-light text-center mt-8 max-w-[760px] mx-auto leading-relaxed">
+            Imagens ilustrativas geradas por IA. Resultados reais variam conforme aderência ao protocolo, biotipo e condições individuais.
+          </p>
         </div>
       </section>
 
