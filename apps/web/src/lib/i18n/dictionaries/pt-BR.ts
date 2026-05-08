@@ -31,7 +31,7 @@ export const ptBR: DictShape = {
   footer: {
     tagline_line1: "A pele e dados.",
     tagline_line2: "Nos lemos.",
-    location: "Sao Paulo, Brasil",
+    location: "São Paulo, Brasil · CDMX, México",
     section_product: "Produto",
     section_segments: "Segmentos",
     section_company: "Empresa",

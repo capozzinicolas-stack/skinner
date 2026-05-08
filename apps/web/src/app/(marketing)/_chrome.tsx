@@ -5,7 +5,7 @@ import { useI18n } from "@/lib/i18n/client";
 import { LanguageSwitcher } from "@/components/shared/language-switcher";
 
 export function MarketingChrome({ children }: { children: React.ReactNode }) {
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const navLinks = [
     { label: t.nav.product, href: "/como-funciona" },
     { label: t.nav.segments, href: "/segmentos" },
@@ -93,7 +93,7 @@ export function MarketingChrome({ children }: { children: React.ReactNode }) {
             {t.footer.copyright}
           </span>
           <span className="font-mono text-[10px] tracking-[0.1em] uppercase text-sable">
-            v 1.0 · {locale}
+            v 1.0 · Skin Tech
           </span>
         </div>
       </footer>

@@ -1,24 +1,40 @@
 "use client";
 
 import { useI18n } from "@/lib/i18n/client";
-import { LOCALES, LOCALE_LABELS } from "@/lib/i18n/types";
+import { LOCALES, LOCALE_FLAGS, LOCALE_LABELS } from "@/lib/i18n/types";
 
-// Compact dropdown switcher. Used in the marketing header. On change writes
-// the cookie and hard-reloads so server components re-render.
+/**
+ * Inline flag-buttons switcher used in the marketing header. Three flag
+ * buttons — Brazil, Mexico, USA — directly clickable. The active locale is
+ * outlined; the others are subtle. On click, writes the cookie and reloads
+ * so server components re-render with the new dictionary.
+ *
+ * Replaces the prior <select> dropdown per the May-2026 marketing redesign:
+ * flags are more recognizable in a glance and the switcher takes less
+ * visual weight in the header.
+ */
 export function LanguageSwitcher() {
   const { locale, setLocale } = useI18n();
   return (
-    <select
-      aria-label="Idioma / Language"
-      value={locale}
-      onChange={(e) => setLocale(e.target.value as typeof LOCALES[number])}
-      className="text-[12px] text-terre bg-transparent border border-sable/40 px-2 py-1 hover:border-carbone focus:outline-none focus:border-carbone cursor-pointer"
-    >
-      {LOCALES.map((l) => (
-        <option key={l} value={l}>
-          {LOCALE_LABELS[l]}
-        </option>
-      ))}
-    </select>
+    <div className="flex items-center gap-1" role="group" aria-label="Idioma">
+      {LOCALES.map((l) => {
+        const isActive = locale === l;
+        return (
+          <button
+            key={l}
+            type="button"
+            onClick={() => setLocale(l)}
+            aria-label={LOCALE_LABELS[l]}
+            aria-pressed={isActive}
+            title={LOCALE_LABELS[l]}
+            className={`text-[18px] leading-none px-1.5 py-1 transition-opacity ${
+              isActive ? "opacity-100" : "opacity-40 hover:opacity-80"
+            }`}
+          >
+            {LOCALE_FLAGS[l]}
+          </button>
+        );
+      })}
+    </div>
   );
 }

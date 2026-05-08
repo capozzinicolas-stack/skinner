@@ -9,9 +9,19 @@ export type Locale = (typeof LOCALES)[number];
 export const DEFAULT_LOCALE: Locale = "pt-BR";
 
 export const LOCALE_LABELS: Record<Locale, string> = {
-  "pt-BR": "Portugues",
-  es: "Espanol",
+  "pt-BR": "Português",
+  es: "Español",
   en: "English",
+};
+
+// Country flag emojis used by the marketing header switcher. Brazil for
+// pt-BR (the source-of-truth Portuguese variant), Mexico for es (largest
+// Spanish-speaking LATAM market we target), USA for en. Mapped explicitly
+// so the UI doesn't have to guess from the locale code.
+export const LOCALE_FLAGS: Record<Locale, string> = {
+  "pt-BR": "🇧🇷",
+  es: "🇲🇽",
+  en: "🇺🇸",
 };
 
 // Cookie name we set when the user picks a language in the marketing header

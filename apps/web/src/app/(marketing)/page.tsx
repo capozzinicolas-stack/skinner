@@ -1,35 +1,35 @@
 import Link from "next/link";
 
 const steps = [
-  { n: "01", t: "Questionario", d: "7 perguntas sobre tipo de pele, preocupacoes e objetivos." },
-  { n: "02", t: "Foto facial", d: "Frontal com boa luz. Processada e descartada apos analise." },
-  { n: "03", t: "Analise IA", d: "Identifica condicoes, severidade e estado da barreira cutanea." },
-  { n: "04", t: "Recomendacao", d: "Produtos do seu catalogo, ordenados por match score." },
+  { n: "01", t: "Questionário", d: "7 perguntas sobre tipo de pele, preocupações e objetivos." },
+  { n: "02", t: "Foto facial", d: "Frontal com boa luz. Processada e descartada após análise." },
+  { n: "03", t: "Análise IA", d: "Identifica condições, severidade e estado da barreira cutânea." },
+  { n: "04", t: "Recomendação", d: "Produtos do seu catálogo, ordenados por match score." },
 ];
 
 const segments = [
-  { num: "I", title: "Laboratorios", desc: "Seu catalogo virando recomendacao personalizada em milhares de pontos de contato — direto na ponta com o consumidor final.", href: "/laboratorios", feat: false },
-  { num: "II", title: "Clinicas", desc: "Diagnostico IA antes da consulta: o paciente chega 70% mais educado e a venda do tratamento fica muito mais fluida.", href: "/clinicas", feat: true },
-  { num: "III", title: "Farmacias", desc: "Tablet no balcao. Analise em 3 minutos. Ticket medio de skincare 2.4x maior comparado a clientes sem analise.", href: "/farmacias", feat: false },
+  { num: "I", title: "Laboratórios", desc: "Seu catálogo virando recomendação personalizada em milhares de pontos de contato — direto na ponta com o consumidor final.", href: "/laboratorios", feat: false },
+  { num: "II", title: "Clínicas", desc: "Diagnóstico IA antes da consulta: o paciente chega 70% mais educado e a venda do tratamento fica muito mais fluida.", href: "/clinicas", feat: true },
+  { num: "III", title: "Farmácias", desc: "Tablet no balcão. Análise em 3 minutos. Ticket médio de skincare 2.4x maior comparado a clientes sem análise.", href: "/farmacias", feat: false },
 ];
 
 const stats = [
-  { value: "+38%", label: "conversao recomendacao → venda\nvs. baseline humano" },
-  { value: "2.4x", label: "ticket medio em skincare\ncom analise vs. sem analise" },
-  { value: "0.87", label: "match score medio\n(escala 0—1)" },
-  { value: "91%", label: "satisfacao do consumidor final\nNPS pos-analise" },
+  { value: "+38%", label: "conversão recomendação → venda\nvs. baseline humano" },
+  { value: "2.4x", label: "ticket médio em skincare\ncom análise vs. sem análise" },
+  { value: "0.87", label: "match score médio\n(escala 0—1)" },
+  { value: "91%", label: "satisfação do consumidor final\nNPS pós-análise" },
 ];
 
 const quotes = [
-  { text: "Em 4 meses o Skinner virou o nosso melhor canal de venda de skincare. A conversao por sessao e 3x a da abordagem tradicional.", author: "Dra. Helena Rocha", role: "Diretora · Clinica Pele Bela · SP" },
-  { text: "Consegui ativar 380 farmacias em 6 meses. O painel de atribuicao mata qualquer discussao sobre ROI no comite.", author: "Rafael Andrade", role: "VP Comercial · Laboratorio (NDA)" },
+  { text: "Em 4 meses, o Skinner virou o nosso melhor canal de venda de skincare. A conversão por sessão é 3x a da abordagem tradicional.", author: "Dra. Helena Rocha", role: "Diretora · Clínica Pele Bela · SP" },
+  { text: "Consegui ativar 380 farmácias em 6 meses. O painel de atribuição mata qualquer discussão sobre ROI no comitê.", author: "Rafael Andrade", role: "VP Comercial · Laboratório (NDA)" },
 ];
 
 const hlStats = [
-  { value: "1.842", label: "analises / mes (media growth)" },
-  { value: "8.9%", label: "taxa de conversao recomend → venda" },
-  { value: "R$ 47k", label: "receita atribuida media / mes" },
-  { value: "+38%", label: "vs. recomendacao humana" },
+  { value: "1.842", label: "análises / mês (média growth)" },
+  { value: "8.9%", label: "taxa de conversão recomend → venda" },
+  { value: "R$ 47k", label: "receita atribuída média / mês" },
+  { value: "+38%", label: "vs. recomendação humana" },
 ];
 
 export default function HomePage() {
@@ -41,14 +41,14 @@ export default function HomePage() {
           {/* Copy */}
           <div className="max-w-[540px]">
             <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-pierre mb-4">
-              Inteligencia dermatologica · pt-BR
+              skin tech
             </p>
             <h1 className="font-serif text-[clamp(48px,7vw,84px)] leading-[1.02] tracking-[-0.015em] text-carbone">
-              A pele e <i className="text-terre">dados</i>.<br />Nos lemos.
+              A pele é <i className="text-terre">dados</i>.<br />Nós lemos.
             </h1>
             <p className="text-lg font-light text-terre mt-6 leading-relaxed">
-              IA que analisa a pele em 3 minutos, recomenda produtos do seu catalogo
-              e mede a venda. Para clinicas, farmacias e laboratorios no Brasil.
+              IA que analisa a pele em 3 minutos, recomenda produtos do seu catálogo
+              e mede a venda. Para clínicas, farmácias, laboratórios e retailers.
             </p>
             <div className="flex gap-3 mt-8 flex-wrap">
               <Link href="/contato" className="px-7 py-4 bg-carbone text-blanc-casse text-sm border border-carbone hover:bg-terre hover:-translate-y-px transition-all">
@@ -61,9 +61,9 @@ export default function HomePage() {
             {/* Strip stats */}
             <div className="flex items-center gap-5 mt-12 pt-7 border-t border-sable/40">
               {[
-                { v: "+38%", l: "conversao media" },
-                { v: "3 min", l: "analise completa" },
-                { v: "0.87", l: "match score IA" },
+                { v: "+38%", l: "Conversão Média" },
+                { v: "3 min", l: "Análise Completa" },
+                { v: "0.87", l: "Match Score IA" },
               ].map((s, i) => (
                 <div key={i} className="flex items-center gap-5">
                   {i > 0 && <div className="w-px h-8 bg-sable/50" />}
@@ -104,7 +104,7 @@ export default function HomePage() {
             {/* Diagnostic data card */}
             <div className="absolute top-20 right-4 w-[50%] bg-carbone text-blanc-casse p-[18px] z-[2]">
               <div className="flex justify-between items-baseline mb-2.5">
-                <span className="font-mono text-[10px] tracking-[0.14em] uppercase text-sable">Diagnostico</span>
+                <span className="font-mono text-[10px] tracking-[0.14em] uppercase text-sable">Diagnóstico</span>
                 <span className="font-serif italic text-[13px] text-terre">0.87</span>
               </div>
               {[
@@ -118,7 +118,7 @@ export default function HomePage() {
               ))}
               {[
                 { l: "Acne leve", v: "62%", w: "62%" },
-                { l: "Hiperpigmentacao", v: "48%", w: "48%" },
+                { l: "Hiperpigmentação", v: "48%", w: "48%" },
                 { l: "Barreira", v: "forte", w: "78%" },
               ].map((r, i) => (
                 <div key={i} className="flex flex-col py-1.5 border-t border-sable/[0.18]">
@@ -139,9 +139,9 @@ export default function HomePage() {
                 <span className="font-mono text-[10px] tracking-[0.14em] uppercase text-terre">Rotina recomendada</span>
               </div>
               {[
-                { name: "Serum Vit. C 15%", meta: "Manha · Antioxidante", score: 94 },
-                { name: "Hidratante Ceramidas", meta: "2x dia · Barreira", score: 91 },
-                { name: "FPS 50+ Fluido", meta: "Manha · Fotoprotecao", score: 98 },
+                { name: "Sérum Vit. C 15%", meta: "Marka · Antioxidante", score: 94 },
+                { name: "Hidratante Ceramidas", meta: "Marka · Barreira", score: 91 },
+                { name: "FPS 50+ Fluido", meta: "Marka · Fotoproteção", score: 98 },
               ].map((item, i) => (
                 <div key={i} className="grid grid-cols-[32px_1fr_auto] gap-3 items-center py-2 border-t border-sable/25 first:border-0">
                   <span className="w-8 h-8 bg-ivoire border border-pierre/15" />
@@ -156,7 +156,9 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Marquee */}
+        {/* Marquee — hidden 2026-05-07 per marketing redesign. Brand list
+            wasn't backed by signed customers; restore by un-commenting once
+            the partnerships team confirms which logos are public.
         <div className="mt-24 border-y border-sable/40 overflow-hidden py-[18px]">
           <div className="flex gap-12 whitespace-nowrap font-serif text-[22px] italic text-pierre animate-[marquee_45s_linear_infinite]">
             {["Dermage", "Granado", "Pague Menos", "Drogasil", "L'Oreal Brasil", "Vichy", "La Roche-Posay", "Pharmapele", "Dermage", "Granado", "Pague Menos", "Drogasil"].map((brand, i) => (
@@ -164,6 +166,7 @@ export default function HomePage() {
             ))}
           </div>
         </div>
+        */}
       </section>
 
       {/* ─── PROCESSO ─────────────────────────────────────────── */}
@@ -172,7 +175,7 @@ export default function HomePage() {
           <div className="text-center max-w-[760px] mx-auto mb-[72px]">
             <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-pierre mb-4">Processo · 4 etapas</p>
             <h2 className="font-serif text-[clamp(32px,4.2vw,52px)] leading-[1.08] text-carbone">
-              Da foto ao plano de tratamento.<br /><i className="text-terre">Em tres minutos.</i>
+              Da foto ao plano de tratamento.<br /><i className="text-terre">Em três minutos.</i>
             </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-4 border border-sable/40 bg-white">
@@ -191,21 +194,21 @@ export default function HomePage() {
       <section className="py-24">
         <div className="max-w-[1200px] mx-auto px-8 grid grid-cols-1 lg:grid-cols-[1fr_1.1fr] gap-20 items-center">
           <div>
-            <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-pierre mb-4">Relatorio do paciente</p>
+            <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-pierre mb-4">Relatório do paciente</p>
             <h2 className="font-serif text-[clamp(32px,4.2vw,52px)] leading-[1.08] text-carbone mb-6">
-              Um diagnostico que <i className="text-terre">vende sozinho</i>.
+              Um diagnóstico que <i className="text-terre">vende sozinho</i>.
             </h2>
             <p className="text-base font-light text-pierre leading-relaxed mb-6">
-              Cada analise gera um relatorio dermatologico claro: condicoes detectadas,
-              severidade e a rotina ideal — montada com produtos do <em className="text-carbone not-italic font-normal">seu</em> catalogo.
+              Cada análise gera um relatório dermatológico claro: condições detectadas,
+              severidade e a rotina ideal — montada com produtos do <em className="text-carbone not-italic font-normal">seu</em> catálogo.
               Pronto para enviar por WhatsApp, exportar em PDF ou imprimir no PDV.
             </p>
             <ul className="flex flex-col gap-3 mt-6">
               {[
                 "Match score por produto baseado em 142 atributos",
-                "Severidade em escala clinica de 5 niveis",
-                "Compativel com receituario e prontuario eletronico",
-                "Marca branca — fica com a identidade do seu negocio",
+                "Severidade em escala clínica de 5 níveis",
+                "Compatível com receituário e prontuário eletrônico",
+                "Marca branca — fica com a identidade do seu negócio",
               ].map((b, i) => (
                 <li key={i} className="flex gap-3 text-sm text-terre font-light leading-relaxed pb-3 border-b border-sable/30">
                   <span className="w-1.5 h-1.5 bg-carbone mt-2 flex-shrink-0" />
@@ -237,15 +240,15 @@ export default function HomePage() {
               {/* Info area */}
               <div className="p-7 flex flex-col gap-6 overflow-hidden">
                 <div>
-                  <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-pierre mb-1">Relatorio de pele</p>
+                  <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-pierre mb-1">Relatório de pele</p>
                   <h3 className="font-serif text-[28px] text-carbone tracking-[-0.005em]">Pele <i className="text-terre">mista</i>, fototipo III</h3>
-                  <p className="text-xs text-pierre font-mono tracking-[0.04em] mt-1">7 condicoes detectadas · barreira integra</p>
+                  <p className="text-xs text-pierre font-mono tracking-[0.04em] mt-1">7 condições detectadas · barreira íntegra</p>
                 </div>
                 <div>
-                  <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-pierre mb-3">Condicoes</p>
+                  <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-pierre mb-3">Condições</p>
                   {[
                     { name: "Acne leve", sub: "T-zone", sev: [1,1,1,0,0] },
-                    { name: "Hiperpigmentacao", sub: "pos-inflamatoria", sev: [1,1,0,0,0] },
+                    { name: "Hiperpigmentação", sub: "pós-inflamatória", sev: [1,1,0,0,0] },
                     { name: "Oleosidade", sub: "moderada", sev: [1,1,1,0,0] },
                     { name: "Linhas finas", sub: "periorbital", sev: [1,0,0,0,0] },
                   ].map((c, i) => (
@@ -284,8 +287,8 @@ export default function HomePage() {
               <h3 className="font-serif text-2xl italic text-carbone mb-4">Boa tarde, Dra. Helena</h3>
               <div className="grid grid-cols-4 gap-2 mb-4">
                 {[
-                  { l: "Analises", v: "1.842", d: "+24% mes" },
-                  { l: "Conversao", v: "8,9%", d: "+1,2pp" },
+                  { l: "Análises", v: "1.842", d: "+24% mês" },
+                  { l: "Conversão", v: "8,9%", d: "+1,2pp" },
                   { l: "Receita", v: "R$ 47k", d: "+38%" },
                   { l: "Match", v: "0.81", d: "+0.04" },
                 ].map((k, i) => (
@@ -300,14 +303,14 @@ export default function HomePage() {
           </div>
           {/* Copy */}
           <div>
-            <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-pierre mb-4">Painel de gestao</p>
+            <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-pierre mb-4">Painel de gestão</p>
             <h2 className="font-serif text-[clamp(32px,4.2vw,52px)] leading-[1.08] text-carbone mb-6">
               Dados duros sobre <i className="text-terre">cada venda</i>.
             </h2>
             <p className="text-base font-light text-pierre leading-relaxed mb-6">
-              Atribuicao completa: qual produto foi recomendado, em qual canal, para qual
-              tipo de pele, e o que converteu em receita. Metricas que conselho consultivo
-              e diretor comercial entendem na primeira reuniao.
+              Atribuição completa: qual produto foi recomendado, em qual canal, para qual
+              tipo de pele, e o que converteu em receita. Métricas que conselho consultivo
+              e diretor comercial entendem na primeira reunião.
             </p>
             <div className="grid grid-cols-2 border-t border-l border-sable/40 mt-6">
               {hlStats.map((s, i) => (
@@ -325,20 +328,20 @@ export default function HomePage() {
       <section className="py-24">
         <div className="max-w-[1200px] mx-auto px-8">
           <div className="text-center max-w-[760px] mx-auto mb-[72px]">
-            <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-pierre mb-4">Projecao de evolucao</p>
+            <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-pierre mb-4">Projeção de evolução</p>
             <h2 className="font-serif text-[clamp(32px,4.2vw,52px)] leading-[1.08] text-carbone mb-4">
-              O paciente <i className="text-terre">ve o futuro</i> da pele dele.
+              O paciente <i className="text-terre">vê o futuro</i> da pele dele.
             </h2>
             <p className="text-base font-light text-pierre leading-relaxed max-w-[620px] mx-auto">
-              Visualizacoes de 8 e 12 semanas com aderencia a rotina recomendada.
-              E o gatilho de compra mais forte que existe: ver o resultado antes.
+              Visualizações de 8 e 12 semanas com aderência à rotina recomendada.
+              É o gatilho de compra mais forte que existe: ver o resultado antes.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
               { when: "Hoje · semana 0", title: "Estado atual", pct: null, grad: "from-ivoire to-[#d6cabb]" },
-              { when: "Projecao · 8 semanas", title: "Melhora moderada", pct: "-52%", grad: "from-ivoire to-[#d2c8b9]" },
-              { when: "Projecao · 12 semanas", title: "Aderencia alta", pct: "-81%", grad: "from-ivoire to-[#ccc4b3]" },
+              { when: "Projeção · 8 semanas", title: "Melhora moderada", pct: "-52%", grad: "from-ivoire to-[#d2c8b9]" },
+              { when: "Projeção · 12 semanas", title: "Aderência alta", pct: "-81%", grad: "from-ivoire to-[#ccc4b3]" },
             ].map((p, i) => (
               <div key={i} className="bg-white border border-pierre/20">
                 <div className={`aspect-[4/5] bg-gradient-to-br ${p.grad} border-b border-pierre/15 relative`}>
@@ -362,9 +365,9 @@ export default function HomePage() {
       <section className="py-24 bg-white">
         <div className="max-w-[1200px] mx-auto px-8">
           <div className="text-center max-w-[760px] mx-auto mb-[72px]">
-            <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-pierre mb-4">Para quem e</p>
+            <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-pierre mb-4">Para quem é</p>
             <h2 className="font-serif text-[clamp(32px,4.2vw,52px)] leading-[1.08] text-carbone">
-              Tres jeitos de usar.<br />Mesma <i className="text-terre">tecnologia</i>.
+              Três jeitos de usar.<br />Mesma <i className="text-terre">tecnologia</i>.
             </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -394,9 +397,9 @@ export default function HomePage() {
       <section className="py-24 bg-carbone text-blanc-casse">
         <div className="max-w-[1200px] mx-auto px-8">
           <div className="text-center max-w-[760px] mx-auto mb-[72px]">
-            <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-sable mb-4">Resultados · base de 47 clientes ativos</p>
+            <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-sable mb-4">Resultados — base de clientes ativos</p>
             <h2 className="font-serif text-[clamp(32px,4.2vw,52px)] leading-[1.08] text-blanc-casse">
-              Os <i>numeros</i> que importam.
+              Os <i>números</i> que importam.
             </h2>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 border-t border-l border-sable/30">
@@ -425,12 +428,12 @@ export default function HomePage() {
       {/* ─── CTA FINAL ────────────────────────────────────────── */}
       <section className="py-28 bg-ivoire border-t border-sable/40">
         <div className="max-w-[1200px] mx-auto px-8 text-center">
-          <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-pierre mb-4">Proximo passo</p>
+          <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-pierre mb-4">Próximo passo</p>
           <h2 className="font-serif text-[clamp(32px,4.2vw,52px)] leading-[1.08] text-carbone mb-2">
             Pronto pra ler a pele<br />dos seus clientes?
           </h2>
           <p className="text-base font-light text-pierre leading-relaxed max-w-[620px] mx-auto mt-4 mb-8">
-            Demo de 25 minutos com o time de produto. Saimos com um plano-piloto desenhado pro seu negocio.
+            Demo de 25 minutos com o time de produto. Saímos com um plano-piloto desenhado pro seu negócio.
           </p>
           <div className="flex gap-3 justify-center">
             <Link href="/contato" className="px-7 py-4 bg-carbone text-blanc-casse text-sm border border-carbone hover:bg-terre hover:-translate-y-px transition-all">

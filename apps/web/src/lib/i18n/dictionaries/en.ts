@@ -16,7 +16,7 @@ export const en: Dictionary = {
   footer: {
     tagline_line1: "Skin is data.",
     tagline_line2: "We read it.",
-    location: "Sao Paulo, Brazil",
+    location: "São Paulo, Brazil · CDMX, México",
     section_product: "Product",
     section_segments: "Segments",
     section_company: "Company",
