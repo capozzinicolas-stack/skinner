@@ -7,10 +7,10 @@ export default function DemoPage() {
         <div className="max-w-[1200px] mx-auto">
           <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-pierre mb-4">Resultados · base ativa Q1/2026</p>
           <h1 className="font-serif text-[clamp(48px,7vw,84px)] leading-[1.02] tracking-[-0.015em] text-carbone">
-            Os <i className="text-terre">numeros</i>.<br />Sem floreio.
+            Os <i className="text-terre">números</i>.<br />Sem floreio.
           </h1>
           <p className="text-lg font-light text-terre mt-6 leading-relaxed max-w-[620px]">
-            47 clientes ativos · 218.000 analises geradas · R$ 14.6M em GMV atribuido acumulado nos ultimos 12 meses.
+            47 clientes ativos · 218.000 análises geradas · R$ 14.6M em GMV atribuído acumulado nos últimos 12 meses.
           </p>
         </div>
       </section>
@@ -20,10 +20,10 @@ export default function DemoPage() {
         <div className="max-w-[1200px] mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 border-t border-l border-sable/30">
             {[
-              { v: "+38%", l: "conversao recomendacao → venda\nvs. baseline humano" },
-              { v: "2.4x", l: "ticket medio skincare\nanalise vs. sem analise" },
-              { v: "91%", l: "NPS do consumidor final\npos-analise (n=42k)" },
-              { v: "R$ 14.6M", l: "GMV atribuido acumulado\nultimos 12 meses" },
+              { v: "+38%", l: "conversão recomendação → venda\nvs. baseline humano" },
+              { v: "2.4x", l: "ticket médio skincare\nanálise vs. sem análise" },
+              { v: "91%", l: "NPS do consumidor final\npós-análise (n=42k)" },
+              { v: "R$ 14.6M", l: "GMV atribuído acumulado\núltimos 12 meses" },
             ].map((s, i) => (
               <div key={i} className="p-9 border-b border-r border-sable/30">
                 <b className="font-serif text-[clamp(48px,5vw,80px)] italic text-carbone leading-none block">{s.v}</b>
@@ -46,25 +46,25 @@ export default function DemoPage() {
           <div className="space-y-8">
             {[
               {
-                eyebrow: "Clinica · Sao Paulo · 4 unidades",
+                eyebrow: "Clínica · São Paulo · 4 unidades",
                 title: 'Pele Bela aumentou 3.1x a venda de produto por consulta.',
-                stats: [["3.1x", "venda / consulta"], ["R$ 287k", "receita atribuida / mes"], ["4 meses", "ate 100% das unidades"]],
-                quote: "Skinner virou parte do nosso pre-atendimento. A paciente ja chega entendendo a propria pele.",
+                stats: [["3.1x", "venda / consulta"], ["R$ 287k", "receita atribuída / mês"], ["4 meses", "até 100% das unidades"]],
+                quote: "Skinner virou parte do nosso pré-atendimento. A paciente já chega entendendo a própria pele.",
                 author: "Dra. Helena Rocha, diretora",
               },
               {
-                eyebrow: "Laboratorio dermatologico · NDA",
+                eyebrow: "Laboratório dermatológico · NDA",
                 title: "+47% de sell-out em 90 dias na rede ativada.",
-                stats: [["+47%", "sell-out em 90 dias"], ["380", "farmacias ativadas"], ["R$ 1.2M", "GMV atribuido / mes"]],
-                quote: "Atribuicao clara por SKU acabou com a discussao interna sobre eficacia de trade.",
+                stats: [["+47%", "sell-out em 90 dias"], ["380", "farmácias ativadas"], ["R$ 1.2M", "GMV atribuído / mês"]],
+                quote: "Atribuição clara por SKU acabou com a discussão interna sobre eficácia de trade.",
                 author: "Rafael Andrade, VP Comercial",
               },
               {
-                eyebrow: "Rede de farmacias · Nordeste · 62 unidades",
-                title: 'Ticket de skincare 2.7x maior em clientes que fizeram analise.',
-                stats: [["2.7x", "ticket medio skincare"], ["62%", "taxa de cross-sell"], ["9.2/10", "NPS do atendente"]],
-                quote: "O tablet vira o gatilho da conversa. A analise fecha a venda.",
-                author: "Diretora de Operacoes",
+                eyebrow: "Rede de farmácias · Nordeste · 62 unidades",
+                title: 'Ticket de skincare 2.7x maior em clientes que fizeram análise.',
+                stats: [["2.7x", "ticket médio skincare"], ["62%", "taxa de cross-sell"], ["9.2/10", "NPS do atendente"]],
+                quote: "O tablet vira o gatilho da conversa. A análise fecha a venda.",
+                author: "Diretora de Operações",
               },
             ].map((c, i) => (
               <article key={i} className="grid grid-cols-1 lg:grid-cols-[1fr_1.4fr] gap-8 border border-sable/30 overflow-hidden">

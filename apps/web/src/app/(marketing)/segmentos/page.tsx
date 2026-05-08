@@ -15,34 +15,34 @@ const segments: Record<SegmentId, {
   bullets: string[];
 }> = {
   laboratorios: {
-    title: "Laboratorios",
-    claim: "Sua marca como recomendacao dermatologica.",
-    desc: "Distribua o Skinner como ferramenta de ativacao para sua rede de PDVs e farmacias parceiras. O catalogo da marca aparece como recomendacao personalizada — nao como prateleira.",
-    stats: [["+47%", "sell-out em 90 dias"], ["380+", "pontos ativados"], ["R$ 1.2M", "GMV atribuido / mes"]],
-    bullets: ["Painel master multi-rede", "Co-marketing com farmacias", "Atribuicao por SKU e por regiao", "Insights de demanda por bioma"],
+    title: "Laboratórios",
+    claim: "Sua marca como recomendação dermatológica.",
+    desc: "Distribua o Skinner como ferramenta de ativação para sua rede de PDVs e farmácias parceiras. O catálogo da marca aparece como recomendação personalizada — não como prateleira.",
+    stats: [["+47%", "sell-out em 90 dias"], ["380+", "pontos ativados"], ["R$ 1.2M", "GMV atribuído / mês"]],
+    bullets: ["Painel master multi-rede", "Co-marketing com farmácias", "Atribuição por SKU e por região", "Insights de demanda por bioma"],
   },
   clinicas: {
-    title: "Clinicas",
+    title: "Clínicas",
     claim: "O paciente chega educado. A venda flui.",
-    desc: "Analise IA antes da consulta dermatologica. O paciente entra no consultorio ja entendendo o estado da pele, com expectativas alinhadas e mais aberto a recomendacao de tratamento e venda de produto.",
-    stats: [["3.1x", "venda de produto por consulta"], ["-40%", "tempo da consulta inicial"], ["NPS 71", "satisfacao do paciente"]],
-    bullets: ["Marca branca completa", "Integracao com prontuario (memed, doctor.med)", "Receituario e PDF assinados", "Historico de evolucao do paciente"],
+    desc: "Análise IA antes da consulta dermatológica. O paciente entra no consultório já entendendo o estado da pele, com expectativas alinhadas e mais aberto à recomendação de tratamento e venda de produto.",
+    stats: [["3.1x", "venda de produto por consulta"], ["-40%", "tempo da consulta inicial"], ["NPS 71", "satisfação do paciente"]],
+    bullets: ["Marca branca completa", "Integração com prontuário (memed, doctor.med)", "Receituário e PDF assinados", "Histórico de evolução do paciente"],
   },
   farmacias: {
-    title: "Farmacias",
-    claim: "Tablet no balcao. Ticket medio 2.4x maior.",
-    desc: "Analise no PDV em 3 minutos. O atendente consulta junto com o cliente e a recomendacao aparece em tempo real, com produtos disponiveis no estoque local.",
-    stats: [["2.4x", "ticket medio skincare"], ["+62%", "cross-sell por atendimento"], ["89%", "taxa de aceite da recomendacao"]],
-    bullets: ["Modo PDV otimizado pra tablet", "Integracao com Linx, RM, e PDVs proprios", "Comissao automatica para atendente", "Treinamento por video + certificacao"],
+    title: "Farmácias",
+    claim: "Tablet no balcão. Ticket médio 2.4x maior.",
+    desc: "Análise no PDV em 3 minutos. O atendente consulta junto com o cliente e a recomendação aparece em tempo real, com produtos disponíveis no estoque local.",
+    stats: [["2.4x", "ticket médio skincare"], ["+62%", "cross-sell por atendimento"], ["89%", "taxa de aceite da recomendação"]],
+    bullets: ["Modo PDV otimizado pra tablet", "Integração com Linx, RM, e PDVs próprios", "Comissão automática para atendente", "Treinamento por vídeo + certificação"],
   },
 };
 
 const timeline = [
-  { d: "Dia 1—2", t: "Setup tecnico", x: "Subdominio, marca branca, primeiros usuarios" },
-  { d: "Dia 3—5", t: "Catalogo", x: "Importacao e mapeamento de SKUs e ingredientes" },
-  { d: "Dia 6—9", t: "Treinamento", x: "2h de onboarding pro time + material assincrono" },
-  { d: "Dia 10—14", t: "Piloto", x: "Primeiras 50 analises com acompanhamento de CSM" },
-  { d: "Mes 2", t: "Otimizacao", x: "Revisao de funil + ajuste de match score" },
+  { d: "Dia 1—2", t: "Setup técnico", x: "Subdomínio, marca branca, primeiros usuários" },
+  { d: "Dia 3—5", t: "Catálogo", x: "Importação e mapeamento de SKUs e ingredientes" },
+  { d: "Dia 6—9", t: "Treinamento", x: "2h de onboarding pro time + material assíncrono" },
+  { d: "Dia 10—14", t: "Piloto", x: "Primeiras 50 análises com acompanhamento de CSM" },
+  { d: "Mês 2", t: "Otimização", x: "Revisão de funil + ajuste de match score" },
 ];
 
 function SegmentosContent() {
@@ -64,11 +64,11 @@ function SegmentosContent() {
         <div className="max-w-[1200px] mx-auto">
           <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-pierre mb-4">Segmentos</p>
           <h1 className="font-serif text-[clamp(48px,7vw,84px)] leading-[1.02] tracking-[-0.015em] text-carbone">
-            <i className="text-terre">Tres</i> jeitos de usar Skinner.
+            <i className="text-terre">Três</i> jeitos de usar Skinner.
           </h1>
           <p className="text-lg font-light text-terre mt-6 leading-relaxed max-w-[620px]">
-            Mesmo motor de IA. Mesma qualidade de diagnostico. Adaptado pra cada
-            modelo de negocio do mercado dermatologico brasileiro.
+            Mesmo motor de IA. Mesma qualidade de diagnóstico. Adaptado pra cada
+            modelo de negócio do mercado dermatológico brasileiro.
           </p>
           {/* Tabs */}
           <div className="flex gap-3 mt-10">
@@ -112,7 +112,7 @@ function SegmentosContent() {
             </Link>
           </div>
           <div className="p-8 border border-sable/30 bg-white">
-            <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-pierre mb-4">Resultados tipicos</p>
+            <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-pierre mb-4">Resultados típicos</p>
             <div className="space-y-6">
               {s.stats.map(([n, l], i) => (
                 <div key={i} className="border-b border-sable/20 pb-4">
@@ -129,9 +129,9 @@ function SegmentosContent() {
       <section className="py-24 px-8 bg-white">
         <div className="max-w-[1200px] mx-auto">
           <div className="text-center max-w-[760px] mx-auto mb-16">
-            <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-pierre mb-4">Implementacao</p>
+            <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-pierre mb-4">Implementação</p>
             <h2 className="font-serif text-[clamp(32px,4.2vw,52px)] leading-[1.08] text-carbone">
-              14 dias do contrato ao primeiro <i className="text-terre">relatorio</i>.
+              14 dias do contrato ao primeiro <i className="text-terre">relatório</i>.
             </h2>
           </div>
           <div className="space-y-4 max-w-2xl mx-auto">

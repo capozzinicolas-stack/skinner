@@ -9,18 +9,18 @@ import { trpc } from "@/lib/trpc/client";
 // plan id. If the admin creates a new plan id, it falls back to no badge
 // and a generic target line.
 const MARKETING_META: Record<string, { target: string; popular: boolean }> = {
-  growth: { target: "Clinicas e farmacias independentes", popular: false },
-  pro: { target: "Redes regionais e clinicas multi-unidade", popular: true },
-  enterprise: { target: "Laboratorios, redes nacionais", popular: false },
+  growth: { target: "Clínicas e farmácias independentes", popular: false },
+  pro: { target: "Redes regionais e clínicas multi-unidade", popular: true },
+  enterprise: { target: "Laboratórios, redes nacionais", popular: false },
 };
 
 const faq = [
-  ["Como funciona a comissao?", "Cobrada apenas sobre vendas confirmadas geradas pela recomendacao Skinner. Rastreamento via pixel ou API. Voce so paga quando a Skinner gera venda."],
-  ["Tem fidelidade?", "Nao. Cancela quando quiser. Historico exportavel e dados ficam disponiveis por 30 dias apos o cancelamento."],
-  ["LGPD?", "Foto descartada apos analise por padrao. DPO dedicado. Conforme ANPD. Termo de tratamento de dados disponivel para analise juridica."],
-  ["Quanto tempo leva pra implementar?", "14 dias do contrato ao primeiro relatorio em producao. CSM acompanha as 50 primeiras analises."],
-  ["Funciona com meu catalogo?", "Sim. Importacao por CSV, integracao com Bling, Tiny, Linx, VTEX, Shopify, ou API direta."],
-  ["Precisa de hardware?", "Nao. Funciona em qualquer dispositivo com camera. Tablet recomendado pra PDV."],
+  ["Como funciona a comissão?", "Cobrada apenas sobre vendas confirmadas geradas pela recomendação Skinner. Rastreamento via pixel ou API. Você só paga quando a Skinner gera venda."],
+  ["Tem fidelidade?", "Não. Cancela quando quiser. Histórico exportável e dados ficam disponíveis por 30 dias após o cancelamento."],
+  ["LGPD?", "Foto descartada após análise por padrão. DPO dedicado. Conforme ANPD. Termo de tratamento de dados disponível para análise jurídica."],
+  ["Quanto tempo leva pra implementar?", "14 dias do contrato ao primeiro relatório em produção. CSM acompanha as 50 primeiras análises."],
+  ["Funciona com meu catálogo?", "Sim. Importação por CSV, integração com Bling, Tiny, Linx, VTEX, Shopify, ou API direta."],
+  ["Precisa de hardware?", "Não. Funciona em qualquer dispositivo com câmera. Tablet recomendado pra PDV."],
 ];
 
 export default function PlanosPage() {
@@ -42,7 +42,7 @@ export default function PlanosPage() {
       if (data.url) {
         window.location.href = data.url;
       } else {
-        alert(data.error || "Erro ao criar sessao de pagamento");
+        alert(data.error || "Erro ao criar sessão de pagamento");
         setLoading(null);
       }
     } catch {
@@ -57,10 +57,10 @@ export default function PlanosPage() {
         <div className="max-w-[1200px] mx-auto">
           <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-pierre mb-4">Planos · pt-BR · CNPJ ativo</p>
           <h1 className="font-serif text-[clamp(48px,7vw,84px)] leading-[1.02] tracking-[-0.015em] text-carbone">
-            <i className="text-terre">Planos</i> simples.<br />Sem letra miuda.
+            <i className="text-terre">Planos</i> simples.<br />Sem letra miúda.
           </h1>
           <p className="text-lg font-light text-terre mt-6 leading-relaxed max-w-[620px]">
-            Mensalidade fixa + comissao sobre venda atribuida. Sem fidelidade. Sem custo escondido.
+            Mensalidade fixa + comissão sobre venda atribuída. Sem fidelidade. Sem custo escondido.
           </p>
         </div>
       </section>
@@ -91,9 +91,9 @@ export default function PlanosPage() {
                   <h2 className="font-serif text-4xl italic text-carbone mt-2">{p.name}</h2>
                   <div className="mt-4 mb-1">
                     <b className="font-serif text-3xl text-carbone">{priceLabel}</b>
-                    {!p.customAllowed && <small className="text-pierre font-light text-sm ml-1">/mes</small>}
+                    {!p.customAllowed && <small className="text-pierre font-light text-sm ml-1">/mês</small>}
                   </div>
-                  <p className="text-[13px] text-pierre font-light">Setup: {setupLabel} · Comissao: {commissionLabel}</p>
+                  <p className="text-[13px] text-pierre font-light">Setup: {setupLabel} · Comissão: {commissionLabel}</p>
                   <div className="h-px bg-sable/30 my-6" />
                   <ul className="flex flex-col gap-3 flex-1">
                     {p.features.map((f, i) => (

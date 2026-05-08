@@ -33,7 +33,7 @@ export default function ForgotPasswordPage() {
             className="h-[140px] mx-auto mb-6 object-contain brightness-0 invert"
           />
           <p className="font-mono text-[10px] tracking-[0.2em] uppercase text-sable/80 mb-3">
-            Recuperacao de senha
+            Recuperação de senha
           </p>
           <h1 className="font-serif text-3xl md:text-4xl text-blanc-casse italic">
             Esqueceu sua senha
@@ -45,11 +45,11 @@ export default function ForgotPasswordPage() {
             {submitted ? (
               <div className="text-center space-y-4">
                 <p className="text-sm text-carbone font-light">
-                  Se o e-mail informado estiver cadastrado, voce recebera um link para redefinir
+                  Se o e-mail informado estiver cadastrado, você receberá um link para redefinir
                   sua senha em alguns instantes.
                 </p>
                 <p className="text-xs text-pierre font-light">
-                  O link expira em 60 minutos e so pode ser usado uma vez.
+                  O link expira em 60 minutos e só pode ser usado uma vez.
                 </p>
                 <a
                   href="/login"
@@ -61,7 +61,7 @@ export default function ForgotPasswordPage() {
             ) : (
               <form onSubmit={handleSubmit} className="space-y-5">
                 <p className="text-sm text-pierre font-light">
-                  Informe o e-mail da sua conta. Enviaremos um link para voce escolher uma nova senha.
+                  Informe o e-mail da sua conta. Enviaremos um link para você escolher uma nova senha.
                 </p>
                 <div>
                   <label htmlFor="email" className="block text-[10px] font-light text-pierre uppercase tracking-wider mb-2">
@@ -81,7 +81,7 @@ export default function ForgotPasswordPage() {
                   disabled={loading}
                   className="w-full py-3.5 bg-carbone text-blanc-casse text-sm tracking-[0.02em] hover:bg-terre transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {loading ? "Enviando..." : "Enviar link de recuperacao"}
+                  {loading ? "Enviando..." : "Enviar link de recuperação"}
                 </button>
                 <div className="text-center pt-2">
                   <a

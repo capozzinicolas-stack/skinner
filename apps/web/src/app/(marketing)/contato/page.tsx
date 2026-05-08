@@ -35,7 +35,7 @@ export default function ContatoPage() {
             <i className="text-terre">Vamos</i> conversar.
           </h1>
           <p className="text-lg font-light text-terre mt-6 leading-relaxed max-w-[620px]">
-            Demo de 25 min com o time de produto. A gente entende seu modelo de negocio e desenha um piloto sob medida.
+            Demo de 25 min com o time de produto. A gente entende seu modelo de negócio e desenha um piloto sob medida.
           </p>
         </div>
       </section>
@@ -52,7 +52,7 @@ export default function ContatoPage() {
               {[
                 "Tour pelo produto (10 min)",
                 "Casos parecidos com o seu (5 min)",
-                "Analise rapida do seu funil atual (5 min)",
+                "Análise rápida do seu funil atual (5 min)",
                 "Plano de piloto desenhado ao vivo (5 min)",
               ].map((b, i) => (
                 <li key={i} className="flex gap-3 text-sm text-terre font-light leading-relaxed pb-3 border-b border-sable/30">
@@ -70,8 +70,8 @@ export default function ContatoPage() {
                 <span className="text-sm text-carbone">+55 11 9 8888-0000</span>
               </div>
               <div className="flex gap-4">
-                <span className="font-mono text-[10px] tracking-[0.12em] uppercase text-pierre w-24">endereco</span>
-                <span className="text-sm text-carbone">Sao Paulo, SP</span>
+                <span className="font-mono text-[10px] tracking-[0.12em] uppercase text-pierre w-24">endereço</span>
+                <span className="text-sm text-carbone">São Paulo, SP</span>
               </div>
             </div>
           </div>
@@ -81,7 +81,7 @@ export default function ContatoPage() {
             <div className="p-12 border border-sable/30 bg-white flex flex-col justify-center">
               <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-pierre mb-2">Recebido</p>
               <h3 className="font-serif text-[28px] text-carbone">
-                Obrigado.<br />Falamos <i className="text-terre">em ate 1 dia util</i>.
+                Obrigado.<br />Falamos <i className="text-terre">em até 1 dia útil</i>.
               </h3>
             </div>
           ) : (
@@ -93,24 +93,24 @@ export default function ContatoPage() {
               </label>
               <label className="block">
                 <span className="text-sm text-carbone block mb-1">Email corporativo</span>
-                <input name="email" type="email" required placeholder="voce@empresa.com.br" className="w-full px-4 py-3 border border-sable/30 bg-blanc-casse text-sm font-light text-carbone focus:outline-none focus:border-terre" />
+                <input name="email" type="email" required placeholder="você@empresa.com.br" className="w-full px-4 py-3 border border-sable/30 bg-blanc-casse text-sm font-light text-carbone focus:outline-none focus:border-terre" />
               </label>
               <label className="block">
                 <span className="text-sm text-carbone block mb-1">Empresa</span>
-                <input name="company" type="text" placeholder="Razao social ou nome fantasia" className="w-full px-4 py-3 border border-sable/30 bg-blanc-casse text-sm font-light text-carbone focus:outline-none focus:border-terre" />
+                <input name="company" type="text" placeholder="Razão social ou nome fantasia" className="w-full px-4 py-3 border border-sable/30 bg-blanc-casse text-sm font-light text-carbone focus:outline-none focus:border-terre" />
               </label>
               <label className="block">
                 <span className="text-sm text-carbone block mb-1">Segmento</span>
                 <select name="segment" className="w-full px-4 py-3 border border-sable/30 bg-blanc-casse text-sm font-light text-carbone focus:outline-none focus:border-terre">
-                  <option>Clinica</option>
-                  <option>Laboratorio</option>
-                  <option>Farmacia</option>
+                  <option>Clínica</option>
+                  <option>Laboratório</option>
+                  <option>Farmácia</option>
                   <option>Outro</option>
                 </select>
               </label>
               <label className="block">
                 <span className="text-sm text-carbone block mb-1">Mensagem</span>
-                <textarea name="message" rows={3} placeholder="Conta um pouco do que voce procura." className="w-full px-4 py-3 border border-sable/30 bg-blanc-casse text-sm font-light text-carbone focus:outline-none focus:border-terre" />
+                <textarea name="message" rows={3} placeholder="Conta um pouco do que você procura." className="w-full px-4 py-3 border border-sable/30 bg-blanc-casse text-sm font-light text-carbone focus:outline-none focus:border-terre" />
               </label>
               <button type="submit" className="w-full py-4 bg-carbone text-blanc-casse text-sm tracking-[0.02em] hover:bg-terre transition-all">
                 Solicitar demo →

@@ -22,7 +22,7 @@ function ResetPasswordForm() {
       return;
     }
     if (pwd !== confirm) {
-      setError("As senhas nao coincidem.");
+      setError("As senhas não coincidem.");
       return;
     }
     setLoading(true);
@@ -67,7 +67,7 @@ function ResetPasswordForm() {
           <div className="bg-blanc-casse/95 backdrop-blur-md border border-sable/30 p-8 shadow-[0_32px_80px_-20px_rgba(0,0,0,0.5)]">
             {!token ? (
               <div className="text-center text-sm text-terre font-light">
-                Link invalido. Solicite um novo em "Esqueci minha senha".
+                Link inválido. Solicite um novo em "Esqueci minha senha".
               </div>
             ) : success ? (
               <div className="text-center space-y-3">
@@ -97,7 +97,7 @@ function ResetPasswordForm() {
                     minLength={8}
                     className="w-full px-4 py-3 border border-sable/40 bg-white text-sm text-carbone font-light focus:outline-none focus:border-terre"
                   />
-                  <p className="text-[10px] text-pierre font-light mt-1">Minimo 8 caracteres.</p>
+                  <p className="text-[10px] text-pierre font-light mt-1">Mínimo 8 caracteres.</p>
                 </div>
                 <div>
                   <label className="block text-[10px] font-light text-pierre uppercase tracking-wider mb-2">

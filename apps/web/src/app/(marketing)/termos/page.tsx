@@ -7,46 +7,46 @@ export default function TermosPage() {
 
         <div className="space-y-8 text-sm text-pierre font-light leading-relaxed">
           <div>
-            <h2 className="text-carbone text-sm mb-2">1. Aceitacao</h2>
+            <h2 className="text-carbone text-sm mb-2">1. Aceitação</h2>
             <p>
-              Ao utilizar a plataforma Skinner, voce concorda com estes termos de uso.
-              Se voce e um cliente B2B, um Contrato de Prestacao de Servicos (SLA) separado
-              pode ser aplicavel.
+              Ao utilizar a plataforma Skinner, você concorda com estes termos de uso.
+              Se você é um cliente B2B, um Contrato de Prestação de Serviços (SLA) separado
+              pode ser aplicável.
             </p>
           </div>
 
           <div>
-            <h2 className="text-carbone text-sm mb-2">2. Descricao do servico</h2>
+            <h2 className="text-carbone text-sm mb-2">2. Descrição do serviço</h2>
             <p>
-              Skinner e uma plataforma SaaS B2B de inteligencia dermatologica que oferece
-              analise facial por IA e recomendacao personalizada de produtos. O servico e
+              Skinner é uma plataforma SaaS B2B de inteligência dermatológica que oferece
+              análise facial por IA e recomendação personalizada de produtos. O serviço é
               contratado por empresas (tenants) e disponibilizado aos seus clientes finais.
             </p>
           </div>
 
           <div>
-            <h2 className="text-carbone text-sm mb-2">3. Disclaimer medico</h2>
+            <h2 className="text-carbone text-sm mb-2">3. Disclaimer médico</h2>
             <p>
-              A analise de pele fornecida pela Skinner e exclusivamente informativa e educacional.
-              Nao constitui diagnostico medico, prescricao ou aconselhamento profissional de saude.
-              Sempre consulte um dermatologista para condicoes de pele que necessitem tratamento medico.
+              A análise de pele fornecida pela Skinner é exclusivamente informativa e educacional.
+              Não constitui diagnóstico médico, prescrição ou aconselhamento profissional de saúde.
+              Sempre consulte um dermatologista para condições de pele que necessitem tratamento médico.
             </p>
           </div>
 
           <div>
-            <h2 className="text-carbone text-sm mb-2">4. Uso aceitavel</h2>
+            <h2 className="text-carbone text-sm mb-2">4. Uso aceitável</h2>
             <p>
-              O cliente B2B se compromete a: utilizar a plataforma apenas para fins legitimos,
-              nao tentar reverter a engenharia do motor de analise, nao compartilhar credenciais
-              de acesso e manter seu catalogo de produtos atualizado e veridico.
+              O cliente B2B se compromete a: utilizar a plataforma apenas para fins legítimos,
+              não tentar reverter a engenharia do motor de análise, não compartilhar credenciais
+              de acesso e manter seu catálogo de produtos atualizado e verídico.
             </p>
           </div>
 
           <div>
             <h2 className="text-carbone text-sm mb-2">5. Propriedade intelectual</h2>
             <p>
-              A base dermatologica, algoritmos de matching, modelos de analise e marca Skinner
-              sao propriedade exclusiva da Skinner. O conteudo do catalogo de produtos e os
+              A base dermatológica, algoritmos de matching, modelos de análise e marca Skinner
+              são propriedade exclusiva da Skinner. O conteúdo do catálogo de produtos e os
               dados de clientes finais pertencem ao respectivo cliente B2B.
             </p>
           </div>
@@ -54,31 +54,31 @@ export default function TermosPage() {
           <div>
             <h2 className="text-carbone text-sm mb-2">6. Faturamento</h2>
             <p>
-              A cobranca e realizada mensalmente via Stripe. Inclui mensalidade fixa,
-              analises excedentes ao limite do plano e comissao sobre vendas rastreadas.
+              A cobrança é realizada mensalmente via Stripe. Inclui mensalidade fixa,
+              análises excedentes ao limite do plano e comissão sobre vendas rastreadas.
               O cancelamento pode ser feito a qualquer momento e entra em vigor no final
               do ciclo corrente.
             </p>
           </div>
 
           <div>
-            <h2 className="text-carbone text-sm mb-2">7. Limitacao de responsabilidade</h2>
+            <h2 className="text-carbone text-sm mb-2">7. Limitação de responsabilidade</h2>
             <p>
-              A Skinner nao se responsabiliza por decisoes de compra tomadas pelo consumidor
-              final com base nas recomendacoes da plataforma. A responsabilidade sobre os
-              produtos recomendados e exclusiva do cliente B2B que os cadastrou.
+              A Skinner não se responsabiliza por decisões de compra tomadas pelo consumidor
+              final com base nas recomendações da plataforma. A responsabilidade sobre os
+              produtos recomendados é exclusiva do cliente B2B que os cadastrou.
             </p>
           </div>
 
           <div>
-            <h2 className="text-carbone text-sm mb-2">8. Alteracoes</h2>
+            <h2 className="text-carbone text-sm mb-2">8. Alterações</h2>
             <p>
-              Estes termos podem ser atualizados periodicamente. Alteracoes significativas
-              serao comunicadas por e-mail aos clientes B2B com 30 dias de antecedencia.
+              Estes termos podem ser atualizados periodicamente. Alterações significativas
+              serão comunicadas por e-mail aos clientes B2B com 30 dias de antecedência.
             </p>
           </div>
 
-          <p className="text-xs text-sable mt-8">Ultima atualizacao: abril de 2026.</p>
+          <p className="text-xs text-sable mt-8">Última atualização: abril de 2026.</p>
         </div>
       </div>
     </section>

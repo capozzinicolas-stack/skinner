@@ -15,7 +15,7 @@ function detectMode(): LoginMode {
 
 const modeConfig = {
   admin: {
-    eyebrow: "Administracao",
+    eyebrow: "Administração",
     title: "Painel Skinner",
     subtitle: "Acesso restrito ao time interno.",
     bgGradient: "from-[#1C1917] via-[#3D342C] to-[#1C1917]",
@@ -26,7 +26,7 @@ const modeConfig = {
   client: {
     eyebrow: "Portal do Cliente",
     title: "Bem-vindo de volta",
-    subtitle: "Acesse o painel do seu negocio.",
+    subtitle: "Acesse o painel do seu negócio.",
     bgGradient: "from-[#3D342C] via-[#7C7269] to-[#3D342C]",
     mountainColor1: "#7C7269",
     mountainColor2: "#5a524a",
@@ -71,8 +71,8 @@ function LoginForm() {
     if (result?.error) {
       setError(
         mode === "admin"
-          ? "E-mail ou senha invalidos. (Apenas administradores Skinner podem acessar este painel.)"
-          : "E-mail ou senha invalidos. (Administradores devem usar admin.skinner.lat.)"
+          ? "E-mail ou senha inválidos. (Apenas administradores Skinner podem acessar este painel.)"
+          : "E-mail ou senha inválidos. (Administradores devem usar admin.skinner.lat.)"
       );
       return;
     }
@@ -171,12 +171,12 @@ function LoginForm() {
               <div className="p-3 text-sm text-terre bg-ivoire border border-sable/30 mb-6">
                 {error ||
                   (urlError === "unauthorized"
-                    ? "Acesso nao autorizado."
+                    ? "Acesso não autorizado."
                     : urlError === "no-tenant"
-                    ? "Usuario sem empresa vinculada."
+                    ? "Usuário sem empresa vinculada."
                     : urlError === "wrong-portal"
                     ? mode === "admin"
-                      ? "Esta conta nao e administrativa. Acesse pelo portal app.skinner.lat."
+                      ? "Esta conta não é administrativa. Acesse pelo portal app.skinner.lat."
                       : "Administradores devem acessar pelo portal admin.skinner.lat."
                     : "Erro ao fazer login.")}
               </div>
