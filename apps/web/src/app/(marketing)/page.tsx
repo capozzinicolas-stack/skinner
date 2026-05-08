@@ -139,9 +139,9 @@ export default function HomePage() {
                 <span className="font-mono text-[10px] tracking-[0.14em] uppercase text-terre">Rotina recomendada</span>
               </div>
               {[
-                { name: "Sérum Vit. C 15%", meta: "Marka · Antioxidante", score: 94 },
-                { name: "Hidratante Ceramidas", meta: "Marka · Barreira", score: 91 },
-                { name: "FPS 50+ Fluido", meta: "Marka · Fotoproteção", score: 98 },
+                { name: "Sérum Vit. C 15%", meta: "Mancha · Antioxidante", score: 94 },
+                { name: "Hidratante Ceramidas", meta: "Mancha · Barreira", score: 91 },
+                { name: "FPS 50+ Fluido", meta: "Mancha · Fotoproteção", score: 98 },
               ].map((item, i) => (
                 <div key={i} className="grid grid-cols-[32px_1fr_auto] gap-3 items-center py-2 border-t border-sable/25 first:border-0">
                   <span className="w-8 h-8 bg-ivoire border border-pierre/15" />
