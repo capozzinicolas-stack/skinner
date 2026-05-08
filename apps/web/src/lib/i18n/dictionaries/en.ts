@@ -29,6 +29,7 @@ export const en: Dictionary = {
     link_labs: "Laboratories",
     link_clinics: "Clinics",
     link_pharmacies: "Pharmacies",
+    link_retail: "Retail",
     link_contact: "Contact",
     link_press: "Press",
     link_privacy: "Privacy",

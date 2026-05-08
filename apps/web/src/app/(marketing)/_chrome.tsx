@@ -79,6 +79,7 @@ export function MarketingChrome({ children }: { children: React.ReactNode }) {
             <Link href="/laboratorios" className="text-[13px] text-blanc-casse font-light hover:text-sable">{t.footer.link_labs}</Link>
             <Link href="/clinicas" className="text-[13px] text-blanc-casse font-light hover:text-sable">{t.footer.link_clinics}</Link>
             <Link href="/farmacias" className="text-[13px] text-blanc-casse font-light hover:text-sable">{t.footer.link_pharmacies}</Link>
+            <Link href="/varejo" className="text-[13px] text-blanc-casse font-light hover:text-sable">{t.footer.link_retail}</Link>
           </div>
           <div className="flex flex-col gap-2">
             <p className="font-mono text-[10px] tracking-[0.14em] uppercase text-sable mb-2">{t.footer.section_company}</p>

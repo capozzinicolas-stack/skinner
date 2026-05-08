@@ -1,9 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 
-export default function ContatoPage() {
+// Map URL ?segment= keys (used by segment landing CTAs) to the human-readable
+// labels of the <select> below. Keep in sync with /segmentos page tabs and
+// the option list in the form. Adding a new segment tab → add a row here.
+const SEGMENT_TO_LABEL: Record<string, string> = {
+  laboratorios: "Laboratório",
+  clinicas: "Clínica",
+  farmacias: "Farmácia",
+  varejo: "Varejo",
+};
+
+function ContatoForm() {
+  const searchParams = useSearchParams();
+  const initialSegment = searchParams.get("segment") ?? "";
+  const initialSegmentLabel = SEGMENT_TO_LABEL[initialSegment] ?? "";
+
   const [sent, setSent] = useState(false);
+  const [segment, setSegment] = useState(initialSegmentLabel);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -101,10 +117,20 @@ export default function ContatoPage() {
               </label>
               <label className="block">
                 <span className="text-sm text-carbone block mb-1">Segmento</span>
-                <select name="segment" className="w-full px-4 py-3 border border-sable/30 bg-blanc-casse text-sm font-light text-carbone focus:outline-none focus:border-terre">
+                {/* Pre-selected from ?segment= query param when the visitor
+                    came in from a segment landing CTA — saves them a click
+                    and gives sales the right playbook context. */}
+                <select
+                  name="segment"
+                  value={segment}
+                  onChange={(e) => setSegment(e.target.value)}
+                  className="w-full px-4 py-3 border border-sable/30 bg-blanc-casse text-sm font-light text-carbone focus:outline-none focus:border-terre"
+                >
+                  <option value="">— Selecione —</option>
                   <option>Clínica</option>
                   <option>Laboratório</option>
                   <option>Farmácia</option>
+                  <option>Varejo</option>
                   <option>Outro</option>
                 </select>
               </label>
@@ -120,5 +146,13 @@ export default function ContatoPage() {
         </div>
       </section>
     </>
+  );
+}
+
+export default function ContatoPage() {
+  return (
+    <Suspense>
+      <ContatoForm />
+    </Suspense>
   );
 }

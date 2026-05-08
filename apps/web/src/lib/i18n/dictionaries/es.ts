@@ -29,6 +29,7 @@ export const es: Dictionary = {
     link_labs: "Laboratorios",
     link_clinics: "Clinicas",
     link_pharmacies: "Farmacias",
+    link_retail: "Retail", // REVIEW_TRANSLATION_HUMAN: "Varejo" → "Retail" en común uso LATAM
     link_contact: "Contacto",
     link_press: "Prensa",
     link_privacy: "Privacidad",
