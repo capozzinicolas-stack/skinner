@@ -1,12 +1,17 @@
 import Link from "next/link";
 
+// Stack section — May-2026 redesign denationalized the cards to support
+// LATAM expansion. Previous copy referenced "Brasil", "Pix", "Datacenter SP"
+// — all of which contradicted the es/en locales and excluded segments
+// (multi-region laboratories, retailers using MercadoPago, etc.). New copy
+// maps each card to a feature actually shipping in the product.
 const techGrid = [
-  { t: "LGPD nativo", d: "DPO dedicado, ANPD-compliant, foto descartada por padrão." },
-  { t: "Multi-tenant", d: "Marca branca completa: domínio, cores, tipografia, copy." },
-  { t: "API REST + Webhooks", d: "Eventos de análise, recomendação e venda em tempo real." },
-  { t: "WhatsApp nativo", d: "Captura e relatório direto pelo Business API oficial." },
-  { t: "Pix + cartão", d: "Stripe, Pagar.me, Mercado Pago, Asaas integrados." },
-  { t: "Datacenter SP", d: "Infraestrutura em São Paulo. Latência < 80ms em todo o Brasil." },
+  { t: "Compliance regional", d: "LGPD, GDPR e equivalentes locais. DPO dedicado. Foto descartada por padrão após análise." },
+  { t: "Marca branca multi-tenant", d: "Subdomínio próprio, paleta, tipografia e copy ajustáveis por canal. Zero indício de Skinner." },
+  { t: "Integrações abertas", d: "API REST, webhooks e SDKs. Conexão direta com e-commerce, ERP, prontuário e CRM." },
+  { t: "Multi-canal nativo", d: "WhatsApp Business API, e-mail transacional, link compartilhável e widget embed para qualquer site." },
+  { t: "Pagamento flexível", d: "Stripe, MercadoPago, Pagar.me e gateways locais. Checkout no carrinho do cliente, sem fricção." },
+  { t: "Infraestrutura distribuída", d: "Multi-região com baixa latência. Backups automatizados. SLA de uptime 99.9% contratual." },
 ];
 
 export default function ComoFuncionaPage() {
@@ -142,10 +147,13 @@ export default function ComoFuncionaPage() {
       <section className="py-24 px-8 bg-white">
         <div className="max-w-[1200px] mx-auto">
           <div className="text-center max-w-[760px] mx-auto mb-[72px]">
-            <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-pierre mb-4">Stack técnica</p>
+            <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-pierre mb-4">Stack</p>
             <h2 className="font-serif text-[clamp(32px,4.2vw,52px)] leading-[1.08] text-carbone">
-              Construído pra <i className="text-terre">escalar</i> no Brasil.
+              Construído pra <i className="text-terre">escalar</i> sem fricção.
             </h2>
+            <p className="text-base font-light text-pierre leading-relaxed mt-6 max-w-[620px] mx-auto">
+              Compliance, integrações e performance que acompanham seu modelo de negócio — em qualquer mercado.
+            </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {techGrid.map((x, i) => (
