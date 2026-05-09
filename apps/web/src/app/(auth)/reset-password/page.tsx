@@ -2,8 +2,76 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useI18n } from "@/lib/i18n/client";
+import type { Locale } from "@/lib/i18n/types";
+
+type Copy = {
+  eyebrow: string;
+  title: string;
+  invalidLink: string;
+  successText: string;
+  redirecting: string;
+  newPasswordLabel: string;
+  confirmLabel: string;
+  minLengthHint: string;
+  submit: string;
+  submitting: string;
+  errorMin: string;
+  errorMismatch: string;
+  errorGeneric: string;
+};
+
+const COPY: Record<Locale, Copy> = {
+  "pt-BR": {
+    eyebrow: "Nova senha",
+    title: "Redefina sua senha",
+    invalidLink: "Link inválido. Solicite um novo em \"Esqueci minha senha\".",
+    successText: "Senha redefinida com sucesso.",
+    redirecting: "Redirecionando para o login...",
+    newPasswordLabel: "Nova senha",
+    confirmLabel: "Confirmar nova senha",
+    minLengthHint: "Mínimo 8 caracteres.",
+    submit: "Redefinir senha",
+    submitting: "Redefinindo...",
+    errorMin: "A senha deve ter ao menos 8 caracteres.",
+    errorMismatch: "As senhas não coincidem.",
+    errorGeneric: "Erro ao redefinir a senha.",
+  },
+  es: {
+    eyebrow: "Nueva contraseña",
+    title: "Restablece tu contraseña",
+    invalidLink: "Link inválido. Solicita uno nuevo en \"Olvidaste tu contraseña\".",
+    successText: "Contraseña restablecida con éxito.",
+    redirecting: "Redirigiendo al login...",
+    newPasswordLabel: "Nueva contraseña",
+    confirmLabel: "Confirmar nueva contraseña",
+    minLengthHint: "Mínimo 8 caracteres.",
+    submit: "Restablecer contraseña",
+    submitting: "Restableciendo...",
+    errorMin: "La contraseña debe tener al menos 8 caracteres.",
+    errorMismatch: "Las contraseñas no coinciden.",
+    errorGeneric: "Error al restablecer la contraseña.",
+  },
+  en: {
+    eyebrow: "New password",
+    title: "Reset your password",
+    invalidLink: "Invalid link. Request a new one at \"Forgot password\".",
+    successText: "Password reset successfully.",
+    redirecting: "Redirecting to sign-in...",
+    newPasswordLabel: "New password",
+    confirmLabel: "Confirm new password",
+    minLengthHint: "Minimum 8 characters.",
+    submit: "Reset password",
+    submitting: "Resetting...",
+    errorMin: "Password must be at least 8 characters.",
+    errorMismatch: "Passwords do not match.",
+    errorGeneric: "Error resetting password.",
+  },
+};
 
 function ResetPasswordForm() {
+  const { locale } = useI18n();
+  const c = COPY[locale];
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token") ?? "";
@@ -18,11 +86,11 @@ function ResetPasswordForm() {
     e.preventDefault();
     setError(null);
     if (pwd.length < 8) {
-      setError("A senha deve ter ao menos 8 caracteres.");
+      setError(c.errorMin);
       return;
     }
     if (pwd !== confirm) {
-      setError("As senhas não coincidem.");
+      setError(c.errorMismatch);
       return;
     }
     setLoading(true);
@@ -34,7 +102,7 @@ function ResetPasswordForm() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Erro ao redefinir a senha.");
+        setError(data.error ?? c.errorGeneric);
         return;
       }
       setSuccess(true);
@@ -55,28 +123,18 @@ function ResetPasswordForm() {
             alt="Skinner"
             className="h-[140px] mx-auto mb-6 object-contain brightness-0 invert"
           />
-          <p className="font-mono text-[10px] tracking-[0.2em] uppercase text-sable/80 mb-3">
-            Nova senha
-          </p>
-          <h1 className="font-serif text-3xl md:text-4xl text-blanc-casse italic">
-            Redefina sua senha
-          </h1>
+          <p className="font-mono text-[10px] tracking-[0.2em] uppercase text-sable/80 mb-3">{c.eyebrow}</p>
+          <h1 className="font-serif text-3xl md:text-4xl text-blanc-casse italic">{c.title}</h1>
         </div>
 
         <div className="w-full max-w-sm">
           <div className="bg-blanc-casse/95 backdrop-blur-md border border-sable/30 p-8 shadow-[0_32px_80px_-20px_rgba(0,0,0,0.5)]">
             {!token ? (
-              <div className="text-center text-sm text-terre font-light">
-                Link inválido. Solicite um novo em "Esqueci minha senha".
-              </div>
+              <div className="text-center text-sm text-terre font-light">{c.invalidLink}</div>
             ) : success ? (
               <div className="text-center space-y-3">
-                <p className="text-sm text-carbone font-light">
-                  Senha redefinida com sucesso.
-                </p>
-                <p className="text-xs text-pierre font-light">
-                  Redirecionando para o login...
-                </p>
+                <p className="text-sm text-carbone font-light">{c.successText}</p>
+                <p className="text-xs text-pierre font-light">{c.redirecting}</p>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-5">
@@ -87,7 +145,7 @@ function ResetPasswordForm() {
                 )}
                 <div>
                   <label className="block text-[10px] font-light text-pierre uppercase tracking-wider mb-2">
-                    Nova senha
+                    {c.newPasswordLabel}
                   </label>
                   <input
                     type="password"
@@ -97,11 +155,11 @@ function ResetPasswordForm() {
                     minLength={8}
                     className="w-full px-4 py-3 border border-sable/40 bg-white text-sm text-carbone font-light focus:outline-none focus:border-terre"
                   />
-                  <p className="text-[10px] text-pierre font-light mt-1">Mínimo 8 caracteres.</p>
+                  <p className="text-[10px] text-pierre font-light mt-1">{c.minLengthHint}</p>
                 </div>
                 <div>
                   <label className="block text-[10px] font-light text-pierre uppercase tracking-wider mb-2">
-                    Confirmar nova senha
+                    {c.confirmLabel}
                   </label>
                   <input
                     type="password"
@@ -117,7 +175,7 @@ function ResetPasswordForm() {
                   disabled={loading}
                   className="w-full py-3.5 bg-carbone text-blanc-casse text-sm tracking-[0.02em] hover:bg-terre transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {loading ? "Redefinindo..." : "Redefinir senha"}
+                  {loading ? c.submitting : c.submit}
                 </button>
               </form>
             )}

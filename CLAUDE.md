@@ -870,10 +870,20 @@ contexts are independently configurable.
 
 ### Component-level translations
 - Marketing chrome (header/footer/switcher): TRANSLATED via `t.nav` /
-  `t.footer`. Page bodies (/, /como-funciona, /planos, etc.) still
-  hardcoded pt-BR — incremental migration as content stabilizes.
+  `t.footer`.
+- **Marketing page bodies (May-2026): FULLY TRANSLATED** in pt-BR / es / en.
+  Each page (`/`, `/como-funciona`, `/planos`, `/contato`, `/demo`,
+  `/segmentos`, `/privacidade`, `/termos`, `/integracoes/pixel`) has a
+  local `COPY: Record<Locale, PageCopy>` object. Server pages call
+  `resolveLocale()` then `c = COPY[locale]`; client pages call
+  `useI18n()` then `c = COPY[locale]`. This pattern avoids inflating
+  the central dictionary and keeps each page self-contained.
+- **Auth pages (May-2026): FULLY TRANSLATED**. New `(auth)/layout.tsx`
+  wraps the auth route group in `<I18nProvider>` (auth doesn't inherit
+  the marketing chrome). Each page uses the same local-COPY pattern.
 - Dashboard sidebar: TRANSLATED via `t.dashboard.nav_*`. Page bodies
-  hardcoded pt-BR.
+  hardcoded pt-BR (visited only by logged-in B2B staff who can set
+  per-user `User.locale`; less urgent than marketing).
 - Patient flow components (welcome-screen, consent-screen, photo-capture,
   results-screen, contact-capture, cart-floater): defaults still pt-BR.
   When tenants need es/en they should configure
