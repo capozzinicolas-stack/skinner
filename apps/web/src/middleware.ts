@@ -149,6 +149,11 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|brand/|uploads/).*)",
+    // Static asset folders MUST be listed here — without exclusion the
+    // middleware redirects them to /login and Vercel serves a 307 instead
+    // of the file. `marketing/` was missed when the AI projection images +
+    // catalog screenshot landed; symptom was alt-text rendering instead of
+    // images on the home page (May-2026).
+    "/((?!_next/static|_next/image|favicon.ico|brand/|uploads/|marketing/).*)",
   ],
 };
