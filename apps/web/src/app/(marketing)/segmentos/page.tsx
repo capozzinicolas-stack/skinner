@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { Suspense } from "react";
 import { useI18n } from "@/lib/i18n/client";
@@ -249,6 +249,8 @@ function SegmentosContent() {
   const { locale } = useI18n();
   const c = COPY[locale];
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const initialTab = (searchParams.get("tab") as SegmentId) || "clinicas";
   const [tab, setTab] = useState<SegmentId>(initialTab in c.segmentsObj ? initialTab : "clinicas");
 
@@ -256,6 +258,18 @@ function SegmentosContent() {
     const t = searchParams.get("tab") as SegmentId;
     if (t && c.segmentsObj[t]) setTab(t);
   }, [searchParams, c.segmentsObj]);
+
+  // Sync tab change → URL with `?tab=...`. Uses router.replace (not push)
+  // so back-button doesn't get polluted with N tab clicks; SEO crawlers
+  // and shareable links still get the right URL on each tab. Scroll: false
+  // so clicking a tab doesn't jump to top — the tabs themselves are above
+  // the content, you want to keep your view stable.
+  function handleTabClick(key: SegmentId) {
+    setTab(key);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", key);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }
 
   const s = c.segmentsObj[tab];
 
@@ -272,7 +286,7 @@ function SegmentosContent() {
             {c.segmentOrder.map((key) => (
               <button
                 key={key}
-                onClick={() => setTab(key)}
+                onClick={() => handleTabClick(key)}
                 aria-pressed={tab === key}
                 className={`px-6 py-3 text-sm border transition-all focus:outline-none focus:ring-1 focus:ring-carbone ${
                   tab === key
