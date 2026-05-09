@@ -5,6 +5,7 @@ import { useState } from "react";
 import { trpc } from "@/lib/trpc/client";
 import { useI18n } from "@/lib/i18n/client";
 import type { Locale } from "@/lib/i18n/types";
+import { formatPrice } from "@/lib/i18n/currency";
 
 type Copy = {
   eyebrow: string;
@@ -187,13 +188,14 @@ export default function PlanosPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {plans.map((p) => {
               const meta = c.marketingMeta[p.id] ?? { target: "", popular: false };
-              const priceLabel = p.customAllowed
-                ? c.customConsult
-                : `R$ ${p.monthlyPriceBRL.toLocaleString("pt-BR")}`;
-              const setupLabel =
+              // formatPrice converts BRL → visitor's locale currency for
+              // display only. Stripe still charges BRL — disclaimer below
+              // makes the FX behaviour transparent to LATAM/US visitors.
+              const priceFormatted = formatPrice(p.monthlyPriceBRL, locale);
+              const setupFormatted =
                 p.customAllowed || !p.setupFeeBRL
-                  ? "—"
-                  : `R$ ${p.setupFeeBRL.toLocaleString("pt-BR")}`;
+                  ? null
+                  : formatPrice(p.setupFeeBRL, locale);
               const commissionLabel = `${(p.commissionRate * 100).toFixed(0)}%`;
               return (
                 <div key={p.id} className={`relative p-8 border flex flex-col ${meta.popular ? "border-carbone bg-blanc-casse" : "border-sable/40 bg-white"}`}>
@@ -203,10 +205,22 @@ export default function PlanosPage() {
                   )}
                   <h2 className="font-serif text-4xl italic text-carbone mt-2">{p.name}</h2>
                   <div className="mt-4 mb-1">
-                    <b className="font-serif text-3xl text-carbone">{priceLabel}</b>
+                    <b className="font-serif text-3xl text-carbone">
+                      {p.customAllowed ? c.customConsult : priceFormatted.primary}
+                    </b>
                     {!p.customAllowed && <small className="text-pierre font-light text-sm ml-1">{c.perMonth}</small>}
                   </div>
-                  <p className="text-[13px] text-pierre font-light">{c.setupLabel}: {setupLabel} · {c.commissionLabel}: {commissionLabel}</p>
+                  {/* Per-card FX disclaimer (es/en only) — pt-BR returns null
+                      and this skips. Sits below the price + setup so the
+                      visitor connects the dots immediately. */}
+                  {!p.customAllowed && priceFormatted.disclaimer && (
+                    <p className="text-[10px] text-pierre/70 font-light italic mb-1">
+                      {priceFormatted.disclaimer}
+                    </p>
+                  )}
+                  <p className="text-[13px] text-pierre font-light">
+                    {c.setupLabel}: {setupFormatted ? setupFormatted.primary : "—"} · {c.commissionLabel}: {commissionLabel}
+                  </p>
                   <div className="h-px bg-sable/30 my-6" />
                   <ul className="flex flex-col gap-3 flex-1">
                     {p.features.map((f, i) => (

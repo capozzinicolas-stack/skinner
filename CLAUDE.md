@@ -922,6 +922,41 @@ contexts are independently configurable.
 - The directive overrides any tone/brand instructions earlier in the
   prompt and is positioned at the end where it has highest priority.
 
+### Currency display (display-only conversion, May-2026)
+
+Plans are stored and **charged** in BRL across the stack
+(`Plan.monthlyPriceBRL`, `Tenant.customMonthlyPriceBRL`, Stripe Prices
+in BRL, webhook handlers, billing math). The marketing `/planos` page
+**displays** them in the visitor's locale currency for comfort:
+
+| Locale | Currency | Display | Disclaimer |
+|---|---|---|---|
+| pt-BR | BRL | "R$ 1.490" | none |
+| es | MXN (display) | "MX$ 4.917" | "Cobrado en R$ 1.490 · El monto en MXN puede variar..." |
+| en | USD (display) | "$ 268" | "Billed in R$ 1,490 · USD amount may vary..." |
+
+Helper: `lib/i18n/currency.ts:formatPrice(amountBRL, locale)` returns
+`{ primary, disclaimer }`. Disclaimer is `null` for pt-BR (no FX
+clarification needed) and renders as italic small text below the price
+for es/en. Rates hardcoded (BRL→MXN ~3.3, BRL→USD ~0.18, last updated
+2026-05-08) — review when off >5% from market.
+
+This is NOT real multi-currency. Stripe charges BRL; the visitor's
+bank does the FX conversion to their local currency at their rate
+(usually with a small spread). The disclaimer makes this transparent.
+
+**Migration path to real multi-currency** when LATAM/US demand
+justifies it (~1 week of work):
+- `Plan` schema: add `stripePriceIdMXN` + `stripePriceIdUSD` columns
+- `/admin/planos` UI: manage 3 prices per plan + lifecycle
+- `/api/billing/checkout`: receive `currency` param, pick the right
+  Stripe Price by locale
+- `formatPrice` extends to take a `currency` parameter (instead of
+  always converting from BRL); rest of the JSX doesn't change because
+  the display contract stays the same
+- Existing tenants stay on BRL. Only new signups in MX/US flow get
+  the new currency-aware checkout
+
 ### Translation review status
 All es/en strings carry `REVIEW_TRANSLATION_HUMAN` markers. They were
 AI-translated and need native-speaker validation (especially medical /
