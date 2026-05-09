@@ -6,6 +6,7 @@ import { trpc } from "@/lib/trpc/client";
 import { useI18n } from "@/lib/i18n/client";
 import type { Locale } from "@/lib/i18n/types";
 import { formatPrice } from "@/lib/i18n/currency";
+import { translatePlanFeature, translatePlanCta } from "@/lib/i18n/plan-features";
 
 type Copy = {
   eyebrow: string;
@@ -223,15 +224,18 @@ export default function PlanosPage() {
                   </p>
                   <div className="h-px bg-sable/30 my-6" />
                   <ul className="flex flex-col gap-3 flex-1">
+                    {/* Plan.features stored in DB as pt-BR. translatePlanFeature
+                        falls back to original text when no translation found —
+                        page never breaks for new admin-added features. */}
                     {p.features.map((f, i) => (
                       <li key={i} className="flex gap-3 text-sm text-terre font-light">
-                        <span className="w-1.5 h-1.5 bg-carbone mt-2 flex-shrink-0" />{f}
+                        <span className="w-1.5 h-1.5 bg-carbone mt-2 flex-shrink-0" />{translatePlanFeature(f, locale)}
                       </li>
                     ))}
                   </ul>
                   {p.customAllowed ? (
                     <Link href="/contato" className="mt-8 block text-center py-4 text-sm tracking-[0.02em] transition-all border border-sable text-carbone hover:bg-ivoire hover:border-carbone">
-                      {p.ctaText || c.defaultCustomCta}
+                      {p.ctaText ? translatePlanCta(p.ctaText, locale) : c.defaultCustomCta}
                     </Link>
                   ) : (
                     <button
@@ -243,7 +247,7 @@ export default function PlanosPage() {
                           : "border border-sable text-carbone hover:bg-ivoire hover:border-carbone"
                       }`}
                     >
-                      {loading === p.id ? c.redirecting : (p.ctaText || c.defaultStandardCta)}
+                      {loading === p.id ? c.redirecting : (p.ctaText ? translatePlanCta(p.ctaText, locale) : c.defaultStandardCta)}
                     </button>
                   )}
                 </div>
