@@ -104,11 +104,11 @@ export default function MinhaContaPage() {
 
       {/* Dados pessoais */}
       <section className="mb-12">
-        <h2 className="font-serif text-base text-carbone mb-4">Dados pessoais</h2>
+        <h2 className="font-serif text-base text-carbone mb-4">{t.dashboardPages.acct_section_profile}</h2>
         <form onSubmit={handleProfileSubmit} className="space-y-4 bg-white border border-sable/20 p-6">
           <div>
             <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
-              Nome
+              {t.dashboardPages.acct_name_label}
             </label>
             <input
               value={profile.name}
@@ -120,7 +120,7 @@ export default function MinhaContaPage() {
           </div>
           <div>
             <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
-              E-mail
+              {t.dashboardPages.acct_email_label}
             </label>
             <input
               type="email"
@@ -136,7 +136,7 @@ export default function MinhaContaPage() {
               disabled={updateProfile.isPending}
               className="px-4 py-2 bg-carbone text-blanc-casse text-sm font-light tracking-wide disabled:opacity-50"
             >
-              {updateProfile.isPending ? "Salvando..." : "Salvar dados"}
+              {updateProfile.isPending ? t.dashboardPages.common_saving : t.dashboardPages.common_save}
             </button>
             {profileMsg && (
               <p className={`text-sm font-light ${profileMsg.type === "ok" ? "text-carbone" : "text-pierre"}`}>
@@ -149,15 +149,14 @@ export default function MinhaContaPage() {
 
       {/* Idioma da interface */}
       <section className="mb-12">
-        <h2 className="font-serif text-base text-carbone mb-4">Idioma da interface</h2>
+        <h2 className="font-serif text-base text-carbone mb-4">{t.dashboardPages.acct_section_locale}</h2>
         <div className="bg-white border border-sable/20 p-6 space-y-4">
           <p className="text-sm text-pierre font-light">
-            Defina o idioma do seu painel administrativo. Esta preferencia e
-            individual e nao afeta o que seus pacientes veem nas analises.
+            {t.dashboardPages.acct_locale_section_text}
           </p>
           <div>
             <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
-              Idioma
+              {t.dashboardPages.acct_locale_label}
             </label>
             <select
               value={locale}
@@ -169,13 +168,13 @@ export default function MinhaContaPage() {
               }}
               className="w-full max-w-xs px-3 py-2 border border-sable/30 bg-blanc-casse text-sm text-carbone font-light focus:outline-none focus:border-pierre"
             >
-              <option value="">Padrao da organizacao</option>
+              <option value="">{t.dashboardPages.acct_locale_default_org}</option>
               <option value="pt-BR">Portugues (Brasil)</option>
               <option value="es">Espanol</option>
               <option value="en">English</option>
             </select>
             <p className="text-[10px] text-pierre/70 font-light mt-2">
-              Em breve. A interface continua em portugues ate ativarmos as traducoes.
+              {t.dashboardPages.acct_locale_hint}
             </p>
           </div>
           {localeMsg && (
@@ -186,16 +185,16 @@ export default function MinhaContaPage() {
 
       {/* Senha */}
       <section className="mb-12">
-        <h2 className="font-serif text-base text-carbone mb-4">Alterar senha</h2>
+        <h2 className="font-serif text-base text-carbone mb-4">{t.dashboardPages.acct_section_password}</h2>
         {me.data?.passwordChangedAt === null && (
           <div className="mb-4 px-4 py-3 bg-ivoire border border-sable/30 text-sm text-carbone font-light">
-            Voce ainda esta usando uma senha temporaria. Recomendamos altera-la agora.
+            {t.dashboardPages.acct_pwd_temp_warning}
           </div>
         )}
         <form onSubmit={handlePwdSubmit} className="space-y-4 bg-white border border-sable/20 p-6">
           <div>
             <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
-              Senha atual
+              {t.dashboardPages.acct_pwd_current}
             </label>
             <input
               type="password"
@@ -207,7 +206,7 @@ export default function MinhaContaPage() {
           </div>
           <div>
             <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
-              Nova senha
+              {t.dashboardPages.acct_pwd_new}
             </label>
             <input
               type="password"
@@ -217,11 +216,11 @@ export default function MinhaContaPage() {
               minLength={8}
               className="w-full px-3 py-2 border border-sable/30 bg-blanc-casse text-sm text-carbone font-light focus:outline-none focus:border-pierre"
             />
-            <p className="text-[10px] text-pierre font-light mt-1">Minimo 8 caracteres.</p>
+            <p className="text-[10px] text-pierre font-light mt-1">{t.dashboardPages.acct_pwd_min}</p>
           </div>
           <div>
             <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
-              Confirmar nova senha
+              {t.dashboardPages.acct_pwd_confirm}
             </label>
             <input
               type="password"
@@ -238,7 +237,7 @@ export default function MinhaContaPage() {
               disabled={changePassword.isPending}
               className="px-4 py-2 bg-carbone text-blanc-casse text-sm font-light tracking-wide disabled:opacity-50"
             >
-              {changePassword.isPending ? "Alterando..." : "Alterar senha"}
+              {changePassword.isPending ? t.dashboardPages.acct_pwd_changing : t.dashboardPages.acct_pwd_change}
             </button>
             {pwdMsg && (
               <p className={`text-sm font-light ${pwdMsg.type === "ok" ? "text-carbone" : "text-pierre"}`}>
@@ -253,16 +252,14 @@ export default function MinhaContaPage() {
           Visivel apenas para b2b_admin do tenant. */}
       {me.data?.role === "b2b_admin" && (
         <section>
-          <h2 className="font-serif text-base text-carbone mb-4">Excluir minha conta</h2>
+          <h2 className="font-serif text-base text-carbone mb-4">{t.dashboardPages.acct_section_delete}</h2>
           <div className="bg-white border border-terre/40 p-6 space-y-4">
             <p className="text-sm text-pierre font-light">
-              Esta acao remove o acesso da sua clinica ao Skinner e anonimiza todos os dados
-              dos pacientes (fotos, respostas e localizacao sao apagados; metricas agregadas
-              sao preservadas para conformidade contabil). Usuarios da equipe sao despersonalizados.
-              <strong className="block mt-2 text-terre">A acao nao pode ser desfeita por voce.</strong>
+              {t.dashboardPages.acct_delete_body}
+              <strong className="block mt-2 text-terre">{t.dashboardPages.acct_delete_warn}</strong>
             </p>
             <p className="text-xs text-pierre font-light">
-              Para confirmar, digite <code className="bg-ivoire px-1.5 py-0.5">DELETAR</code> abaixo.
+              {t.dashboardPages.acct_delete_confirm_intro} <code className="bg-ivoire px-1.5 py-0.5">DELETAR</code>.
             </p>
             <input
               type="text"
@@ -284,7 +281,7 @@ export default function MinhaContaPage() {
                 }}
                 className="px-4 py-2 bg-terre text-blanc-casse text-sm font-light tracking-wide disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                {requestDataDeletion.isPending ? "Processando..." : "Excluir conta definitivamente"}
+                {requestDataDeletion.isPending ? t.dashboardPages.acct_delete_processing : t.dashboardPages.acct_delete_cta}
               </button>
               {deleteMsg && (
                 <p className="text-sm text-pierre font-light">{deleteMsg}</p>

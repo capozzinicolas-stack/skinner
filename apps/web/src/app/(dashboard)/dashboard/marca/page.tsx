@@ -101,23 +101,23 @@ export default function BrandConfigPage() {
       <form onSubmit={handleBrandSubmit} className="mt-8 space-y-6">
         <div>
           <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-2">
-            URL do Logo
+            {t.dashboardPages.marca_logo_label}
           </label>
           <input
             value={form.logoUrl}
             onChange={(e) => setForm((f) => ({ ...f, logoUrl: e.target.value }))}
-            placeholder="https://exemplo.com/logo.png"
+            placeholder={t.dashboardPages.marca_logo_placeholder}
             className="w-full px-3 py-2 border border-sable/40 bg-white text-sm text-carbone font-light focus:outline-none focus:border-carbone"
           />
           <p className="text-xs text-pierre font-light mt-1">
-            Recomendado: PNG transparente, 200x60px.
+            {t.dashboardPages.marca_logo_hint}
           </p>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-2">
-              Cor primaria
+              {t.dashboardPages.marca_primary_color}
             </label>
             <div className="flex items-center gap-2">
               <input
@@ -139,7 +139,7 @@ export default function BrandConfigPage() {
           </div>
           <div>
             <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-2">
-              Cor secundaria
+              {t.dashboardPages.marca_secondary_color}
             </label>
             <div className="flex items-center gap-2">
               <input
@@ -163,32 +163,32 @@ export default function BrandConfigPage() {
 
         <div>
           <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-2">
-            Voz de marca
+            {t.dashboardPages.marca_voice_label}
           </label>
           <textarea
             value={form.brandVoice}
             onChange={(e) =>
               setForm((f) => ({ ...f, brandVoice: e.target.value }))
             }
-            placeholder="Ex: Profissional, acolhedor e educativo. Use linguagem acessivel..."
+            placeholder={t.dashboardPages.marca_voice_placeholder}
             rows={3}
             className="w-full px-3 py-2 border border-sable/40 bg-white text-sm text-carbone font-light focus:outline-none focus:border-carbone"
           />
           <p className="text-xs text-pierre font-light mt-1">
-            Instrucoes de tom para a IA ao gerar relatorios.
+            {t.dashboardPages.marca_voice_hint}
           </p>
         </div>
 
         <div>
           <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-2">
-            Disclaimer medico
+            {t.dashboardPages.marca_disclaimer_label}
           </label>
           <textarea
             value={form.disclaimer}
             onChange={(e) =>
               setForm((f) => ({ ...f, disclaimer: e.target.value }))
             }
-            placeholder="Ex: Esta analise e apenas informativa e nao substitui a consulta com um dermatologista."
+            placeholder={t.dashboardPages.marca_disclaimer_placeholder}
             rows={3}
             className="w-full px-3 py-2 border border-sable/40 bg-white text-sm text-carbone font-light focus:outline-none focus:border-carbone"
           />
@@ -200,10 +200,10 @@ export default function BrandConfigPage() {
             disabled={updateBrand.isPending}
             className="px-6 py-2 bg-carbone text-blanc-casse text-sm font-light tracking-wide hover:bg-terre disabled:opacity-50 transition-colors"
           >
-            {updateBrand.isPending ? "Salvando..." : "Salvar marca"}
+            {updateBrand.isPending ? t.dashboardPages.common_saving : t.dashboardPages.marca_save}
           </button>
           {brandSaved && (
-            <span className="text-sm text-pierre font-light">Salvo.</span>
+            <span className="text-sm text-pierre font-light">{t.dashboardPages.marca_saved}</span>
           )}
           {updateBrand.error && (
             <span className="text-sm text-red-600 font-light">

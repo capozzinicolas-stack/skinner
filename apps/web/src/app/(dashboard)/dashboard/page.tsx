@@ -64,13 +64,14 @@ function SectionTitle({ children, subtitle }: { children: React.ReactNode; subti
 }
 
 function HorizontalBar({ label, value, max, count, suffix }: { label: string; value: number; max: number; count?: number; suffix?: string }) {
+  const { t } = useI18n();
   const pct = max > 0 ? (value / max) * 100 : 0;
   return (
     <div>
       <div className="flex items-baseline justify-between mb-1">
         <span className="text-sm text-carbone font-light">{label}</span>
         <span className="text-xs text-pierre font-light">
-          {count != null ? `${fmtInt(count)} análises ` : ""}
+          {count != null ? `${fmtInt(count)} ${count === 1 ? t.dashboardPages.home_analyses_one : t.dashboardPages.home_analyses_many} ` : ""}
           {suffix ?? fmtPct(value, 1)}
         </span>
       </div>
@@ -90,10 +91,14 @@ function EmptyHint({ children }: { children: React.ReactNode }) {
 }
 
 function LowSampleNotice({ sample, threshold = 30 }: { sample: number; threshold?: number }) {
+  const { t } = useI18n();
   if (sample >= threshold) return null;
+  const tmpl = sample === 1
+    ? t.dashboardPages.home_low_sample_one
+    : t.dashboardPages.home_low_sample_many;
   return (
     <p className="text-[10px] text-terre font-light mt-2 italic">
-      Amostra pequena ({sample} análise{sample === 1 ? "" : "s"}) — colete mais dados para insights confiáveis.
+      {tmpl.replace("{sample}", String(sample))}
     </p>
   );
 }
@@ -253,6 +258,7 @@ const BR_GRID: Record<string, { col: number; row: number; label: string }> = {
 };
 
 function BrazilTileMap({ data }: { data: Array<{ uf: string; count: number }> }) {
+  const { t } = useI18n();
   const counts = new Map(data.map((d) => [d.uf, d.count]));
   const max = Math.max(...data.map((d) => d.count), 1);
   const cell = 40;
@@ -283,7 +289,7 @@ function BrazilTileMap({ data }: { data: Array<{ uf: string; count: number }> })
           const count = counts.get(uf) ?? 0;
           return (
             <g key={uf}>
-              <title>{`${uf}: ${count} ${count === 1 ? "análise" : "análises"}`}</title>
+              <title>{`${uf}: ${count} ${count === 1 ? t.dashboardPages.home_analyses_one : t.dashboardPages.home_analyses_many}`}</title>
               <rect
                 x={x}
                 y={y}
@@ -350,6 +356,7 @@ function PersonaCard({
   };
   rank: number;
 }) {
+  const { t } = useI18n();
   const concernRaw = tr(conditionLabels, persona.topConcern) || persona.topConcern;
   const concernLabel = concernRaw.charAt(0).toUpperCase() + concernRaw.slice(1);
   const skinLabel = tr(skinTypeLabels, persona.skinType) || "—";
@@ -357,10 +364,10 @@ function PersonaCard({
     <div className="p-5 bg-white border border-sable/20">
       <div className="flex items-baseline justify-between mb-3">
         <p className="text-[10px] text-pierre uppercase tracking-wider font-light">
-          Persona #{rank}
+          {t.dashboardPages.home_persona_rank.replace("{rank}", String(rank))}
         </p>
         <span className="text-xs text-pierre font-light">
-          {fmtInt(persona.patients)} pacientes
+          {fmtInt(persona.patients)} {t.dashboardPages.home_patients_label}
         </span>
       </div>
       <h3 className="font-serif text-base text-carbone mb-1">
@@ -446,6 +453,7 @@ function LiftCard({
   rows: Array<{ key: string; patients: number; converted: number; rate: number; lift: number }>;
   labelMap?: Record<string, string>;
 }) {
+  const { t } = useI18n();
   return (
     <div className="p-5 bg-white border border-sable/20">
       <p className="text-[10px] text-pierre uppercase tracking-wider font-light mb-4">
@@ -453,7 +461,7 @@ function LiftCard({
       </p>
       {rows.length === 0 ? (
         <p className="text-xs text-pierre font-light">
-          Sem segmentos com amostra suficiente (mínimo 3 pacientes).
+          {t.dashboardPages.home_persona_min_sample}
         </p>
       ) : (
         <div className="space-y-3">
@@ -504,6 +512,7 @@ function SeasonalityHeatmap({
   months: string[];
   series: Array<{ condition: string; values: number[]; peak: number; peakMonth: string | null }>;
 }) {
+  const { t } = useI18n();
   const monthLabel = (m: string) => `${m.slice(5)}/${m.slice(2, 4)}`;
   return (
     <div className="min-w-[640px]">
@@ -560,7 +569,7 @@ function SeasonalityHeatmap({
         </tbody>
       </table>
       <p className="text-[10px] text-pierre font-light mt-3 italic">
-        Cada célula mostra o número de pacientes com essa condição naquele mês. Cor mais escura = mais casos.
+        {t.dashboardPages.home_seasonality_explanation}
       </p>
     </div>
   );
@@ -690,45 +699,49 @@ export default function TenantDashboard() {
 
       {data && (
         <>
-          {/* ROI BLOQUE */}
-          <SectionTitle subtitle="Resultados financeiros e operacionais">Visão geral</SectionTitle>
+          {/* OVERVIEW */}
+          <SectionTitle subtitle={t.dashboardPages.home_section_overview_sub}>{t.dashboardPages.home_section_overview}</SectionTitle>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <KpiCard
-              label="Análises completas"
+              label={t.dashboardPages.home_kpi_completed}
               value={fmtInt(data.analysesCompleted)}
-              hint={`${fmtPct(data.completionRate)} de ${fmtInt(data.analysesStarted)} iniciadas`}
+              hint={t.dashboardPages.home_kpi_completed_hint
+                .replace("{pct}", fmtPct(data.completionRate))
+                .replace("{total}", fmtInt(data.analysesStarted))}
             />
             <KpiCard
-              label="Conversões em vendas"
+              label={t.dashboardPages.home_kpi_conversions}
               value={fmtInt(data.conversions)}
-              hint={fmtPct(data.conversionRate) + " do total completas"}
+              hint={t.dashboardPages.home_kpi_conversions_hint.replace("{pct}", fmtPct(data.conversionRate))}
             />
             <KpiCard
-              label="Receita atribuída"
+              label={t.dashboardPages.home_kpi_revenue}
               value={fmtCurrency(data.revenue)}
-              hint={"Ticket médio " + fmtCurrency(data.avgTicket)}
+              hint={t.dashboardPages.home_kpi_revenue_hint.replace("{avg}", fmtCurrency(data.avgTicket))}
               accent
             />
             <KpiCard
-              label="Downloads de PDF"
+              label={t.dashboardPages.home_kpi_pdf}
               value={fmtInt(data.pdfDownloads)}
               hint={
                 data.analysesCompleted > 0
-                  ? fmtPct(data.pdfDownloads / data.analysesCompleted) + " de engajamento"
+                  ? t.dashboardPages.home_kpi_pdf_hint.replace("{pct}", fmtPct(data.pdfDownloads / data.analysesCompleted))
                   : ""
               }
             />
           </div>
 
           {/* PLAN USAGE */}
-          <SectionTitle subtitle="Consumo do plano vs limite">Plano e capacidade</SectionTitle>
+          <SectionTitle subtitle={t.dashboardPages.home_section_plan_sub}>{t.dashboardPages.home_section_plan}</SectionTitle>
           <div className="p-5 bg-white border border-sable/20">
             <div className="flex items-baseline justify-between mb-2">
               <span className="text-sm text-carbone uppercase tracking-wider font-light">
-                Plano {data.planUsage.plan}
+                {t.dashboardPages.home_plan_label.replace("{plan}", data.planUsage.plan)}
               </span>
               <span className="text-xs text-pierre font-light">
-                {fmtInt(data.planUsage.used)} / {fmtInt(data.planUsage.limit)} análises
+                {t.dashboardPages.home_plan_count
+                  .replace("{used}", fmtInt(data.planUsage.used))
+                  .replace("{limit}", fmtInt(data.planUsage.limit))}
               </span>
             </div>
             <div className="h-2 bg-sable/20">
@@ -744,19 +757,19 @@ export default function TenantDashboard() {
               />
             </div>
             <p className="text-xs text-pierre font-light mt-2">
-              {fmtPct(data.planUsage.pct, 0)} consumido.{" "}
+              {t.dashboardPages.home_plan_consumed.replace("{pct}", fmtPct(data.planUsage.pct, 0))}{" "}
               {data.planUsage.pct > 0.9
-                ? "Limite próximo — considere fazer upgrade."
+                ? t.dashboardPages.home_plan_near_limit
                 : data.planUsage.pct > 0.7
-                ? "Atenção: você está acima de 70% do limite."
-                : "Uso saudável."}
+                ? t.dashboardPages.home_plan_above_70
+                : t.dashboardPages.home_plan_healthy}
             </p>
           </div>
 
           {/* MONTHLY TREND */}
           {trend.data && trend.data.length > 0 && (
             <>
-              <SectionTitle subtitle="Volume e receita nos últimos 6 meses">Tendência</SectionTitle>
+              <SectionTitle subtitle={t.dashboardPages.home_section_trend_sub}>{t.dashboardPages.home_section_trend}</SectionTitle>
               <div className="p-4 md:p-5 bg-white border border-sable/20 overflow-x-auto">
                 <div className="grid grid-cols-6 gap-2 md:gap-3 min-w-[480px]">
                   {trend.data.map((m) => {
@@ -788,14 +801,14 @@ export default function TenantDashboard() {
           )}
 
           {/* GEO */}
-          <SectionTitle subtitle="De onde vêm seus pacientes (capturado automaticamente)">
-            Distribuição geográfica
+          <SectionTitle subtitle={t.dashboardPages.home_section_geo_sub}>
+            {t.dashboardPages.home_section_geo}
           </SectionTitle>
           {/* Brazil tile map */}
           {geoMap.data && geoMap.data.length > 0 && (
             <div className="p-5 bg-white border border-sable/20 mb-4">
               <p className="text-[10px] text-pierre uppercase tracking-wider font-light mb-4 text-center">
-                Mapa do Brasil — análises por estado
+                {t.dashboardPages.home_geo_brazil_title}
               </p>
               <BrazilTileMap data={geoMap.data} />
             </div>
@@ -803,7 +816,7 @@ export default function TenantDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="p-5 bg-white border border-sable/20">
               <p className="text-[10px] text-pierre uppercase tracking-wider font-light mb-4">
-                Por estado / região
+                {t.dashboardPages.home_geo_by_region}
               </p>
               {byRegion.data && byRegion.data.length > 0 ? (
                 <div className="space-y-3">
@@ -822,12 +835,12 @@ export default function TenantDashboard() {
                   })}
                 </div>
               ) : (
-                <EmptyHint>Sem dados geográficos no período. Análises feitas em redes locais ou sem detecção de IP aparecem como "Desconhecido".</EmptyHint>
+                <EmptyHint>{t.dashboardPages.home_geo_empty_region}</EmptyHint>
               )}
             </div>
             <div className="p-5 bg-white border border-sable/20">
               <p className="text-[10px] text-pierre uppercase tracking-wider font-light mb-4">
-                Top 10 cidades
+                {t.dashboardPages.home_geo_top_cities}
               </p>
               {byCity.data && byCity.data.length > 0 ? (
                 <div className="space-y-2">
@@ -842,20 +855,20 @@ export default function TenantDashboard() {
                   ))}
                 </div>
               ) : (
-                <EmptyHint>Sem dados de cidade.</EmptyHint>
+                <EmptyHint>{t.dashboardPages.home_geo_empty_city}</EmptyHint>
               )}
             </div>
           </div>
 
           {/* PATIENT PROFILE */}
-          <SectionTitle subtitle="Quem são seus pacientes e o que precisam">
-            Perfil de paciente
+          <SectionTitle subtitle={t.dashboardPages.home_section_profile_sub}>
+            {t.dashboardPages.home_section_profile}
           </SectionTitle>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Skin type */}
             <div className="p-5 bg-white border border-sable/20">
               <p className="text-[10px] text-pierre uppercase tracking-wider font-light mb-4">
-                Tipo de pele detectado
+                {t.dashboardPages.home_profile_skin_type}
               </p>
               {bySkinType.data && bySkinType.data.length > 0 ? (
                 <div className="space-y-3">
@@ -871,13 +884,13 @@ export default function TenantDashboard() {
                   ))}
                 </div>
               ) : (
-                <EmptyHint>Sem análises completas no período.</EmptyHint>
+                <EmptyHint>{t.dashboardPages.home_profile_empty_skin}</EmptyHint>
               )}
             </div>
             {/* Age range */}
             <div className="p-5 bg-white border border-sable/20">
               <p className="text-[10px] text-pierre uppercase tracking-wider font-light mb-4">
-                Faixa etária
+                {t.dashboardPages.home_profile_age_range}
               </p>
               {byAge.data && byAge.data.length > 0 ? (
                 <div className="space-y-3">
@@ -896,13 +909,13 @@ export default function TenantDashboard() {
                   })}
                 </div>
               ) : (
-                <EmptyHint>Sem dados de faixa etária.</EmptyHint>
+                <EmptyHint>{t.dashboardPages.home_profile_empty_age}</EmptyHint>
               )}
             </div>
             {/* Objective */}
             <div className="p-5 bg-white border border-sable/20">
               <p className="text-[10px] text-pierre uppercase tracking-wider font-light mb-4">
-                Objetivo principal
+                {t.dashboardPages.home_profile_objective}
               </p>
               {byObjective.data && byObjective.data.length > 0 ? (
                 <div className="space-y-3">
@@ -921,7 +934,7 @@ export default function TenantDashboard() {
                   })}
                 </div>
               ) : (
-                <EmptyHint>Sem objetivos registrados.</EmptyHint>
+                <EmptyHint>{t.dashboardPages.home_profile_empty_objective}</EmptyHint>
               )}
             </div>
           </div>
@@ -929,8 +942,8 @@ export default function TenantDashboard() {
           {/* PERSONAS */}
           {personas.data && personas.data.length > 0 && (
             <>
-              <SectionTitle subtitle="Perfis dominantes do seu público — use para campanhas, estoque e comunicação">
-                Personas dominantes
+              <SectionTitle subtitle={t.dashboardPages.home_section_personas_sub}>
+                {t.dashboardPages.home_section_personas}
               </SectionTitle>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {personas.data.map((p, i) => (
@@ -941,8 +954,8 @@ export default function TenantDashboard() {
           )}
 
           {/* CONDITIONS + BARRIER */}
-          <SectionTitle subtitle="O que a IA está detectando na pele dos seus pacientes">
-            Condições mais frequentes
+          <SectionTitle subtitle={t.dashboardPages.home_section_conditions_sub}>
+            {t.dashboardPages.home_section_conditions}
           </SectionTitle>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="lg:col-span-2 p-5 bg-white border border-sable/20">
@@ -950,11 +963,11 @@ export default function TenantDashboard() {
                 <div className="space-y-3">
                   {topConditions.data.map((c) => {
                     const max = topConditions.data![0].count;
-                    const sevLabel = c.avgSeverity < 1.5 ? "Leve" : c.avgSeverity < 2.5 ? "Moderada" : "Severa";
+                    const sevLabel = c.avgSeverity < 1.5 ? t.dashboardPages.home_conditions_severity_light : c.avgSeverity < 2.5 ? t.dashboardPages.home_conditions_severity_moderate : t.dashboardPages.home_conditions_severity_severe;
                     return (
                       <HorizontalBar
                         key={c.condition}
-                        label={`${tr(conditionLabels, c.condition).charAt(0).toUpperCase() + tr(conditionLabels, c.condition).slice(1)} — gravidade média ${sevLabel}`}
+                        label={`${tr(conditionLabels, c.condition).charAt(0).toUpperCase() + tr(conditionLabels, c.condition).slice(1)} — ${t.dashboardPages.home_conditions_severity_label} ${sevLabel}`}
                         value={c.count}
                         max={max}
                         count={c.count}
@@ -964,7 +977,7 @@ export default function TenantDashboard() {
                   })}
                 </div>
               ) : (
-                <EmptyHint>Sem condições detectadas no período.</EmptyHint>
+                <EmptyHint>{t.dashboardPages.home_conditions_empty}</EmptyHint>
               )}
             </div>
             {/* Barrier status */}
@@ -986,7 +999,7 @@ export default function TenantDashboard() {
                   ))}
                 </div>
               ) : (
-                <EmptyHint>Sem dados.</EmptyHint>
+                <EmptyHint>{t.dashboardPages.home_barrier_empty}</EmptyHint>
               )}
             </div>
           </div>
@@ -994,24 +1007,24 @@ export default function TenantDashboard() {
           {/* DISCREPANCY INDEX */}
           {discrepancy.data && discrepancy.data.total > 0 && (
             <>
-              <SectionTitle subtitle="Quantos pacientes têm um tipo de pele diferente do que percebem">
-                Discrepância de auto-percepção
+              <SectionTitle subtitle={t.dashboardPages.home_section_discrepancy_sub}>
+                {t.dashboardPages.home_section_discrepancy}
               </SectionTitle>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <KpiCard
-                  label="Taxa de discrepância"
+                  label={t.dashboardPages.home_discrepancy_rate}
                   value={fmtPct(discrepancy.data.mismatchPct, 0)}
-                  hint={`${fmtInt(discrepancy.data.mismatch)} de ${fmtInt(discrepancy.data.total)} análises`}
+                  hint={t.dashboardPages.home_discrepancy_count_hint
+                    .replace("{mismatch}", fmtInt(discrepancy.data.mismatch))
+                    .replace("{total}", fmtInt(discrepancy.data.total))}
                   accent
                 />
                 <div className="md:col-span-2 p-5 bg-white border border-sable/20">
                   <p className="text-[10px] text-pierre uppercase tracking-wider font-light mb-3">
-                    Por que isso importa
+                    {t.dashboardPages.home_discrepancy_why_title}
                   </p>
                   <p className="text-sm text-pierre font-light leading-relaxed">
-                    Em <span className="text-carbone">{fmtPct(discrepancy.data.mismatchPct, 0)}</span> dos
-                    casos, a análise da IA identificou um tipo de pele diferente do que o paciente acreditava ter.
-                    Use esse dado em campanhas: "nossa análise revela em média informações que você não percebe sobre sua própria pele".
+                    {t.dashboardPages.home_discrepancy_why_body.replace("{pct}", fmtPct(discrepancy.data.mismatchPct, 0))}
                   </p>
                   <LowSampleNotice sample={discrepancy.data.total} />
                 </div>
@@ -1020,13 +1033,13 @@ export default function TenantDashboard() {
           )}
 
           {/* CATALOG */}
-          <SectionTitle subtitle="O que está sendo recomendado e onde estão as oportunidades">
-            Performance do catálogo
+          <SectionTitle subtitle={t.dashboardPages.home_section_catalog_sub}>
+            {t.dashboardPages.home_section_catalog}
           </SectionTitle>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="p-5 bg-white border border-sable/20">
               <p className="text-[10px] text-pierre uppercase tracking-wider font-light mb-4">
-                Top 8 produtos recomendados
+                {t.dashboardPages.home_catalog_top}
               </p>
               {topProducts.data && topProducts.data.length > 0 ? (
                 <div className="space-y-2">
@@ -1039,23 +1052,23 @@ export default function TenantDashboard() {
                         <span className="text-pierre text-xs">#{i + 1}</span> {p.product?.name ?? "—"}
                       </span>
                       <span className="text-xs text-pierre font-light whitespace-nowrap">
-                        {fmtInt(p.recommendationCount)} rec.
+                        {fmtInt(p.recommendationCount)} {t.dashboardPages.home_catalog_top_rec_suffix}
                       </span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <EmptyHint>Sem recomendações no período.</EmptyHint>
+                <EmptyHint>{t.dashboardPages.home_catalog_top_empty}</EmptyHint>
               )}
             </div>
             <div className="p-5 bg-white border border-sable/20">
               <p className="text-[10px] text-pierre uppercase tracking-wider font-light mb-4">
-                Lacunas no catálogo
+                {t.dashboardPages.home_catalog_gaps}
               </p>
               {gaps.data && gaps.data.length > 0 ? (
                 <>
                   <p className="text-xs text-pierre font-light mb-3">
-                    Condições detectadas em pacientes para as quais você ainda não tem produto:
+                    {t.dashboardPages.home_catalog_gaps_intro}
                   </p>
                   <div className="space-y-2">
                     {gaps.data.map((g) => (
@@ -1067,7 +1080,7 @@ export default function TenantDashboard() {
                           {tr(conditionLabels, g.condition).charAt(0).toUpperCase() + tr(conditionLabels, g.condition).slice(1)}
                         </span>
                         <span className="text-xs text-terre font-light whitespace-nowrap">
-                          {fmtInt(g.count)} pacientes ({fmtPct(g.pctOfPatients, 0)})
+                          {t.dashboardPages.home_catalog_gaps_patients.replace("{count}", fmtInt(g.count)).replace("{pct}", fmtPct(g.pctOfPatients, 0))}
                         </span>
                       </div>
                     ))}
@@ -1075,7 +1088,7 @@ export default function TenantDashboard() {
                 </>
               ) : (
                 <p className="text-xs text-pierre font-light">
-                  Seu catálogo cobre todas as condições detectadas. Excelente.
+                  {t.dashboardPages.home_catalog_gaps_empty}
                 </p>
               )}
             </div>
@@ -1084,38 +1097,39 @@ export default function TenantDashboard() {
           {/* CONVERSION LIFT POR PERFIL */}
           {conversionLift.data && conversionLift.data.baseline.totalPatients > 0 && (
             <>
-              <SectionTitle subtitle="Quais perfis convertem mais que a média — útil para segmentar campanhas">
-                Conversão por perfil
+              <SectionTitle subtitle={t.dashboardPages.home_section_lift_sub}>
+                {t.dashboardPages.home_section_lift}
               </SectionTitle>
               <div className="p-5 bg-white border border-sable/20 mb-4">
                 <p className="text-xs text-pierre font-light">
-                  Linha de base do tenant:{" "}
+                  {t.dashboardPages.home_lift_baseline}{" "}
                   <span className="text-carbone">
                     {fmtPct(conversionLift.data.baseline.rate, 1)}
                   </span>{" "}
-                  ({fmtInt(conversionLift.data.baseline.converted)} de{" "}
-                  {fmtInt(conversionLift.data.baseline.totalPatients)} pacientes converteram).
-                  Lift = quanto cada segmento converte vs essa média (1.50x = 50% acima).
+                  {t.dashboardPages.home_lift_baseline_count
+                    .replace("{converted}", fmtInt(conversionLift.data.baseline.converted))
+                    .replace("{total}", fmtInt(conversionLift.data.baseline.totalPatients))}{" "}
+                  {t.dashboardPages.home_lift_explanation}
                 </p>
                 <LowSampleNotice sample={conversionLift.data.baseline.totalPatients} threshold={50} />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <LiftCard
-                  title="Por tipo de pele"
+                  title={t.dashboardPages.home_lift_by_skin}
                   rows={conversionLift.data.bySkinType.slice(0, 5)}
                   labelMap={skinTypeLabels}
                 />
                 <LiftCard
-                  title="Por faixa etária"
+                  title={t.dashboardPages.home_lift_by_age}
                   rows={conversionLift.data.byAgeRange.slice(0, 5)}
                 />
                 <LiftCard
-                  title="Por objetivo"
+                  title={t.dashboardPages.home_lift_by_objective}
                   rows={conversionLift.data.byObjective.slice(0, 5)}
                   labelMap={objectiveLabels}
                 />
                 <LiftCard
-                  title="Por região"
+                  title={t.dashboardPages.home_lift_by_region}
                   rows={conversionLift.data.byRegion.slice(0, 5)}
                 />
               </div>
@@ -1125,8 +1139,8 @@ export default function TenantDashboard() {
           {/* SAZONALIDADE */}
           {seasonality.data && seasonality.data.series.length > 0 && (
             <>
-              <SectionTitle subtitle="Como cada condição varia ao longo do ano — antecipe campanhas e estoque">
-                Sazonalidade das condições
+              <SectionTitle subtitle={t.dashboardPages.home_section_seasonality_sub}>
+                {t.dashboardPages.home_section_seasonality}
               </SectionTitle>
               <div className="p-5 bg-white border border-sable/20 overflow-x-auto">
                 <SeasonalityHeatmap months={seasonality.data.months} series={seasonality.data.series} />
@@ -1137,49 +1151,47 @@ export default function TenantDashboard() {
           {/* BENCHMARK PLATAFORMA */}
           {benchmark.data && (
             <>
-              <SectionTitle subtitle="Compare seus indicadores com a média de outros clientes Skinner (anônimo, agregado)">
-                Benchmark da plataforma
+              <SectionTitle subtitle={t.dashboardPages.home_section_benchmark_sub}>
+                {t.dashboardPages.home_section_benchmark}
               </SectionTitle>
               {!benchmark.data.optedIn ? (
                 <div className="p-5 bg-ivoire border border-sable/30">
                   <p className="text-sm text-terre font-light leading-relaxed">
-                    Você ainda não está participando do benchmark. Ative em{" "}
+                    {t.dashboardPages.home_benchmark_opt_out_intro}{" "}
                     <a href="/dashboard/analise" className="underline text-carbone">
-                      Configuração da análise → Benchmark da plataforma
+                      {t.dashboardPages.home_benchmark_opt_out_link}
                     </a>{" "}
-                    para comparar seus números com a média anônima dos demais clientes.
+                    {t.dashboardPages.home_benchmark_opt_out_tail}
                   </p>
                 </div>
               ) : !benchmark.data.eligible ? (
                 <div className="p-5 bg-ivoire border border-sable/30">
                   <p className="text-sm text-terre font-light leading-relaxed">
-                    Você está participando do benchmark, mas ainda não temos clientes
-                    suficientes opt-in para gerar números agregados confiáveis (
-                    {benchmark.data.contributingTenants ?? 0} de {benchmark.data.minTenants ?? 3} mínimos).
-                    Conforme mais clientes ativarem, os indicadores aparecerão aqui automaticamente.
+                    {t.dashboardPages.home_benchmark_low_sample
+                      .replace("{count}", String(benchmark.data.contributingTenants ?? 0))
+                      .replace("{min}", String(benchmark.data.minTenants ?? 3))}
                   </p>
                 </div>
               ) : data ? (
                 <>
                   <p className="text-xs text-pierre font-light mb-3">
-                    Baseado em <span className="text-carbone">{benchmark.data.contributingTenants}</span>{" "}
-                    clientes opt-in (média agregada — nenhum cliente individual exposto).
+                    {t.dashboardPages.home_benchmark_basis.replace("{count}", String(benchmark.data.contributingTenants))}
                   </p>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <BenchmarkComparison
-                      label="Taxa de conclusão"
+                      label={t.dashboardPages.home_benchmark_completion}
                       myValue={data.completionRate}
                       platformValue={benchmark.data.avgCompletionRate}
                       format="pct"
                     />
                     <BenchmarkComparison
-                      label="Taxa de conversão"
+                      label={t.dashboardPages.home_benchmark_conversion}
                       myValue={data.conversionRate}
                       platformValue={benchmark.data.avgConversionRate}
                       format="pct"
                     />
                     <BenchmarkComparison
-                      label="Ticket médio"
+                      label={t.dashboardPages.home_benchmark_avg_ticket}
                       myValue={data.avgTicket}
                       platformValue={benchmark.data.avgTicket}
                       format="currency"
@@ -1193,24 +1205,24 @@ export default function TenantDashboard() {
           {/* ENGAGEMENT */}
           {engagement.data && (
             <>
-              <SectionTitle subtitle="Como os pacientes interagem com o resultado">
-                Engajamento
+              <SectionTitle subtitle={t.dashboardPages.home_section_engagement_sub}>
+                {t.dashboardPages.home_section_engagement}
               </SectionTitle>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <KpiCard
-                  label="Taxa de download de PDF"
+                  label={t.dashboardPages.home_engagement_pdf_rate}
                   value={fmtPct(engagement.data.downloadRate, 0)}
-                  hint={`${fmtInt(engagement.data.pdfDownloads)} downloads`}
+                  hint={t.dashboardPages.home_engagement_pdf_count.replace("{count}", fmtInt(engagement.data.pdfDownloads))}
                 />
                 <KpiCard
-                  label="Taxa de envio por email"
+                  label={t.dashboardPages.home_engagement_email_rate}
                   value={fmtPct(engagement.data.emailRate, 0)}
-                  hint={`${fmtInt(engagement.data.emailsSent)} emails`}
+                  hint={t.dashboardPages.home_engagement_email_count.replace("{count}", fmtInt(engagement.data.emailsSent))}
                 />
                 <KpiCard
-                  label="Análises completas"
+                  label={t.dashboardPages.home_engagement_completed}
                   value={fmtInt(engagement.data.completed)}
-                  hint="No período selecionado"
+                  hint={t.dashboardPages.home_engagement_completed_hint}
                 />
               </div>
             </>

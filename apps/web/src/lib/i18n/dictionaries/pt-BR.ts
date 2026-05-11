@@ -306,6 +306,155 @@ export const ptBR: DictShape = {
     home_seasonality: "Sazonalidade",
     home_benchmark: "Benchmark vs plataforma",
 
+    // Section titles (full bodies)
+    home_section_overview: "Visao geral",
+    home_section_overview_sub: "Resultados financeiros e operacionais",
+    home_section_plan: "Plano e capacidade",
+    home_section_plan_sub: "Consumo do plano vs limite",
+    home_section_trend: "Tendencia",
+    home_section_trend_sub: "Volume e receita nos ultimos 6 meses",
+    home_section_geo: "Distribuicao geografica",
+    home_section_geo_sub: "De onde vem seus pacientes (capturado automaticamente)",
+    home_section_profile: "Perfil de paciente",
+    home_section_profile_sub: "Quem sao seus pacientes e o que precisam",
+    home_section_personas: "Personas dominantes",
+    home_section_personas_sub:
+      "Perfis dominantes do seu publico — use para campanhas, estoque e comunicacao",
+    home_section_conditions: "Condicoes mais frequentes",
+    home_section_conditions_sub:
+      "O que a IA esta detectando na pele dos seus pacientes",
+    home_section_discrepancy: "Discrepancia de auto-percepcao",
+    home_section_discrepancy_sub:
+      "Quantos pacientes tem um tipo de pele diferente do que percebem",
+    home_section_catalog: "Performance do catalogo",
+    home_section_catalog_sub:
+      "O que esta sendo recomendado e onde estao as oportunidades",
+    home_section_lift: "Conversao por perfil",
+    home_section_lift_sub:
+      "Quais perfis convertem mais que a media — util para segmentar campanhas",
+    home_section_seasonality: "Sazonalidade das condicoes",
+    home_section_seasonality_sub:
+      "Como cada condicao varia ao longo do ano — antecipe campanhas e estoque",
+    home_section_benchmark: "Benchmark da plataforma",
+    home_section_benchmark_sub:
+      "Compare seus indicadores com a media de outros clientes Skinner (anonimo, agregado)",
+    home_section_engagement: "Engajamento",
+    home_section_engagement_sub:
+      "Como pacientes estao interagindo com o resultado da analise",
+
+    // KPI cards
+    home_kpi_completed: "Analises completas",
+    home_kpi_completed_hint: "{pct} de {total} iniciadas",
+    home_kpi_conversions: "Conversoes em vendas",
+    home_kpi_conversions_hint: "{pct} do total completas",
+    home_kpi_revenue: "Receita atribuida",
+    home_kpi_revenue_hint: "Ticket medio {avg}",
+    home_kpi_pdf: "Downloads de PDF",
+    home_kpi_pdf_hint: "{pct} de engajamento",
+
+    // Plan usage card
+    home_plan_label: "Plano {plan}",
+    home_plan_count: "{used} / {limit} analises",
+    home_plan_consumed: "{pct} consumido.",
+    home_plan_near_limit: "Limite proximo — considere fazer upgrade.",
+    home_plan_above_70: "Atencao: voce esta acima de 70% do limite.",
+    home_plan_healthy: "Uso saudavel.",
+
+    // Geography section
+    home_geo_brazil_title: "Mapa do Brasil — analises por estado",
+    home_geo_by_region: "Por estado / regiao",
+    home_geo_top_cities: "Top 10 cidades",
+    home_geo_empty_region:
+      "Sem dados geograficos no periodo. Analises feitas em redes locais ou sem deteccao de IP aparecem como \"Desconhecido\".",
+    home_geo_empty_city: "Sem dados de cidade.",
+
+    // Profile section
+    home_profile_skin_type: "Tipo de pele detectado",
+    home_profile_age_range: "Faixa etaria",
+    home_profile_objective: "Objetivo principal",
+    home_profile_empty_skin: "Sem analises completas no periodo.",
+    home_profile_empty_age: "Sem dados de faixa etaria.",
+    home_profile_empty_objective: "Sem objetivos registrados.",
+
+    // Conditions section
+    home_conditions_empty: "Sem condicoes detectadas no periodo.",
+    home_conditions_severity_light: "Leve",
+    home_conditions_severity_moderate: "Moderada",
+    home_conditions_severity_severe: "Severa",
+    home_conditions_severity_label: "gravidade media",
+    home_barrier_empty: "Sem dados.",
+
+    // Discrepancy section
+    home_discrepancy_rate: "Taxa de discrepancia",
+    home_discrepancy_count_hint: "{mismatch} de {total} analises",
+    home_discrepancy_why_title: "Por que isso importa",
+    home_discrepancy_why_body:
+      "Em {pct} dos casos, a analise da IA identificou um tipo de pele diferente do que o paciente acreditava ter. Use esse dado em campanhas: \"nossa analise revela em media informacoes que voce nao percebe sobre sua propria pele\".",
+
+    // Catalog section
+    home_catalog_top: "Top 8 produtos recomendados",
+    home_catalog_top_rec_suffix: "rec.",
+    home_catalog_top_empty: "Sem recomendacoes no periodo.",
+    home_catalog_gaps: "Lacunas no catalogo",
+    home_catalog_gaps_intro:
+      "Condicoes detectadas em pacientes para as quais voce ainda nao tem produto:",
+    home_catalog_gaps_patients: "{count} pacientes ({pct})",
+    home_catalog_gaps_empty:
+      "Seu catalogo cobre todas as condicoes detectadas. Excelente.",
+
+    // Lift section
+    home_lift_baseline: "Linha de base do tenant:",
+    home_lift_baseline_count: "({converted} de {total} pacientes converteram).",
+    home_lift_explanation:
+      "Lift = quanto cada segmento converte vs essa media (1.50x = 50% acima).",
+    home_lift_by_skin: "Por tipo de pele",
+    home_lift_by_age: "Por faixa etaria",
+    home_lift_by_objective: "Por objetivo",
+    home_lift_by_region: "Por regiao",
+
+    // Benchmark section
+    home_benchmark_opt_out_intro: "Voce ainda nao esta participando do benchmark. Ative em",
+    home_benchmark_opt_out_link: "Configuracao da analise → Benchmark da plataforma",
+    home_benchmark_opt_out_tail:
+      "para comparar seus numeros com a media anonima dos demais clientes.",
+    home_benchmark_low_sample:
+      "Voce esta participando do benchmark, mas ainda nao temos clientes suficientes opt-in para gerar numeros agregados confiaveis ({count} de {min} minimos). Conforme mais clientes ativarem, os indicadores aparecerao aqui automaticamente.",
+    home_benchmark_basis:
+      "Baseado em {count} clientes opt-in (media agregada — nenhum cliente individual exposto).",
+    home_benchmark_completion: "Taxa de conclusao",
+    home_benchmark_conversion: "Taxa de conversao",
+    home_benchmark_avg_ticket: "Ticket medio",
+
+    // Engagement section
+    home_engagement_pdf: "Downloads de PDF",
+    home_engagement_email: "Envio por e-mail",
+    home_engagement_pdf_rate: "Taxa de download de PDF",
+    home_engagement_pdf_count: "{count} downloads",
+    home_engagement_email_rate: "Taxa de envio por email",
+    home_engagement_email_count: "{count} emails",
+    home_engagement_completed: "Analises completas",
+    home_engagement_completed_hint: "No periodo selecionado",
+    home_analyses_one: "analise",
+    home_analyses_many: "analises",
+    home_patients_label: "pacientes",
+    home_persona_rank: "Persona #{rank}",
+    home_persona_min_sample: "Sem segmentos com amostra suficiente (minimo 3 pacientes).",
+    home_seasonality_explanation:
+      "Cada celula mostra o numero de pacientes com essa condicao naquele mes. Cor mais escura = mais casos.",
+
+    // Low sample notice
+    home_low_sample_one:
+      "Amostra pequena ({sample} analise) — colete mais dados para insights confiaveis.",
+    home_low_sample_many:
+      "Amostra pequena ({sample} analises) — colete mais dados para insights confiaveis.",
+
+    // Temp password banner (existing keys kept above are replaced by these
+    // more accurate strings — the originals were too generic).
+    home_temp_password_warn: "Voce ainda esta usando uma senha temporaria.",
+    home_temp_password_hint:
+      "Por seguranca, recomendamos altera-la agora em Minha Conta.",
+    home_temp_password_change: "Alterar senha",
+
     // ── Leads page ───────────────────────────────────────────────────
     leads_title: "Leads",
     leads_subtitle: "Pacientes que autorizaram contato durante a analise.",
@@ -384,6 +533,20 @@ export const ptBR: DictShape = {
     marca_colors_section: "Cores",
     marca_voice_section: "Tom da marca",
     marca_disclaimer_section: "Aviso legal",
+    marca_logo_label: "URL do Logo",
+    marca_logo_placeholder: "https://exemplo.com/logo.png",
+    marca_logo_hint: "Recomendado: PNG transparente, 200x60px.",
+    marca_primary_color: "Cor primaria",
+    marca_secondary_color: "Cor secundaria",
+    marca_voice_label: "Voz de marca",
+    marca_voice_placeholder:
+      "Ex: Profissional, acolhedor e educativo. Use linguagem acessivel...",
+    marca_voice_hint: "Instrucoes de tom para a IA ao gerar relatorios.",
+    marca_disclaimer_label: "Disclaimer medico",
+    marca_disclaimer_placeholder:
+      "Ex: Esta analise e apenas informativa e nao substitui a consulta com um dermatologista.",
+    marca_save: "Salvar marca",
+    marca_saved: "Salvo.",
 
     // ── Channels page ────────────────────────────────────────────────
     chan_title: "Canais",
@@ -437,6 +600,23 @@ export const ptBR: DictShape = {
     acct_locale_inherit: "Usar idioma da organizacao",
     acct_locale_hint:
       "Sobrescreve o idioma da organizacao apenas para sua conta. Deixe vazio para herdar.",
+    acct_locale_default_org: "Padrao da organizacao",
+    acct_locale_section_text:
+      "Defina o idioma do seu painel administrativo. Esta preferencia e individual e nao afeta o que seus pacientes veem nas analises.",
+    acct_pwd_temp_warning:
+      "Voce ainda esta usando uma senha temporaria. Recomendamos altera-la agora.",
+    acct_pwd_current: "Senha atual",
+    acct_pwd_new: "Nova senha",
+    acct_pwd_confirm: "Confirmar nova senha",
+    acct_pwd_min: "Minimo 8 caracteres.",
+    acct_pwd_changing: "Alterando...",
+    acct_pwd_change: "Alterar senha",
+    acct_delete_body:
+      "Esta acao remove o acesso da sua clinica ao Skinner e anonimiza todos os dados dos pacientes (fotos, respostas e localizacao sao apagados; metricas agregadas sao preservadas para conformidade contabil). Usuarios da equipe sao despersonalizados.",
+    acct_delete_warn: "A acao nao pode ser desfeita por voce.",
+    acct_delete_confirm_intro: "Para confirmar, digite",
+    acct_delete_processing: "Processando...",
+    acct_delete_cta: "Excluir conta definitivamente",
 
     // ── Analysis settings page ───────────────────────────────────────
     analise_title: "Configuracao da Analise",

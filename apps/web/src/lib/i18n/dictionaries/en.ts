@@ -271,6 +271,141 @@ export const en: Dictionary = {
     home_seasonality: "Seasonality",
     home_benchmark: "Benchmark vs platform",
 
+    home_section_overview: "Overview",
+    home_section_overview_sub: "Financial and operational results",
+    home_section_plan: "Plan and capacity",
+    home_section_plan_sub: "Plan usage vs limit",
+    home_section_trend: "Trend",
+    home_section_trend_sub: "Volume and revenue over the last 6 months",
+    home_section_geo: "Geographic distribution",
+    home_section_geo_sub: "Where your patients come from (auto-captured)",
+    home_section_profile: "Patient profile",
+    home_section_profile_sub: "Who your patients are and what they need",
+    home_section_personas: "Dominant personas",
+    home_section_personas_sub:
+      "Dominant profiles of your audience — use for campaigns, stock and comms",
+    home_section_conditions: "Most frequent conditions",
+    home_section_conditions_sub:
+      "What the AI is detecting on your patients' skin",
+    home_section_discrepancy: "Self-perception discrepancy",
+    home_section_discrepancy_sub:
+      "How many patients have a skin type different from what they think",
+    home_section_catalog: "Catalog performance",
+    home_section_catalog_sub:
+      "What is being recommended and where the opportunities are",
+    home_section_lift: "Conversion by profile",
+    home_section_lift_sub:
+      "Which profiles convert above average — useful for campaign segmentation",
+    home_section_seasonality: "Seasonality of conditions",
+    home_section_seasonality_sub:
+      "How each condition varies across the year — anticipate campaigns and stock",
+    home_section_benchmark: "Platform benchmark",
+    home_section_benchmark_sub:
+      "Compare your indicators with the average of other Skinner clients (anonymous, aggregated)",
+    home_section_engagement: "Engagement",
+    home_section_engagement_sub:
+      "How patients interact with the analysis result",
+
+    home_kpi_completed: "Completed analyses",
+    home_kpi_completed_hint: "{pct} of {total} started",
+    home_kpi_conversions: "Sales conversions",
+    home_kpi_conversions_hint: "{pct} of completed total",
+    home_kpi_revenue: "Attributed revenue",
+    home_kpi_revenue_hint: "Avg. ticket {avg}",
+    home_kpi_pdf: "PDF downloads",
+    home_kpi_pdf_hint: "{pct} engagement",
+
+    home_plan_label: "Plan {plan}",
+    home_plan_count: "{used} / {limit} analyses",
+    home_plan_consumed: "{pct} consumed.",
+    home_plan_near_limit: "Limit close — consider upgrading.",
+    home_plan_above_70: "Heads up: you are above 70% of the limit.",
+    home_plan_healthy: "Healthy usage.",
+
+    home_geo_brazil_title: "Brazil map — analyses by state",
+    home_geo_by_region: "By state / region",
+    home_geo_top_cities: "Top 10 cities",
+    home_geo_empty_region:
+      "No geographic data in the period. Analyses run on local networks or without IP detection appear as \"Unknown\".",
+    home_geo_empty_city: "No city data.",
+
+    home_profile_skin_type: "Detected skin type",
+    home_profile_age_range: "Age range",
+    home_profile_objective: "Main goal",
+    home_profile_empty_skin: "No completed analyses in the period.",
+    home_profile_empty_age: "No age range data.",
+    home_profile_empty_objective: "No goals recorded.",
+
+    home_conditions_empty: "No conditions detected in the period.",
+    home_conditions_severity_light: "Light",
+    home_conditions_severity_moderate: "Moderate",
+    home_conditions_severity_severe: "Severe",
+    home_conditions_severity_label: "avg. severity",
+    home_barrier_empty: "No data.",
+
+    home_discrepancy_rate: "Discrepancy rate",
+    home_discrepancy_count_hint: "{mismatch} of {total} analyses",
+    home_discrepancy_why_title: "Why it matters",
+    home_discrepancy_why_body:
+      "In {pct} of cases, the AI analysis identified a skin type different from what the patient believed. Use this in campaigns: \"our analysis reveals on average information you do not perceive about your own skin\".",
+
+    home_catalog_top: "Top 8 recommended products",
+    home_catalog_top_rec_suffix: "rec.",
+    home_catalog_top_empty: "No recommendations in the period.",
+    home_catalog_gaps: "Catalog gaps",
+    home_catalog_gaps_intro:
+      "Conditions detected in patients for which you don't have a product yet:",
+    home_catalog_gaps_patients: "{count} patients ({pct})",
+    home_catalog_gaps_empty:
+      "Your catalog covers every detected condition. Excellent.",
+
+    home_lift_baseline: "Tenant baseline:",
+    home_lift_baseline_count: "({converted} of {total} patients converted).",
+    home_lift_explanation:
+      "Lift = how much each segment converts vs that average (1.50x = 50% above).",
+    home_lift_by_skin: "By skin type",
+    home_lift_by_age: "By age range",
+    home_lift_by_objective: "By goal",
+    home_lift_by_region: "By region",
+
+    home_benchmark_opt_out_intro: "You are not participating in the benchmark yet. Enable it in",
+    home_benchmark_opt_out_link: "Analysis settings → Platform benchmark",
+    home_benchmark_opt_out_tail:
+      "to compare your numbers with the anonymous average of other clients.",
+    home_benchmark_low_sample:
+      "You are participating in the benchmark, but there are not enough opt-in clients yet to produce reliable aggregated numbers ({count} of {min} minimum). As more clients enable it, indicators will appear here automatically.",
+    home_benchmark_basis:
+      "Based on {count} opt-in clients (aggregated average — no individual client exposed).",
+    home_benchmark_completion: "Completion rate",
+    home_benchmark_conversion: "Conversion rate",
+    home_benchmark_avg_ticket: "Average ticket",
+
+    home_engagement_pdf: "PDF downloads",
+    home_engagement_email: "Email delivery",
+    home_engagement_pdf_rate: "PDF download rate",
+    home_engagement_pdf_count: "{count} downloads",
+    home_engagement_email_rate: "Email delivery rate",
+    home_engagement_email_count: "{count} emails",
+    home_engagement_completed: "Completed analyses",
+    home_engagement_completed_hint: "In the selected period",
+    home_analyses_one: "analysis",
+    home_analyses_many: "analyses",
+    home_patients_label: "patients",
+    home_persona_rank: "Persona #{rank}",
+    home_persona_min_sample: "No segments with enough sample (minimum 3 patients).",
+    home_seasonality_explanation:
+      "Each cell shows the number of patients with that condition in that month. Darker color = more cases.",
+
+    home_low_sample_one:
+      "Small sample ({sample} analysis) — collect more data for reliable insights.",
+    home_low_sample_many:
+      "Small sample ({sample} analyses) — collect more data for reliable insights.",
+
+    home_temp_password_warn: "You are still using a temporary password.",
+    home_temp_password_hint:
+      "For your security, we recommend changing it now in My Account.",
+    home_temp_password_change: "Change password",
+
     leads_title: "Leads",
     leads_subtitle: "Patients who authorized contact during the analysis.",
     leads_empty: "No leads captured in this period.",
@@ -344,6 +479,20 @@ export const en: Dictionary = {
     marca_colors_section: "Colors",
     marca_voice_section: "Brand voice",
     marca_disclaimer_section: "Legal disclaimer",
+    marca_logo_label: "Logo URL",
+    marca_logo_placeholder: "https://example.com/logo.png",
+    marca_logo_hint: "Recommended: transparent PNG, 200x60px.",
+    marca_primary_color: "Primary color",
+    marca_secondary_color: "Secondary color",
+    marca_voice_label: "Brand voice",
+    marca_voice_placeholder:
+      "Ex: Professional, warm and educational. Use accessible language...",
+    marca_voice_hint: "Tone instructions for the AI when generating reports.",
+    marca_disclaimer_label: "Medical disclaimer",
+    marca_disclaimer_placeholder:
+      "Ex: This analysis is informational only and does not replace consulting a dermatologist.",
+    marca_save: "Save brand",
+    marca_saved: "Saved.",
 
     chan_title: "Channels",
     chan_subtitle:
@@ -391,6 +540,23 @@ export const en: Dictionary = {
     acct_locale_inherit: "Use organization language",
     acct_locale_hint:
       "Overrides the organization language only for your account. Leave empty to inherit.",
+    acct_locale_default_org: "Organization default",
+    acct_locale_section_text:
+      "Set the language of your admin panel. This preference is individual and does not affect what your patients see in the analyses.",
+    acct_pwd_temp_warning:
+      "You are still using a temporary password. We recommend changing it now.",
+    acct_pwd_current: "Current password",
+    acct_pwd_new: "New password",
+    acct_pwd_confirm: "Confirm new password",
+    acct_pwd_min: "Minimum 8 characters.",
+    acct_pwd_changing: "Changing...",
+    acct_pwd_change: "Change password",
+    acct_delete_body:
+      "This action removes your clinic's access to Skinner and anonymizes all patient data (photos, answers and location are deleted; aggregate metrics are preserved for accounting compliance). Team users are depersonalized.",
+    acct_delete_warn: "This action cannot be undone by you.",
+    acct_delete_confirm_intro: "To confirm, type",
+    acct_delete_processing: "Processing...",
+    acct_delete_cta: "Delete account permanently",
 
     analise_title: "Analysis Settings",
     analise_subtitle:
