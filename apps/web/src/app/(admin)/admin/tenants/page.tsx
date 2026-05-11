@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { trpc } from "@/lib/trpc/client";
+import { useI18n } from "@/lib/i18n/client";
 
 const planLabels: Record<string, string> = {
   growth: "Growth",
@@ -10,14 +11,16 @@ const planLabels: Record<string, string> = {
   enterprise: "Enterprise",
 };
 
-const statusConfig: Record<string, { label: string; classes: string }> = {
-  active: { label: "Ativo", classes: "bg-carbone/10 text-carbone" },
-  paused: { label: "Pausado", classes: "bg-sable/30 text-pierre" },
-  deleted: { label: "Deletado", classes: "bg-sable/20 text-pierre" },
-};
-
 export default function TenantsPage() {
+  const { t } = useI18n();
   const utils = trpc.useUtils();
+
+  // Status config depends on locale, so build inside the component
+  const statusConfig: Record<string, { label: string; classes: string }> = {
+    active: { label: t.dashboardPages.admin_tenants_status_active_label, classes: "bg-carbone/10 text-carbone" },
+    paused: { label: t.dashboardPages.admin_tenants_status_paused_label, classes: "bg-sable/30 text-pierre" },
+    deleted: { label: t.dashboardPages.admin_tenants_status_deleted_label, classes: "bg-sable/20 text-pierre" },
+  };
   const tenants = trpc.tenant.list.useQuery();
   const createMutation = trpc.tenant.create.useMutation({
     onSuccess: () => {
@@ -48,26 +51,26 @@ export default function TenantsPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="border-b border-sable/20 pb-6 mb-8 flex items-end justify-between">
+    <div className="p-4 md:p-8">
+      <div className="border-b border-sable/20 pb-6 mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
-          <h1 className="font-serif text-2xl text-carbone">Tenants</h1>
+          <h1 className="font-serif text-xl md:text-2xl text-carbone">{t.dashboardPages.admin_tenants_title}</h1>
           <p className="text-sm text-pierre font-light mt-1">
-            Gerencie clientes B2B da plataforma.
+            {t.dashboardPages.admin_tenants_subtitle_old}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Link
             href="/admin/tenants/novo-custom"
             className="px-4 py-2 border border-sable text-terre text-sm font-light tracking-wide hover:bg-ivoire"
           >
-            Novo Plano Custom
+            {t.dashboardPages.admin_tenants_new_custom}
           </Link>
           <button
             onClick={() => setShowCreate(!showCreate)}
             className="px-4 py-2 bg-carbone text-blanc-casse text-sm font-light tracking-wide"
           >
-            {showCreate ? "Cancelar" : "Novo Tenant"}
+            {showCreate ? t.dashboardPages.common_cancel : t.dashboardPages.admin_tenants_new}
           </button>
         </div>
       </div>
@@ -84,28 +87,28 @@ export default function TenantsPage() {
           }}
           className="mb-8 p-6 bg-white border border-sable/20 space-y-4"
         >
-          <h2 className="font-serif text-base text-carbone">Criar Tenant</h2>
+          <h2 className="font-serif text-base text-carbone">{t.dashboardPages.admin_tenants_create_title}</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
-                Nome
+                {t.dashboardPages.admin_tenants_field_name}
               </label>
               <input
                 value={form.name}
                 onChange={(e) => handleSlugify(e.target.value)}
-                placeholder="Clinica Exemplo"
+                placeholder={t.dashboardPages.admin_tenants_field_name_ph}
                 required
                 className="w-full px-3 py-2 border border-sable/30 bg-blanc-casse text-sm text-carbone font-light focus:outline-none focus:border-pierre"
               />
             </div>
             <div>
               <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
-                Slug
+                {t.dashboardPages.admin_tenants_field_slug}
               </label>
               <input
                 value={form.slug}
                 onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))}
-                placeholder="clinica-exemplo"
+                placeholder={t.dashboardPages.admin_tenants_field_slug_ph}
                 required
                 pattern="^[a-z0-9-]+$"
                 className="w-full px-3 py-2 border border-sable/30 bg-blanc-casse text-sm text-carbone font-light focus:outline-none focus:border-pierre"
@@ -113,7 +116,7 @@ export default function TenantsPage() {
             </div>
             <div>
               <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
-                Plano
+                {t.dashboardPages.admin_tenants_field_plan}
               </label>
               <select
                 value={form.plan}
@@ -132,7 +135,7 @@ export default function TenantsPage() {
               disabled={createMutation.isPending}
               className="px-4 py-2 bg-carbone text-blanc-casse text-sm font-light tracking-wide disabled:opacity-50"
             >
-              {createMutation.isPending ? "Criando..." : "Criar"}
+              {createMutation.isPending ? t.dashboardPages.admin_tenants_creating : t.dashboardPages.admin_tenants_create}
             </button>
             {createMutation.error && (
               <p className="text-sm text-pierre font-light">
@@ -144,43 +147,43 @@ export default function TenantsPage() {
       )}
 
       {tenants.isLoading && (
-        <p className="text-sm text-pierre font-light">Carregando...</p>
+        <p className="text-sm text-pierre font-light">{t.dashboardPages.common_loading}</p>
       )}
 
       {tenants.data && tenants.data.length === 0 && (
         <p className="text-sm text-pierre font-light">
-          Nenhum tenant cadastrado.
+          {t.dashboardPages.admin_tenants_no_register}
         </p>
       )}
 
       {tenants.data && tenants.data.length > 0 && (
-        <div className="bg-white border border-sable/20 overflow-hidden">
-          <table className="w-full">
+        <div className="bg-white border border-sable/20 overflow-x-auto">
+          <table className="w-full min-w-[800px]">
             <thead>
               <tr className="border-b border-sable/20 bg-ivoire">
                 <th className="text-left px-6 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
-                  Nome
+                  {t.dashboardPages.admin_tenants_th_name}
                 </th>
                 <th className="text-left px-6 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
-                  Slug
+                  {t.dashboardPages.admin_tenants_th_slug}
                 </th>
                 <th className="text-left px-6 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
-                  Plano
+                  {t.dashboardPages.admin_tenants_th_plan}
                 </th>
                 <th className="text-left px-6 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
-                  Status
+                  {t.dashboardPages.admin_tenants_th_status}
                 </th>
                 <th className="text-left px-6 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
-                  Usuarios
+                  {t.dashboardPages.admin_tenants_th_users}
                 </th>
                 <th className="text-left px-6 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
-                  Produtos
+                  {t.dashboardPages.admin_tenants_th_products}
                 </th>
                 <th className="text-left px-6 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
-                  Analises
+                  {t.dashboardPages.admin_tenants_th_analyses}
                 </th>
                 <th className="text-right px-6 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
-                  Acoes
+                  {t.dashboardPages.common_actions}
                 </th>
               </tr>
             </thead>
@@ -230,7 +233,7 @@ export default function TenantsPage() {
                         href={`/admin/tenants/${tenant.id}`}
                         className="text-xs text-pierre font-light hover:underline"
                       >
-                        Detalhes
+                        {t.dashboardPages.admin_tenants_actions_details}
                       </Link>
                       {tenant.status === "active" && (
                         <button
@@ -239,7 +242,7 @@ export default function TenantsPage() {
                           }
                           className="text-xs text-pierre font-light hover:underline"
                         >
-                          Pausar
+                          {t.dashboardPages.admin_tenants_action_pause}
                         </button>
                       )}
                       {tenant.status === "paused" && (
@@ -249,7 +252,7 @@ export default function TenantsPage() {
                           }
                           className="text-xs text-carbone font-light hover:underline"
                         >
-                          Ativar
+                          {t.dashboardPages.admin_tenants_action_activate}
                         </button>
                       )}
                     </td>

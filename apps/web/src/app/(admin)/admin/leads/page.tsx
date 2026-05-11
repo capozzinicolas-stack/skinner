@@ -2,6 +2,7 @@
 
 import { Fragment, useState } from "react";
 import { trpc } from "@/lib/trpc/client";
+import { useI18n } from "@/lib/i18n/client";
 
 const segmentLabels: Record<string, string> = {
   laboratorio: "Laboratorio",
@@ -22,6 +23,7 @@ function formatDateTime(d: Date | string) {
 }
 
 export default function LeadsPage() {
+  const { t } = useI18n();
   const utils = trpc.useUtils();
   const leads = trpc.admin.listLeads.useQuery();
   const deleteLead = trpc.admin.deleteLead.useMutation({
@@ -41,11 +43,11 @@ export default function LeadsPage() {
     : [];
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <div className="border-b border-sable/20 pb-6 mb-8">
-        <h1 className="font-serif text-2xl text-carbone">Leads</h1>
+        <h1 className="font-serif text-xl md:text-2xl text-carbone">{t.dashboardPages.admin_leads_title}</h1>
         <p className="text-sm text-pierre font-light mt-1">
-          Contatos recebidos pelo formulario do site.
+          {t.dashboardPages.admin_leads_subtitle}
         </p>
       </div>
 
@@ -85,7 +87,7 @@ export default function LeadsPage() {
       </div>
 
       {leads.isLoading && (
-        <p className="text-sm text-pierre font-light">Carregando...</p>
+        <p className="text-sm text-pierre font-light">{t.dashboardPages.common_loading}</p>
       )}
 
       {!leads.isLoading && filtered.length === 0 && (

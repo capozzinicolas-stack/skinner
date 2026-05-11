@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc/client";
 import { DEFAULT_QUESTIONS, CORE_QUESTION_IDS, type DynamicQuestion } from "@/components/analysis/questionnaire";
+import { useI18n } from "@/lib/i18n/client";
 
 const typeLabels: Record<string, string> = {
   single: "Selecao unica",
@@ -11,6 +12,7 @@ const typeLabels: Record<string, string> = {
 };
 
 export default function FormularioPage() {
+  const { t } = useI18n();
   const utils = trpc.useUtils();
   const configQuery = trpc.admin.getQuestionnaireConfig.useQuery();
   const updateMutation = trpc.admin.updateQuestionnaireConfig.useMutation({
@@ -154,12 +156,12 @@ export default function FormularioPage() {
   const isCore = (id: string) => CORE_QUESTION_IDS.includes(id);
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between border-b border-sable/20 pb-6 mb-8">
+    <div className="p-4 md:p-8">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between border-b border-sable/20 pb-6 mb-8 gap-4">
         <div>
-          <h1 className="font-serif text-2xl text-carbone">Formulario de Analise</h1>
+          <h1 className="font-serif text-xl md:text-2xl text-carbone">{t.dashboardPages.admin_form_title}</h1>
           <p className="text-sm text-pierre font-light mt-1">
-            Gerencie as perguntas do questionario do paciente. Alteracoes se refletem em todos os tenants.
+            {t.dashboardPages.admin_form_subtitle}
           </p>
         </div>
         <div className="flex items-center gap-3">

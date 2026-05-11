@@ -2,13 +2,7 @@
 
 import { useState } from "react";
 import { trpc } from "@/lib/trpc/client";
-
-const roleLabels: Record<string, string> = {
-  skinner_admin: "Skinner Admin",
-  b2b_admin: "Admin",
-  b2b_analyst: "Analista",
-  b2b_viewer: "Visualizador",
-};
+import { useI18n } from "@/lib/i18n/client";
 
 function formatDate(d: Date | string) {
   return new Date(d).toLocaleDateString("pt-BR", {
@@ -19,7 +13,15 @@ function formatDate(d: Date | string) {
 }
 
 export default function UsuariosPage() {
+  const { t } = useI18n();
   const utils = trpc.useUtils();
+
+  const roleLabels: Record<string, string> = {
+    skinner_admin: t.dashboardPages.admin_users_role_skinner_admin,
+    b2b_admin: t.dashboardPages.admin_users_role_b2b_admin,
+    b2b_analyst: t.dashboardPages.admin_users_role_b2b_analyst,
+    b2b_viewer: t.dashboardPages.admin_users_role_b2b_viewer,
+  };
   const users = trpc.admin.listAllUsers.useQuery();
   const tenants = trpc.tenant.list.useQuery();
 
@@ -58,19 +60,19 @@ export default function UsuariosPage() {
     : [];
 
   return (
-    <div className="p-8">
-      <div className="border-b border-sable/20 pb-6 mb-8 flex items-end justify-between">
+    <div className="p-4 md:p-8">
+      <div className="border-b border-sable/20 pb-6 mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
-          <h1 className="font-serif text-2xl text-carbone">Usuarios</h1>
+          <h1 className="font-serif text-xl md:text-2xl text-carbone">{t.dashboardPages.admin_users_title}</h1>
           <p className="text-sm text-pierre font-light mt-1">
-            Todos os usuarios da plataforma.
+            {t.dashboardPages.admin_users_subtitle}
           </p>
         </div>
         <button
           onClick={() => setShowCreate(!showCreate)}
           className="px-4 py-2 bg-carbone text-blanc-casse text-sm font-light tracking-wide"
         >
-          {showCreate ? "Cancelar" : "Novo Usuario"}
+          {showCreate ? t.dashboardPages.common_cancel : t.dashboardPages.usr_invite}
         </button>
       </div>
 

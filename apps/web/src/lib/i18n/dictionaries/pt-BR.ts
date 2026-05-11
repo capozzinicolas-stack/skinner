@@ -784,6 +784,144 @@ export const ptBR: DictShape = {
     analise_sec_visible: "Secoes Visiveis",
     analise_sec_visible_desc: "Controle quais sessoes aparecem na tela final do paciente.",
     analise_sec_limits: "Limites de Recomendacao",
+
+    // ── Admin panel (skinner_admin role) ─────────────────────────────
+    admin_portal_subtitle: "Admin",
+    admin_nav_dashboard: "Painel",
+    admin_nav_tenants: "Tenants",
+    admin_nav_plans: "Planos",
+    admin_nav_users: "Usuarios",
+    admin_nav_leads: "Leads",
+    admin_nav_analytics: "Analytics",
+    admin_nav_dermatology: "Dermatologia",
+    admin_nav_form: "Formulario",
+    admin_nav_prompt_ai: "Prompt IA",
+
+    // Admin dashboard
+    admin_dash_title: "Painel Administrativo",
+    admin_dash_subtitle: "Visao geral da plataforma Skinner.",
+    admin_dash_active_tenants: "Tenants ativos",
+    admin_dash_active_tenants_hint: "{count} no total",
+    admin_dash_mrr: "MRR",
+    admin_dash_mrr_hint: "Receita recorrente mensal",
+    admin_dash_analyses_month: "Analises (mes)",
+    admin_dash_analyses_month_hint: "Em todos os tenants",
+    admin_dash_active_users: "Usuarios ativos (30d)",
+    admin_dash_signups: "Novos signups (30d)",
+    admin_dash_section_recent: "Tenants recentes",
+    admin_dash_section_recent_sub: "Ultimos 5 signups na plataforma.",
+    admin_dash_section_top: "Top tenants por volume",
+    admin_dash_section_top_sub: "Maiores consumidores de analises este mes.",
+    admin_dash_mrr_sub: "planos ativos",
+    admin_dash_analyses_month_label: "Analises este mes",
+    admin_dash_tenants_active_sub: "de {total} total",
+    admin_dash_users_label: "Usuarios B2B",
+    admin_dash_risk_label: "Risco de uso",
+    admin_dash_risk_sub: "tenants acima de 80%",
+    admin_dash_recent_analyses: "Ultimas analises",
+    admin_dash_empty_analyses: "Nenhuma analise realizada ainda.",
+    admin_dash_at_risk: "Tenants em risco",
+    admin_dash_at_risk_empty: "Nenhum tenant acima de 80% do limite.",
+    admin_dash_critical_title: "Configuracoes criticas",
+    admin_dash_critical_sub: "Tenants com configuracoes de seguranca desativadas.",
+    admin_dash_critical_empty:
+      "Nenhum tenant com configuracoes criticas desativadas.",
+
+    // Admin tenants list
+    admin_tenants_title: "Tenants",
+    admin_tenants_subtitle: "Gerencie organizacoes ativas na plataforma.",
+    admin_tenants_new: "Novo Tenant",
+    admin_tenants_new_custom: "Novo Plano Custom",
+    admin_tenants_search: "Buscar por nome, slug ou e-mail...",
+    admin_tenants_th_name: "Nome",
+    admin_tenants_th_slug: "Slug",
+    admin_tenants_th_plan: "Plano",
+    admin_tenants_th_status: "Status",
+    admin_tenants_th_usage: "Uso",
+    admin_tenants_th_signup: "Cadastro",
+    admin_tenants_status_active: "Ativo",
+    admin_tenants_status_paused: "Pausado",
+    admin_tenants_status_deleted: "Removido",
+    admin_tenants_empty: "Nenhum tenant cadastrado ainda.",
+    admin_tenants_open: "Abrir",
+    admin_tenants_create_title: "Criar Tenant",
+    admin_tenants_field_name: "Nome",
+    admin_tenants_field_name_ph: "Clinica Exemplo",
+    admin_tenants_field_slug: "Slug",
+    admin_tenants_field_slug_ph: "clinica-exemplo",
+    admin_tenants_field_plan: "Plano",
+    admin_tenants_creating: "Criando...",
+    admin_tenants_create: "Criar",
+    admin_tenants_subtitle_old: "Gerencie clientes B2B da plataforma.",
+    admin_tenants_th_users: "Usuarios",
+    admin_tenants_th_products: "Produtos",
+    admin_tenants_th_analyses: "Analises",
+    admin_tenants_actions_details: "Detalhes",
+    admin_tenants_action_pause: "Pausar",
+    admin_tenants_action_activate: "Ativar",
+    admin_tenants_status_active_label: "Ativo",
+    admin_tenants_status_paused_label: "Pausado",
+    admin_tenants_status_deleted_label: "Deletado",
+    admin_tenants_no_register: "Nenhum tenant cadastrado.",
+
+    // Admin plans
+    admin_plans_title: "Planos",
+    admin_plans_subtitle:
+      "Pricing, limites e features dos planos disponiveis na plataforma.",
+    admin_plans_new: "Novo Plano",
+    admin_plans_th_id: "ID",
+    admin_plans_th_name: "Nome",
+    admin_plans_th_price: "Preco",
+    admin_plans_th_limit: "Limite",
+    admin_plans_th_visible: "Visivel",
+    admin_plans_th_tenants: "Tenants",
+    admin_plans_archive: "Arquivar",
+    admin_plans_unarchive: "Reativar",
+    admin_plans_deprecated: "Descontinuado",
+    admin_plans_custom_allowed: "Custom permitido",
+
+    // Admin users
+    admin_users_title: "Usuarios",
+    admin_users_subtitle:
+      "Lista de todos os usuarios cadastrados na plataforma.",
+    admin_users_th_email: "E-mail",
+    admin_users_th_name: "Nome",
+    admin_users_th_role: "Papel",
+    admin_users_th_tenant: "Tenant",
+    admin_users_th_last_login: "Ultimo acesso",
+    admin_users_role_skinner_admin: "Skinner Admin",
+    admin_users_role_b2b_admin: "Admin B2B",
+    admin_users_role_b2b_analyst: "Analista",
+    admin_users_role_b2b_viewer: "Visualizador",
+
+    // Admin leads
+    admin_leads_title: "Leads",
+    admin_leads_subtitle:
+      "Leads capturados em todos os tenants da plataforma.",
+    admin_leads_empty: "Nenhuma lead capturada ainda.",
+    admin_leads_th_tenant: "Tenant",
+    admin_leads_th_origin: "Origem",
+
+    // Admin analytics
+    admin_analytics_title: "Analytics",
+    admin_analytics_subtitle:
+      "Metricas agregadas da plataforma (todos os tenants).",
+    admin_analytics_section_growth: "Crescimento",
+    admin_analytics_section_health: "Saude da plataforma",
+    admin_analytics_section_top_brands: "Top marcas",
+
+    // Admin dermatology
+    admin_derm_title: "Dermatologia",
+    admin_derm_subtitle:
+      "Base de conhecimento clinico usada pela IA.",
+
+    // Admin form / prompt
+    admin_form_title: "Formulario",
+    admin_form_subtitle:
+      "Configure as perguntas do questionario que o paciente responde antes da analise.",
+    admin_prompt_title: "Prompt IA",
+    admin_prompt_subtitle:
+      "Regras e instrucoes globais que a IA segue ao gerar relatorios.",
   },
 };
 

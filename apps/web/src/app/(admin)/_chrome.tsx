@@ -2,28 +2,30 @@
 
 import { useState } from "react";
 import { Sidebar } from "@/components/shared/sidebar";
-
-const adminNav = [
-  { label: "Dashboard", href: "/admin", icon: "⌂" },
-  { label: "Tenants", href: "/admin/tenants", icon: "☰" },
-  { label: "Planos", href: "/admin/planos", icon: "∴" },
-  { label: "Usuarios", href: "/admin/usuarios", icon: "◻" },
-  { label: "Leads", href: "/admin/leads", icon: "◈" },
-  { label: "Analytics", href: "/admin/analytics", icon: "▦" },
-  { label: "Dermatologia", href: "/admin/dermatologia", icon: "⚕" },
-  { label: "Formulario", href: "/admin/formulario", icon: "✏" },
-  { label: "Prompt IA", href: "/admin/prompt", icon: "✎" },
-];
+import { useI18n } from "@/lib/i18n/client";
 
 export function AdminChrome({ children }: { children: React.ReactNode }) {
+  const { t } = useI18n();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const adminNav = [
+    { label: t.dashboardPages.admin_nav_dashboard, href: "/admin", icon: "⌂" },
+    { label: t.dashboardPages.admin_nav_tenants, href: "/admin/tenants", icon: "☰" },
+    { label: t.dashboardPages.admin_nav_plans, href: "/admin/planos", icon: "∴" },
+    { label: t.dashboardPages.admin_nav_users, href: "/admin/usuarios", icon: "◻" },
+    { label: t.dashboardPages.admin_nav_leads, href: "/admin/leads", icon: "◈" },
+    { label: t.dashboardPages.admin_nav_analytics, href: "/admin/analytics", icon: "▦" },
+    { label: t.dashboardPages.admin_nav_dermatology, href: "/admin/dermatologia", icon: "⚕" },
+    { label: t.dashboardPages.admin_nav_form, href: "/admin/formulario", icon: "✏" },
+    { label: t.dashboardPages.admin_nav_prompt_ai, href: "/admin/prompt", icon: "✎" },
+  ];
 
   return (
     <div className="flex min-h-screen bg-blanc-casse">
       <Sidebar
         items={adminNav}
         title="Skinner"
-        subtitle="Admin"
+        subtitle={t.dashboardPages.admin_portal_subtitle}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />

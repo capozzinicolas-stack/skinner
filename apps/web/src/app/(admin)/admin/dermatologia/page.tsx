@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { trpc } from "@/lib/trpc/client";
+import { useI18n } from "@/lib/i18n/client";
 
 const categoryLabels: Record<string, string> = {
   inflammatory: "Inflamatória",
@@ -13,6 +14,7 @@ const categoryLabels: Record<string, string> = {
 };
 
 export default function DermatologyPage() {
+  const { t } = useI18n();
   const utils = trpc.useUtils();
   const conditions = trpc.dermatology.listConditions.useQuery();
   const ingredients = trpc.dermatology.listIngredients.useQuery();
@@ -87,10 +89,10 @@ export default function DermatologyPage() {
   }
 
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold text-gray-900">Base Dermatológica</h1>
-      <p className="text-gray-500 mt-1">
-        Gerencie condições de pele e ingredientes ativos da base de conhecimento Skinner.
+    <div className="p-4 md:p-8">
+      <h1 className="font-serif text-xl md:text-2xl text-carbone">{t.dashboardPages.admin_derm_title}</h1>
+      <p className="text-pierre text-sm font-light mt-1">
+        {t.dashboardPages.admin_derm_subtitle}
       </p>
 
       {/* Tabs */}

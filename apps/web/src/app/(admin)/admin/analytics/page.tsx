@@ -1,6 +1,7 @@
 "use client";
 
 import { trpc } from "@/lib/trpc/client";
+import { useI18n } from "@/lib/i18n/client";
 
 function formatDay(iso: string) {
   const [year, month, day] = iso.split("-");
@@ -8,21 +9,22 @@ function formatDay(iso: string) {
 }
 
 export default function AnalyticsPage() {
+  const { t } = useI18n();
   const analytics = trpc.admin.analytics.useQuery();
 
   const d = analytics.data;
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <div className="border-b border-sable/20 pb-6 mb-8">
-        <h1 className="font-serif text-2xl text-carbone">Analytics</h1>
+        <h1 className="font-serif text-xl md:text-2xl text-carbone">{t.dashboardPages.admin_analytics_title}</h1>
         <p className="text-sm text-pierre font-light mt-1">
-          Desempenho da plataforma nos ultimos 30 dias.
+          {t.dashboardPages.admin_analytics_subtitle}
         </p>
       </div>
 
       {analytics.isLoading && (
-        <p className="text-sm text-pierre font-light">Carregando...</p>
+        <p className="text-sm text-pierre font-light">{t.dashboardPages.common_loading}</p>
       )}
 
       {d && (

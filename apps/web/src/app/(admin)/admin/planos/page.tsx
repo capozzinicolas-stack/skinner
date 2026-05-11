@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc/client";
 import { PlanFormModal } from "./plan-form-modal";
+import { useI18n } from "@/lib/i18n/client";
 
 type PlanRow = {
   id: string;
@@ -26,6 +27,7 @@ type PlanRow = {
 };
 
 export default function AdminPlanosPage() {
+  const { t } = useI18n();
   const utils = trpc.useUtils();
   const plans = trpc.plans.list.useQuery();
   const [editing, setEditing] = useState<PlanRow | null>(null);
@@ -39,26 +41,24 @@ export default function AdminPlanosPage() {
   });
 
   return (
-    <div className="p-8">
-      <div className="border-b border-sable/20 pb-6 mb-8 flex items-end justify-between">
+    <div className="p-4 md:p-8">
+      <div className="border-b border-sable/20 pb-6 mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
-          <h1 className="font-serif text-2xl text-carbone">Planos</h1>
+          <h1 className="font-serif text-xl md:text-2xl text-carbone">{t.dashboardPages.admin_plans_title}</h1>
           <p className="text-sm text-pierre font-light mt-1">
-            Gerencia precos, limites e features dos planos visiveis em /planos.
-            Mudancas de preco criam novos Stripe Prices automaticamente —
-            clientes existentes mantem o preco original.
+            {t.dashboardPages.admin_plans_subtitle}
           </p>
         </div>
         <button
           onClick={() => setCreating(true)}
           className="px-4 py-2 bg-carbone text-blanc-casse text-sm font-light tracking-wide"
         >
-          Novo Plano
+          {t.dashboardPages.admin_plans_new}
         </button>
       </div>
 
       {plans.isLoading && (
-        <p className="text-sm text-pierre font-light">Carregando...</p>
+        <p className="text-sm text-pierre font-light">{t.dashboardPages.common_loading}</p>
       )}
 
       {plans.data && (

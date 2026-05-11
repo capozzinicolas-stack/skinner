@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { trpc } from "@/lib/trpc/client";
+import { useI18n } from "@/lib/i18n/client";
 
 const conditionLabels: Record<string, string> = {
   acne: "Acne",
@@ -37,6 +38,7 @@ function safeParseConditions(json: string | null | undefined): string[] {
 }
 
 export default function PromptConfigPage() {
+  const { t } = useI18n();
   const utils = trpc.useUtils();
   const preview = trpc.admin.getPromptPreview.useQuery();
   const config = trpc.admin.getPromptConfig.useQuery();
@@ -73,11 +75,11 @@ export default function PromptConfigPage() {
   }
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <div className="border-b border-sable/20 pb-6 mb-8">
-        <h1 className="font-serif text-2xl text-carbone">Configuracao do Prompt</h1>
+        <h1 className="font-serif text-xl md:text-2xl text-carbone">{t.dashboardPages.admin_prompt_title}</h1>
         <p className="text-sm text-pierre font-light mt-1">
-          Visualize e edite o prompt de analise dermatologica enviado ao Claude.
+          {t.dashboardPages.admin_prompt_subtitle}
         </p>
       </div>
 

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { trpc } from "@/lib/trpc/client";
+import { useI18n } from "@/lib/i18n/client";
 
 function StatCard({
   label,
@@ -51,6 +52,7 @@ function safeParseConditions(json: string | null | undefined): string {
 }
 
 export default function AdminDashboard() {
+  const { t } = useI18n();
   const overview = trpc.admin.dashboardOverview.useQuery();
   const criticalConfigs = trpc.admin.criticalConfigs.useQuery();
 
@@ -58,16 +60,16 @@ export default function AdminDashboard() {
   const criticalData = criticalConfigs.data ?? [];
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <div className="border-b border-sable/20 pb-6 mb-8">
-        <h1 className="font-serif text-2xl text-carbone">Dashboard</h1>
+        <h1 className="font-serif text-xl md:text-2xl text-carbone">{t.dashboardPages.admin_dash_title}</h1>
         <p className="text-sm text-pierre font-light mt-1">
-          Visao geral da plataforma Skinner.
+          {t.dashboardPages.admin_dash_subtitle}
         </p>
       </div>
 
       {overview.isLoading && (
-        <p className="text-sm text-pierre font-light">Carregando...</p>
+        <p className="text-sm text-pierre font-light">{t.dashboardPages.common_loading}</p>
       )}
 
       {data && (
@@ -75,27 +77,27 @@ export default function AdminDashboard() {
           {/* KPI Cards */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-10">
             <StatCard
-              label="MRR"
+              label={t.dashboardPages.admin_dash_mrr}
               value={formatMRR(data.totalMRR)}
-              sub="planos ativos"
+              sub={t.dashboardPages.admin_dash_mrr_sub}
             />
             <StatCard
-              label="Analises este mes"
+              label={t.dashboardPages.admin_dash_analyses_month_label}
               value={data.analysesThisMonth}
             />
             <StatCard
-              label="Tenants ativos"
+              label={t.dashboardPages.admin_dash_active_tenants}
               value={data.activeTenants}
-              sub={`de ${data.totalTenants} total`}
+              sub={t.dashboardPages.admin_dash_tenants_active_sub.replace("{total}", String(data.totalTenants))}
             />
             <StatCard
-              label="Usuarios B2B"
+              label={t.dashboardPages.admin_dash_users_label}
               value={data.totalUsers}
             />
             <StatCard
-              label="Risco de uso"
+              label={t.dashboardPages.admin_dash_risk_label}
               value={data.tenantsAtRisk.length}
-              sub="tenants acima de 80%"
+              sub={t.dashboardPages.admin_dash_risk_sub}
             />
           </div>
 
@@ -104,31 +106,31 @@ export default function AdminDashboard() {
             {/* Recent analyses */}
             <div className="lg:col-span-2">
               <h2 className="font-serif text-base text-carbone mb-4">
-                Ultimas analises
+                {t.dashboardPages.admin_dash_recent_analyses}
               </h2>
               <div className="bg-white border border-sable/20 overflow-hidden">
                 {data.recentAnalyses.length === 0 ? (
                   <p className="p-6 text-sm text-pierre font-light">
-                    Nenhuma analise realizada ainda.
+                    {t.dashboardPages.admin_dash_empty_analyses}
                   </p>
                 ) : (
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-sable/20 bg-ivoire">
                         <th className="text-left px-4 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
-                          Data
+                          {t.dashboardPages.common_date}
                         </th>
                         <th className="text-left px-4 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
-                          Tenant
+                          {t.dashboardPages.admin_leads_th_tenant}
                         </th>
                         <th className="text-left px-4 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
-                          Tipo de pele
+                          {t.dashboardPages.reports_th_skin_type}
                         </th>
                         <th className="text-left px-4 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
-                          Condicoes
+                          {t.dashboardPages.reports_th_conditions}
                         </th>
                         <th className="text-right px-4 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
-                          Latencia
+                          {t.dashboardPages.reports_th_latency}
                         </th>
                       </tr>
                     </thead>
@@ -163,30 +165,30 @@ export default function AdminDashboard() {
               {/* Tenants at risk */}
               <div>
                 <h2 className="font-serif text-base text-carbone mb-4">
-                  Tenants em risco
+                  {t.dashboardPages.admin_dash_at_risk}
                 </h2>
                 <div className="space-y-2">
                   {data.tenantsAtRisk.length === 0 ? (
                     <div className="bg-white border border-sable/20 p-4">
                       <p className="text-sm text-pierre font-light">
-                        Nenhum tenant acima de 80% do limite.
+                        {t.dashboardPages.admin_dash_at_risk_empty}
                       </p>
                     </div>
                   ) : (
-                    data.tenantsAtRisk.map((t) => {
+                    data.tenantsAtRisk.map((tnt) => {
                       const pct =
-                        t.analysisLimit > 0
-                          ? Math.round((t.analysisUsed / t.analysisLimit) * 100)
+                        tnt.analysisLimit > 0
+                          ? Math.round((tnt.analysisUsed / tnt.analysisLimit) * 100)
                           : 0;
                       return (
                         <Link
-                          key={t.id}
-                          href={`/admin/tenants/${t.id}`}
+                          key={tnt.id}
+                          href={`/admin/tenants/${tnt.id}`}
                           className="block bg-white border border-sable/20 p-4 hover:bg-ivoire/40 transition-colors"
                         >
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-sm text-carbone font-light">
-                              {t.name}
+                              {tnt.name}
                             </span>
                             <span className="text-xs text-pierre font-light">
                               {pct}%
@@ -199,7 +201,7 @@ export default function AdminDashboard() {
                             />
                           </div>
                           <p className="text-[10px] text-pierre font-light mt-2 uppercase tracking-wider">
-                            {t.analysisUsed} / {t.analysisLimit} analises — {t.plan}
+                            {tnt.analysisUsed} / {tnt.analysisLimit} {tnt.analysisUsed === 1 ? t.dashboardPages.home_analyses_one : t.dashboardPages.home_analyses_many} — {tnt.plan}
                           </p>
                         </Link>
                       );
@@ -211,21 +213,21 @@ export default function AdminDashboard() {
               {/* Configuracoes criticas */}
               <div>
                 <h2 className="font-serif text-base text-carbone mb-1">
-                  Configuracoes criticas
+                  {t.dashboardPages.admin_dash_critical_title}
                 </h2>
                 <p className="text-xs text-pierre font-light mb-4">
-                  Tenants com configuracoes de seguranca desativadas.
+                  {t.dashboardPages.admin_dash_critical_sub}
                 </p>
                 <div className="space-y-2">
                   {criticalConfigs.isLoading && (
                     <div className="bg-white border border-sable/20 p-4">
-                      <p className="text-sm text-pierre font-light">Carregando...</p>
+                      <p className="text-sm text-pierre font-light">{t.dashboardPages.common_loading}</p>
                     </div>
                   )}
                   {!criticalConfigs.isLoading && criticalData.length === 0 && (
                     <div className="bg-white border border-sable/20 p-4">
                       <p className="text-sm text-pierre font-light">
-                        Nenhum tenant com configuracoes criticas desativadas.
+                        {t.dashboardPages.admin_dash_critical_empty}
                       </p>
                     </div>
                   )}
