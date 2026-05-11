@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc/client";
 import { OrganizationTabs } from "@/components/shared/organization-tabs";
+import { useI18n } from "@/lib/i18n/client";
 
 export default function BillingPage() {
+  const { t } = useI18n();
   const utils = trpc.useUtils();
   const billing = trpc.billing.status.useQuery();
   const plans = trpc.billing.plans.useQuery();
@@ -38,7 +40,7 @@ export default function BillingPage() {
   }
   const usageHistory = trpc.billing.usageHistory.useQuery();
 
-  if (billing.isLoading) return <div className="p-8 text-pierre font-light">Carregando...</div>;
+  if (billing.isLoading) return <div className="p-8 text-pierre font-light">{t.dashboardPages.common_loading}</div>;
   if (!billing.data) return null;
 
   const b = billing.data;
@@ -46,10 +48,10 @@ export default function BillingPage() {
   return (
     <>
       <OrganizationTabs />
-    <div className="p-8 max-w-4xl">
-      <h1 className="font-serif text-2xl text-carbone">Faturamento</h1>
+    <div className="p-4 md:p-8 max-w-4xl">
+      <h1 className="font-serif text-xl md:text-2xl text-carbone">{t.dashboardPages.bill_title}</h1>
       <p className="text-pierre text-sm font-light mt-1">
-        Gerencie seu plano, creditos e cobrancas.
+        {t.dashboardPages.bill_subtitle}
       </p>
 
       {/* Current plan + usage */}

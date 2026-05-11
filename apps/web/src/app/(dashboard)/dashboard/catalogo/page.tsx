@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { trpc } from "@/lib/trpc/client";
+import { useI18n } from "@/lib/i18n/client";
 
 const stepLabels: Record<string, string> = {
   cleanser: "Limpeza",
@@ -121,6 +122,7 @@ function ConfirmDialog({
 }
 
 export default function CatalogPage() {
+  const { t } = useI18n();
   const utils = trpc.useUtils();
 
   // Filters
@@ -315,11 +317,13 @@ export default function CatalogPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="font-serif text-xl md:text-2xl text-carbone">Catálogo de Produtos</h1>
+          <h1 className="font-serif text-xl md:text-2xl text-carbone">{t.dashboardPages.cat_title}</h1>
           <p className="text-sm text-pierre font-light mt-1">
             {stats.data
-              ? `${stats.data.active} ativos de ${stats.data.total} produtos`
-              : "Carregando..."}
+              ? t.dashboardPages.cat_summary
+                  .replace("{active}", String(stats.data.active))
+                  .replace("{total}", String(stats.data.total))
+              : t.dashboardPages.common_loading}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -328,19 +332,19 @@ export default function CatalogPage() {
             disabled={exportQuery.isFetching}
             className="px-4 py-2 border border-sable text-terre text-sm font-light tracking-wide disabled:opacity-50 min-h-[44px] md:min-h-0"
           >
-            {exportQuery.isFetching ? "Exportando..." : "Exportar CSV"}
+            {exportQuery.isFetching ? t.dashboardPages.common_exporting : t.dashboardPages.common_export_csv}
           </button>
           <Link
             href="/dashboard/catalogo/importar"
             className="px-4 py-2 border border-sable text-terre text-sm font-light tracking-wide min-h-[44px] md:min-h-0 flex items-center"
           >
-            Importar CSV
+            {t.dashboardPages.cat_import_csv}
           </Link>
           <Link
             href="/dashboard/catalogo/novo"
             className="px-4 py-2 bg-carbone text-blanc-casse text-sm font-light tracking-wide min-h-[44px] md:min-h-0 flex items-center"
           >
-            Novo Produto
+            {t.dashboardPages.cat_new_product}
           </Link>
         </div>
       </div>
@@ -350,7 +354,7 @@ export default function CatalogPage() {
         <input
           value={search}
           onChange={(e) => handleSearchChange(e.target.value)}
-          placeholder="Buscar por nome ou SKU..."
+          placeholder={t.dashboardPages.cat_search_placeholder}
           className="px-3 py-2 border border-sable/40 text-sm text-carbone font-light w-full md:w-64 focus:outline-none focus:border-pierre bg-blanc-casse"
         />
         <select
@@ -358,7 +362,7 @@ export default function CatalogPage() {
           onChange={(e) => handleConcernChange(e.target.value)}
           className="px-3 py-2 border border-sable/40 text-sm text-carbone font-light focus:outline-none focus:border-pierre bg-blanc-casse"
         >
-          <option value="">Todas condições</option>
+          <option value="">{t.dashboardPages.cat_filter_all_concerns}</option>
           {tags.data?.concerns.map((c) => (
             <option key={c} value={c}>
               {c}
@@ -370,7 +374,7 @@ export default function CatalogPage() {
           onChange={(e) => handleStepChange(e.target.value)}
           className="px-3 py-2 border border-sable/40 text-sm text-carbone font-light focus:outline-none focus:border-pierre bg-blanc-casse"
         >
-          <option value="">Todas etapas</option>
+          <option value="">{t.dashboardPages.cat_filter_all_steps}</option>
           {tags.data?.steps.map((s) => (
             <option key={s} value={s}>
               {stepLabels[s] ?? s}
@@ -382,9 +386,9 @@ export default function CatalogPage() {
           onChange={(e) => handleTypeChange(e.target.value)}
           className="px-3 py-2 border border-sable/40 text-sm text-carbone font-light focus:outline-none focus:border-pierre bg-blanc-casse"
         >
-          <option value="">Todos os tipos</option>
-          <option value="produto">Produtos</option>
-          <option value="servico">Serviços</option>
+          <option value="">{t.dashboardPages.cat_filter_all_types}</option>
+          <option value="produto">{t.dashboardPages.cat_filter_products}</option>
+          <option value="servico">{t.dashboardPages.cat_filter_services}</option>
         </select>
         <label className="flex items-center gap-2 text-sm text-pierre font-light">
           <input
@@ -392,7 +396,7 @@ export default function CatalogPage() {
             checked={showInactive}
             onChange={(e) => handleShowInactiveChange(e.target.checked)}
           />
-          Mostrar inativos
+          {t.dashboardPages.cat_show_inactive}
         </label>
       </div>
 
@@ -400,27 +404,27 @@ export default function CatalogPage() {
       {selectedIds.size > 0 && (
         <div className="mt-4 flex items-center gap-3 p-3 border border-sable/30 bg-ivoire">
           <span className="text-sm text-pierre font-light">
-            {selectedIds.size} {selectedIds.size === 1 ? "item selecionado" : "itens selecionados"}
+            {(selectedIds.size === 1 ? t.dashboardPages.cat_selected_count_one : t.dashboardPages.cat_selected_count_many).replace("{n}", String(selectedIds.size))}
           </span>
           <button
             onClick={() => bulkDeactivate.mutate({ ids: Array.from(selectedIds) })}
             disabled={bulkDeactivate.isPending}
             className="px-4 py-1.5 border border-sable text-terre text-sm font-light tracking-wide disabled:opacity-50"
           >
-            {bulkDeactivate.isPending ? "Desativando..." : "Desativar selecionados"}
+            {bulkDeactivate.isPending ? t.dashboardPages.cat_bulk_deactivating : t.dashboardPages.cat_bulk_deactivate}
           </button>
           <button
             onClick={() => bulkReactivate.mutate({ ids: Array.from(selectedIds) })}
             disabled={bulkReactivate.isPending}
             className="px-4 py-1.5 border border-sable text-terre text-sm font-light tracking-wide disabled:opacity-50"
           >
-            {bulkReactivate.isPending ? "Reativando..." : "Reativar selecionados"}
+            {bulkReactivate.isPending ? t.dashboardPages.cat_bulk_reactivating : t.dashboardPages.cat_bulk_reactivate}
           </button>
           <button
             onClick={() => setSelectedIds(new Set())}
             className="text-sm text-pierre font-light underline"
           >
-            Limpar seleção
+            {t.dashboardPages.cat_clear_selection}
           </button>
         </div>
       )}
@@ -428,17 +432,17 @@ export default function CatalogPage() {
       {/* Product list */}
       <div className="mt-6">
         {listQuery.isLoading && (
-          <p className="text-sm text-pierre font-light">Carregando...</p>
+          <p className="text-sm text-pierre font-light">{t.dashboardPages.common_loading}</p>
         )}
 
         {!listQuery.isLoading && products.length === 0 && (
           <div className="text-center py-12 border border-sable/20 bg-blanc-casse">
-            <p className="text-sm text-pierre font-light">Nenhum item encontrado.</p>
+            <p className="text-sm text-pierre font-light">{t.dashboardPages.cat_empty}</p>
             <Link
               href="/dashboard/catalogo/novo"
               className="text-sm text-terre font-light underline mt-2 inline-block"
             >
-              Adicionar primeiro produto
+              {t.dashboardPages.cat_add_first}
             </Link>
           </div>
         )}
@@ -457,25 +461,25 @@ export default function CatalogPage() {
                     />
                   </th>
                   <th className="text-left px-4 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
-                    Item
+                    {t.dashboardPages.cat_th_item}
                   </th>
                   <th className="text-left px-4 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
-                    SKU
+                    {t.dashboardPages.cat_th_sku}
                   </th>
                   <th className="text-left px-4 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
-                    Tipo / Etapa
+                    {t.dashboardPages.cat_th_type_step}
                   </th>
                   <th className="text-left px-4 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
-                    Condições
+                    {t.dashboardPages.cat_th_concerns}
                   </th>
                   <th className="text-left px-4 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
-                    Intensidade
+                    {t.dashboardPages.cat_th_intensity}
                   </th>
                   <th className="text-left px-4 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
-                    Preço
+                    {t.dashboardPages.cat_th_price}
                   </th>
                   <th className="text-right px-4 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
-                    Ações
+                    {t.dashboardPages.common_actions}
                   </th>
                 </tr>
               </thead>
@@ -532,7 +536,7 @@ export default function CatalogPage() {
                                 : "border-sable/30 text-pierre"
                             }`}
                           >
-                            {isService ? "Serviço" : "Produto"}
+                            {isService ? t.dashboardPages.cat_label_service : t.dashboardPages.cat_label_product}
                           </span>
                           {isService ? (
                             p.sessionCount || p.sessionFrequency ? (
@@ -567,10 +571,10 @@ export default function CatalogPage() {
                       <td className="px-4 py-3">
                         <span className="text-xs text-pierre font-light">
                           {p.severityLevel === 1
-                            ? "Leve"
+                            ? t.dashboardPages.cat_intensity_light
                             : p.severityLevel === 2
-                            ? "Moderado"
-                            : "Intenso"}
+                            ? t.dashboardPages.cat_intensity_moderate
+                            : t.dashboardPages.cat_intensity_intense}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-sm text-pierre font-light">
@@ -581,21 +585,21 @@ export default function CatalogPage() {
                           href={`/dashboard/catalogo/novo?edit=${p.id}`}
                           className="text-xs text-pierre font-light underline hover:text-terre"
                         >
-                          Editar
+                          {t.dashboardPages.common_edit}
                         </Link>
                         {p.isActive ? (
                           <button
                             onClick={() => requestDeactivate(p)}
                             className="text-xs text-pierre font-light underline hover:text-terre"
                           >
-                            Desativar
+                            {t.dashboardPages.cat_deactivate}
                           </button>
                         ) : (
                           <button
                             onClick={() => restoreMutation.mutate({ id: p.id })}
                             className="text-xs text-pierre font-light underline hover:text-terre"
                           >
-                            Reativar
+                            {t.dashboardPages.cat_reactivate}
                           </button>
                         )}
                       </td>
@@ -611,7 +615,7 @@ export default function CatalogPage() {
         {pageCount > 1 && (
           <div className="mt-4 flex items-center justify-between">
             <p className="text-xs text-pierre font-light">
-              Página {page} de {pageCount} — {total} itens
+              {t.dashboardPages.cat_pagination.replace("{page}", String(page)).replace("{pageCount}", String(pageCount)).replace("{total}", String(total))}
             </p>
             <div className="flex gap-2">
               <button
@@ -619,14 +623,14 @@ export default function CatalogPage() {
                 disabled={page === 1}
                 className="px-4 py-1.5 border border-sable text-terre text-sm font-light tracking-wide disabled:opacity-30"
               >
-                Anterior
+                {t.dashboardPages.common_previous}
               </button>
               <button
                 onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
                 disabled={page === pageCount}
                 className="px-4 py-1.5 border border-sable text-terre text-sm font-light tracking-wide disabled:opacity-30"
               >
-                Próxima
+                {t.dashboardPages.common_next}
               </button>
             </div>
           </div>
@@ -636,7 +640,7 @@ export default function CatalogPage() {
       {/* Tag coverage */}
       {stats.data && Object.keys(stats.data.tagCounts).length > 0 && (
         <div className="mt-8">
-          <h2 className="font-serif text-lg text-carbone mb-3">Cobertura por condição</h2>
+          <h2 className="font-serif text-lg text-carbone mb-3">{t.dashboardPages.cat_coverage_title}</h2>
           <div className="flex flex-wrap gap-2">
             {Object.entries(stats.data.tagCounts)
               .sort(([, a], [, b]) => b - a)

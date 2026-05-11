@@ -3,13 +3,7 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc/client";
 import { skinTypeLabels, objectiveLabels, tr } from "@/lib/sae/labels";
-
-const PERIOD_OPTIONS = [
-  { value: 7, label: "7 dias" },
-  { value: 30, label: "30 dias" },
-  { value: 90, label: "90 dias" },
-  { value: 365, label: "12 meses" },
-] as const;
+import { useI18n } from "@/lib/i18n/client";
 
 function fmtDate(d: Date): string {
   return new Date(d).toLocaleDateString("pt-BR", {
@@ -52,12 +46,20 @@ function downloadCsv(rows: Array<Record<string, string>>, days: number) {
 }
 
 export default function LeadsPage() {
+  const { t } = useI18n();
   const [days, setDays] = useState<number>(30);
   const [channelId, setChannelId] = useState<string | undefined>(undefined);
   const utils = trpc.useUtils();
   const channelsQuery = trpc.analysisChannel.list.useQuery();
   const leads = trpc.leads.list.useQuery({ days, onlyConsented: true, channelId });
   const [exporting, setExporting] = useState(false);
+
+  const PERIOD_OPTIONS = [
+    { value: 7, label: t.dashboardPages.common_period_7d },
+    { value: 30, label: t.dashboardPages.common_period_30d },
+    { value: 90, label: t.dashboardPages.common_period_90d },
+    { value: 365, label: t.dashboardPages.common_period_1y },
+  ] as const;
 
   async function handleExport() {
     setExporting(true);
@@ -73,9 +75,9 @@ export default function LeadsPage() {
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6 md:mb-8">
         <div>
-          <h1 className="font-serif text-xl md:text-2xl text-carbone">Leads</h1>
+          <h1 className="font-serif text-xl md:text-2xl text-carbone">{t.dashboardPages.leads_title}</h1>
           <p className="text-pierre text-sm font-light mt-1">
-            Pacientes que autorizaram contato durante a analise.
+            {t.dashboardPages.leads_subtitle}
           </p>
         </div>
         <div className="flex items-center gap-2 md:gap-3 flex-wrap">
@@ -84,7 +86,7 @@ export default function LeadsPage() {
             onChange={(e) => setChannelId(e.target.value || undefined)}
             className="px-3 py-1.5 border border-sable/40 bg-white text-xs text-carbone font-light tracking-wide"
           >
-            <option value="">Todos os canais</option>
+            <option value="">{t.dashboardPages.common_all_channels}</option>
             {channelsQuery.data?.channels.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.label}
@@ -111,23 +113,22 @@ export default function LeadsPage() {
             disabled={exporting || (leads.data?.length ?? 0) === 0}
             className="px-4 py-1.5 border border-sable text-terre text-xs font-light tracking-wide hover:bg-ivoire transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {exporting ? "Exportando..." : "Exportar CSV"}
+            {exporting ? t.dashboardPages.common_exporting : t.dashboardPages.common_export_csv}
           </button>
         </div>
       </div>
 
       {leads.isLoading && (
-        <p className="text-sm text-pierre font-light">Carregando...</p>
+        <p className="text-sm text-pierre font-light">{t.dashboardPages.common_loading}</p>
       )}
 
       {leads.data && leads.data.length === 0 && (
         <div className="bg-white border border-sable/20 p-12 text-center">
           <p className="text-sm text-pierre font-light">
-            Nenhuma lead capturada neste periodo.
+            {t.dashboardPages.leads_empty}
           </p>
           <p className="text-xs text-pierre/70 font-light mt-2">
-            Verifique se a captura de contato esta ativada em "Analise" e que pacientes
-            autorizaram o contato durante a analise.
+            {t.dashboardPages.leads_empty_hint}
           </p>
         </div>
       )}
@@ -145,7 +146,7 @@ export default function LeadsPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <p className="text-sm text-carbone font-light">
-                        {lead.clientName || <span className="text-pierre/60">Sem nome</span>}
+                        {lead.clientName || <span className="text-pierre/60">{t.dashboardPages.leads_no_name}</span>}
                       </p>
                       <p className="text-[10px] text-pierre/70 uppercase tracking-wider mt-1">
                         {fmtDate(lead.createdAt)}
@@ -201,12 +202,12 @@ export default function LeadsPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-sable/20 bg-ivoire">
-                <th className="text-left px-4 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">Data</th>
-                <th className="text-left px-4 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">Nome</th>
-                <th className="text-left px-4 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">Contato</th>
-                <th className="text-left px-4 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">Tipo de pele</th>
-                <th className="text-left px-4 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">Objetivo</th>
-                <th className="text-right px-4 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">Acoes</th>
+                <th className="text-left px-4 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">{t.dashboardPages.common_date}</th>
+                <th className="text-left px-4 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">{t.dashboardPages.common_name}</th>
+                <th className="text-left px-4 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">{t.dashboardPages.common_contact}</th>
+                <th className="text-left px-4 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">{t.dashboardPages.leads_th_skin_type}</th>
+                <th className="text-left px-4 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">{t.dashboardPages.leads_th_objective}</th>
+                <th className="text-right px-4 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">{t.dashboardPages.common_actions}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-sable/10">
@@ -271,7 +272,7 @@ export default function LeadsPage() {
       )}
 
       <p className="text-[10px] text-pierre/60 font-light mt-4">
-        Apenas pacientes que marcaram explicitamente o consentimento LGPD aparecem nesta lista.
+        {t.dashboardPages.leads_consent_notice}
       </p>
     </div>
   );

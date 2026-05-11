@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { trpc } from "@/lib/trpc/client";
+import { useI18n } from "@/lib/i18n/client";
 
 const skinTypeLabels: Record<string, string> = {
   oily: "Oleosa",
@@ -26,6 +27,7 @@ function safeParseConditions(json: string | null | undefined): string[] {
 type TabId = "auto" | "manual";
 
 export default function KitsPage() {
+  const { t } = useI18n();
   const [tab, setTab] = useState<TabId>("auto");
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -55,19 +57,19 @@ export default function KitsPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="flex items-start justify-between">
+    <div className="p-4 md:p-8">
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
         <div>
-          <h1 className="font-serif text-2xl text-carbone">Kits</h1>
+          <h1 className="font-serif text-xl md:text-2xl text-carbone">{t.dashboardPages.kits_title}</h1>
           <p className="text-pierre text-sm font-light mt-1">
-            Gerencie kits automaticos e manuais para seus clientes.
+            {t.dashboardPages.kits_subtitle}
           </p>
         </div>
         <Link
           href="/dashboard/kits/novo"
-          className="px-5 py-2 bg-carbone text-blanc-casse text-sm font-light tracking-wide hover:bg-terre transition-colors"
+          className="px-5 py-2 bg-carbone text-blanc-casse text-sm font-light tracking-wide hover:bg-terre transition-colors min-h-[44px] md:min-h-0 flex items-center"
         >
-          Novo kit manual
+          {t.dashboardPages.kits_new}
         </Link>
       </div>
 

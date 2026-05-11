@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import { signOut } from "next-auth/react";
 import { trpc } from "@/lib/trpc/client";
+import { useI18n } from "@/lib/i18n/client";
 
 export default function MinhaContaPage() {
+  const { t } = useI18n();
   const utils = trpc.useUtils();
   const me = trpc.user.me.useQuery();
 
@@ -88,15 +90,15 @@ export default function MinhaContaPage() {
   }
 
   if (me.isLoading) {
-    return <p className="p-8 text-sm text-pierre font-light">Carregando...</p>;
+    return <p className="p-8 text-sm text-pierre font-light">{t.dashboardPages.common_loading}</p>;
   }
 
   return (
-    <div className="p-8 max-w-2xl">
+    <div className="p-4 md:p-8 max-w-2xl">
       <div className="border-b border-sable/20 pb-6 mb-8">
-        <h1 className="font-serif text-2xl text-carbone">Minha Conta</h1>
+        <h1 className="font-serif text-xl md:text-2xl text-carbone">{t.dashboardPages.acct_title}</h1>
         <p className="text-sm text-pierre font-light mt-1">
-          Atualize seus dados pessoais e altere sua senha de acesso.
+          {t.dashboardPages.acct_subtitle}
         </p>
       </div>
 

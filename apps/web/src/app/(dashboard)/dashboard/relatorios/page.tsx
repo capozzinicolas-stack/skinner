@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { trpc } from "@/lib/trpc/client";
+import { useI18n } from "@/lib/i18n/client";
 
 const skinTypeLabels: Record<string, string> = {
   oily: "Oleosa", dry: "Seca", combination: "Mista", normal: "Normal", sensitive: "Sensivel",
@@ -17,6 +18,7 @@ function safeParseArray(json: string | null | undefined): string[] {
 }
 
 export default function ReportsPage() {
+  const { t } = useI18n();
   const [channelId, setChannelId] = useState<string | undefined>(undefined);
   const channelsQuery = trpc.analysisChannel.list.useQuery();
   const reports = trpc.report.list.useQuery({ channelId });
@@ -25,9 +27,9 @@ export default function ReportsPage() {
     <div className="p-4 md:p-8">
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
-          <h1 className="font-serif text-xl md:text-2xl text-carbone">Relatorios</h1>
+          <h1 className="font-serif text-xl md:text-2xl text-carbone">{t.dashboardPages.reports_title}</h1>
           <p className="text-pierre text-sm font-light mt-1">
-            Historico de analises realizadas pelos seus clientes.
+            {t.dashboardPages.reports_subtitle}
           </p>
         </div>
         <select
@@ -35,7 +37,7 @@ export default function ReportsPage() {
           onChange={(e) => setChannelId(e.target.value || undefined)}
           className="px-3 py-2 border border-sable/40 bg-white text-xs text-carbone font-light tracking-wide w-full md:w-auto"
         >
-          <option value="">Todos os canais</option>
+          <option value="">{t.dashboardPages.common_all_channels}</option>
           {channelsQuery.data?.channels.map((c) => (
             <option key={c.id} value={c.id}>
               {c.label}
@@ -45,11 +47,11 @@ export default function ReportsPage() {
       </div>
 
       <div className="mt-8">
-        {reports.isLoading && <p className="text-pierre font-light">Carregando...</p>}
+        {reports.isLoading && <p className="text-pierre font-light">{t.dashboardPages.common_loading}</p>}
 
         {reports.data && reports.data.length === 0 && (
           <div className="text-center py-16 bg-white border border-sable/20">
-            <p className="text-pierre font-light">Nenhuma analise realizada ainda.</p>
+            <p className="text-pierre font-light">{t.dashboardPages.reports_empty}</p>
           </div>
         )}
 
@@ -64,7 +66,7 @@ export default function ReportsPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <p className="text-sm text-carbone font-light">
-                        {analysis.clientName ?? "Anonimo"}
+                        {analysis.clientName ?? t.dashboardPages.reports_anonymous}
                       </p>
                       {analysis.clientEmail && (
                         <p className="text-xs text-pierre font-light break-all">{analysis.clientEmail}</p>
@@ -97,7 +99,7 @@ export default function ReportsPage() {
                     rel="noopener noreferrer"
                     className="block w-full text-center border border-sable text-terre px-3 py-2 text-xs font-light tracking-wide min-h-[44px] flex items-center justify-center mt-2"
                   >
-                    Ver PDF
+                    {t.dashboardPages.reports_view_pdf}
                   </a>
                 </div>
               );
@@ -109,28 +111,28 @@ export default function ReportsPage() {
               <thead>
                 <tr className="border-b border-sable/20 bg-ivoire/50">
                   <th className="text-left px-5 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
-                    Data
+                    {t.dashboardPages.common_date}
                   </th>
                   <th className="text-left px-5 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
-                    Canal
+                    {t.dashboardPages.reports_th_channel}
                   </th>
                   <th className="text-left px-5 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
-                    Cliente
+                    {t.dashboardPages.reports_th_client}
                   </th>
                   <th className="text-left px-5 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
-                    Tipo de Pele
+                    {t.dashboardPages.reports_th_skin_type}
                   </th>
                   <th className="text-left px-5 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
-                    Condicoes
+                    {t.dashboardPages.reports_th_conditions}
                   </th>
                   <th className="text-left px-5 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
-                    Produtos
+                    {t.dashboardPages.reports_th_products}
                   </th>
                   <th className="text-left px-5 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
-                    Latencia
+                    {t.dashboardPages.reports_th_latency}
                   </th>
                   <th className="text-right px-5 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
-                    Acoes
+                    {t.dashboardPages.common_actions}
                   </th>
                 </tr>
               </thead>

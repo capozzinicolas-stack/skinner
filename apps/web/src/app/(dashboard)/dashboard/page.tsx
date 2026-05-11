@@ -9,6 +9,7 @@ import {
   tr,
   barrierLabel,
 } from "@/lib/sae/labels";
+import { useI18n } from "@/lib/i18n/client";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────────
 
@@ -568,8 +569,16 @@ function SeasonalityHeatmap({
 // ─── Main page ────────────────────────────────────────────────────────────────────
 
 export default function TenantDashboard() {
+  const { t } = useI18n();
   const [days, setDays] = useState<number>(30);
   const [channelId, setChannelId] = useState<string | undefined>(undefined);
+
+  const PERIOD_LABELS: Record<number, string> = {
+    7: t.dashboardPages.common_period_7d,
+    30: t.dashboardPages.common_period_30d,
+    90: t.dashboardPages.common_period_90d,
+    365: t.dashboardPages.common_period_1y,
+  };
 
   const channelsQuery = trpc.analysisChannel.list.useQuery();
 
@@ -613,9 +622,9 @@ export default function TenantDashboard() {
       {/* Header + period filter */}
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
-          <h1 className="font-serif text-xl md:text-2xl text-carbone">Dashboard</h1>
+          <h1 className="font-serif text-xl md:text-2xl text-carbone">{t.dashboardPages.home_title}</h1>
           <p className="text-pierre text-sm font-light mt-1">
-            Visão estratégica do seu negócio.
+            {t.dashboardPages.home_subtitle}
           </p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
@@ -624,7 +633,7 @@ export default function TenantDashboard() {
             onChange={(e) => setChannelId(e.target.value || undefined)}
             className="px-3 py-1.5 border border-sable/40 bg-white text-xs text-carbone font-light tracking-wide"
           >
-            <option value="">Todos os canais</option>
+            <option value="">{t.dashboardPages.common_all_channels}</option>
             {channelsQuery.data?.channels.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.label}
@@ -642,7 +651,7 @@ export default function TenantDashboard() {
                     : "bg-white text-pierre hover:bg-ivoire"
                 }`}
               >
-                {opt.label}
+                {PERIOD_LABELS[opt.value] ?? opt.label}
               </button>
             ))}
           </div>
@@ -651,7 +660,7 @@ export default function TenantDashboard() {
             disabled={exporting}
             className="px-4 py-1.5 border border-sable text-terre text-xs font-light tracking-wide hover:bg-ivoire transition-colors disabled:opacity-50 disabled:cursor-wait"
           >
-            {exporting ? "Exportando..." : "Exportar CSV"}
+            {exporting ? t.dashboardPages.common_exporting : t.dashboardPages.common_export_csv}
           </button>
         </div>
       </div>
@@ -662,22 +671,22 @@ export default function TenantDashboard() {
         <div className="mt-6 px-5 py-4 bg-ivoire border border-sable flex items-center justify-between gap-4 flex-wrap">
           <div>
             <p className="text-sm text-carbone font-light">
-              Voce ainda esta usando uma senha temporaria.
+              {t.dashboardPages.home_temp_password_title}
             </p>
             <p className="text-xs text-pierre font-light mt-1">
-              Por seguranca, recomendamos altera-la agora em Minha Conta.
+              {t.dashboardPages.home_temp_password_body}
             </p>
           </div>
           <a
             href="/dashboard/conta"
             className="px-4 py-2 bg-carbone text-blanc-casse text-xs font-light tracking-wide whitespace-nowrap"
           >
-            Alterar senha
+            {t.dashboardPages.home_temp_password_cta}
           </a>
         </div>
       )}
 
-      {overview.isLoading && <p className="text-pierre mt-8 font-light">Carregando...</p>}
+      {overview.isLoading && <p className="text-pierre mt-8 font-light">{t.dashboardPages.common_loading}</p>}
 
       {data && (
         <>

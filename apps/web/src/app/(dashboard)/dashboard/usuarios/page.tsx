@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc/client";
 import { OrganizationTabs } from "@/components/shared/organization-tabs";
+import { useI18n } from "@/lib/i18n/client";
 
 const roleLabels: Record<string, string> = {
   b2b_admin: "Admin",
@@ -11,6 +12,7 @@ const roleLabels: Record<string, string> = {
 };
 
 export default function UsersPage() {
+  const { t } = useI18n();
   const utils = trpc.useUtils();
   const users = trpc.user.listByTenant.useQuery();
   const createMutation = trpc.user.create.useMutation({
@@ -38,14 +40,14 @@ export default function UsersPage() {
     <div className="p-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Usuários</h1>
-          <p className="text-gray-500 mt-1">Gerencie a equipe do seu portal.</p>
+          <h1 className="font-serif text-xl md:text-2xl text-carbone">{t.dashboardPages.usr_title}</h1>
+          <p className="text-pierre text-sm font-light mt-1">{t.dashboardPages.usr_subtitle}</p>
         </div>
         <button
           onClick={() => setShowCreate(!showCreate)}
-          className="px-4 py-2 bg-carbone text-blanc-casse text-sm font-medium hover:bg-terre transition-colors"
+          className="px-4 py-2 bg-carbone text-blanc-casse text-sm font-light hover:bg-terre transition-colors"
         >
-          {showCreate ? "Cancelar" : "Convidar Usuário"}
+          {showCreate ? t.dashboardPages.common_cancel : t.dashboardPages.usr_invite}
         </button>
       </div>
 

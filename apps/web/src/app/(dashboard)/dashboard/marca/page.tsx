@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import { trpc } from "@/lib/trpc/client";
 import { OrganizationTabs } from "@/components/shared/organization-tabs";
+import { useI18n } from "@/lib/i18n/client";
 
 export default function BrandConfigPage() {
+  const { t } = useI18n();
   const utils = trpc.useUtils();
   const tenant = trpc.tenant.getMine.useQuery();
   const updateBrand = trpc.tenant.updateBrand.useMutation({
@@ -89,10 +91,10 @@ export default function BrandConfigPage() {
   return (
     <>
       <OrganizationTabs />
-    <div className="p-8 max-w-2xl">
-      <h1 className="font-serif text-2xl text-carbone">Configuracao de Marca</h1>
+    <div className="p-4 md:p-8 max-w-2xl">
+      <h1 className="font-serif text-xl md:text-2xl text-carbone">{t.dashboardPages.marca_title}</h1>
       <p className="text-pierre text-sm font-light mt-1">
-        Personalize a aparencia da analise para seus clientes.
+        {t.dashboardPages.marca_subtitle}
       </p>
 
       {/* Brand form */}

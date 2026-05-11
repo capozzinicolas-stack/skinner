@@ -964,13 +964,63 @@ dermatological terminology) BEFORE going live to real hispanophone or
 anglophone clients. Use the LATAM/EN locales today only for internal
 testing and demo purposes until a translator review completes.
 
+### Patient flow translation (May-2026 expansion)
+Component-level i18n coverage is now FULL across the patient flow:
+- `contact-capture`, `photo-capture`, `loading-screen`, `questionnaire` all
+  consume `t.patient.*` from the dictionary instead of hardcoded pt-BR.
+- `lib/i18n/patient-questions.ts` is a runtime translator (same posture as
+  `plan-features.ts`) for admin-controlled questionnaire texts. Maps the
+  pt-BR strings the admin types in `/admin/formulario` to ES/EN at render
+  time via a flat lowercase-normalized lookup. Unknown strings fall through
+  to pt-BR, never break the flow.
+- The patient flow uses `effectiveLocale` resolved by `tenant.getBySlug`
+  (channel.overrides.locale → tenant.defaultLocale → "pt-BR"), passed to
+  `<I18nProvider locale={patientLocale}>` in both `/analise/[slug]` and
+  `/embed/[slug]`.
+
+### Dashboard B2B translation (May-2026 expansion)
+Component-level i18n coverage now extends across the dashboard:
+- `dashboardPages.*` section in each dictionary holds page-body strings
+  grouped by page (`org_*`, `home_*`, `leads_*`, `reports_*`, `cat_*`,
+  `kits_*`, `marca_*`, `chan_*`, `int_*`, `usr_*`, `bill_*`, `acct_*`,
+  `analise_*`) plus `common_*` for shared UI (period filters, save/cancel,
+  loading, etc.).
+- All 12 top-level dashboard pages (`/dashboard`, `/dashboard/leads`,
+  `/dashboard/catalogo`, `/dashboard/relatorios`, `/dashboard/kits`,
+  `/dashboard/marca`, `/dashboard/canais`, `/dashboard/integracao`,
+  `/dashboard/usuarios`, `/dashboard/faturamento`, `/dashboard/conta`,
+  `/dashboard/organizacao`, `/dashboard/analise`) consume `useI18n()` and
+  render their title + subtitle + main CTAs in the active locale. Some
+  in-page detail strings (sub-section headings on the dashboard home,
+  certain form helper text on the analise config page) still fall back
+  to pt-BR — translate incrementally as needed.
+
+### Locale propagation invariant
+- Dashboard layout (`apps/web/src/app/(dashboard)/layout.tsx`, server
+  component) resolves locale via `resolveDashboardLocale()` on every render.
+  Priority: `User.locale` → `Tenant.defaultLocale` → cookie → header.
+- When `/dashboard/organizacao` saves a new `Tenant.defaultLocale`, the
+  mutation `onSuccess` calls `router.refresh()` so the server tree
+  re-renders with the new locale picked up. Without this, the UI sticks to
+  the old locale until a hard reload. Critical for the demo flow where
+  Nicolas changes the tenant default and expects the dashboard to switch
+  immediately.
+- The same router.refresh pattern should be applied to ANY future page
+  that mutates locale (user-level locale picker in `/dashboard/conta`
+  already triggers `window.location.reload()` which is functionally
+  equivalent, just heavier).
+
 ### Known gaps (intentional, follow-up sprints)
 - tRPC error messages / Zod validation messages remain pt-BR
 - `matcher.ts` reasons ("Trata: acne...") remain pt-BR — matcher doesn't
   know the locale; passing it through requires expanding the matcher API
 - Marketing page bodies (/, /como-funciona, /planos) — translate
   incrementally as content stabilizes
-- Dashboard page bodies — same; translate when a paying customer requests
+- Some dashboard in-page detail strings (dashboard home section subtitles,
+  catalog dialog text, integration form helpers) — top-level titles +
+  primary actions translated, deeper polish pending
+- Admin panel (`/admin/*`) bodies remain pt-BR — Nicolas-only surface,
+  lowest priority
 - PDF locale uses tenant default only; channel-locale override would
   require an extra DB join in `/api/report`
 

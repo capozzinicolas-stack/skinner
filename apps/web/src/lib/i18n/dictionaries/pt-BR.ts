@@ -254,7 +254,194 @@ export const ptBR: DictShape = {
     org_save: "Salvar dados",
     org_saving: "Salvando...",
     org_saved: "Dados atualizados.",
+
+    // ── Common UI ────────────────────────────────────────────────────
     common_loading: "Carregando...",
+    common_all_channels: "Todos os canais",
+    common_export_csv: "Exportar CSV",
+    common_exporting: "Exportando...",
+    common_period_7d: "7 dias",
+    common_period_30d: "30 dias",
+    common_period_90d: "90 dias",
+    common_period_1y: "12 meses",
+    common_save: "Salvar",
+    common_saving: "Salvando...",
+    common_cancel: "Cancelar",
+    common_back: "Voltar",
+    common_next: "Proxima",
+    common_previous: "Anterior",
+    common_delete: "Excluir",
+    common_edit: "Editar",
+    common_new: "Novo",
+    common_search: "Buscar...",
+    common_no_data: "Nenhum dado para exibir.",
+    common_close: "Fechar",
+    common_actions: "Acoes",
+    common_status: "Status",
+    common_date: "Data",
+    common_name: "Nome",
+    common_contact: "Contato",
+    common_active: "Ativo",
+    common_inactive: "Inativo",
+    common_paused: "Pausado",
+
+    // ── Dashboard home ──────────────────────────────────────────────
+    home_title: "Painel",
+    home_subtitle: "Visao estrategica do seu negocio.",
+    home_temp_password_title: "Sua senha temporaria precisa ser trocada",
+    home_temp_password_body:
+      "Por seguranca, defina uma senha pessoal antes de continuar usando o painel.",
+    home_temp_password_cta: "Definir senha agora",
+    home_roi_overview: "ROI da plataforma",
+    home_plan_usage: "Uso do plano",
+    home_monthly_trend: "Tendencia",
+    home_monthly_trend_subtitle: "Volume e receita nos ultimos 6 meses",
+    home_geography: "Distribuicao geografica",
+    home_profile: "Perfil dos pacientes",
+    home_top_conditions: "Condicoes mais comuns",
+    home_barrier: "Estado da barreira cutanea",
+    home_top_products: "Produtos recomendados",
+    home_engagement: "Engajamento",
+    home_personas: "Personas",
+    home_seasonality: "Sazonalidade",
+    home_benchmark: "Benchmark vs plataforma",
+
+    // ── Leads page ───────────────────────────────────────────────────
+    leads_title: "Leads",
+    leads_subtitle: "Pacientes que autorizaram contato durante a analise.",
+    leads_empty: "Nenhuma lead capturada neste periodo.",
+    leads_empty_hint:
+      "Verifique se a captura de contato esta ativada em \"Analise\" e que pacientes autorizaram o contato durante a analise.",
+    leads_th_skin_type: "Tipo de pele",
+    leads_th_objective: "Objetivo",
+    leads_no_name: "Sem nome",
+    leads_consent_notice:
+      "Apenas pacientes que marcaram explicitamente o consentimento LGPD aparecem nesta lista.",
+
+    // ── Reports page ─────────────────────────────────────────────────
+    reports_title: "Relatorios",
+    reports_subtitle: "Historico de analises realizadas pelos seus clientes.",
+    reports_empty: "Nenhuma analise realizada ainda.",
+    reports_th_channel: "Canal",
+    reports_th_client: "Cliente",
+    reports_th_skin_type: "Tipo de pele",
+    reports_th_conditions: "Condicoes",
+    reports_th_products: "Produtos",
+    reports_th_latency: "Latencia",
+    reports_anonymous: "Anonimo",
+    reports_view_pdf: "Ver PDF",
+
+    // ── Catalog page ─────────────────────────────────────────────────
+    cat_title: "Catalogo de Produtos",
+    cat_summary: "{active} ativos de {total} produtos",
+    cat_import_csv: "Importar CSV",
+    cat_new_product: "Novo Produto",
+    cat_search_placeholder: "Buscar por nome ou SKU...",
+    cat_filter_all_concerns: "Todas condicoes",
+    cat_filter_all_steps: "Todas etapas",
+    cat_filter_all_types: "Todos os tipos",
+    cat_filter_products: "Produtos",
+    cat_filter_services: "Servicos",
+    cat_show_inactive: "Mostrar inativos",
+    cat_selected_count_one: "{n} item selecionado",
+    cat_selected_count_many: "{n} itens selecionados",
+    cat_bulk_deactivate: "Desativar selecionados",
+    cat_bulk_deactivating: "Desativando...",
+    cat_bulk_reactivate: "Reativar selecionados",
+    cat_bulk_reactivating: "Reativando...",
+    cat_clear_selection: "Limpar selecao",
+    cat_empty: "Nenhum item encontrado.",
+    cat_add_first: "Adicionar primeiro produto",
+    cat_th_item: "Item",
+    cat_th_sku: "SKU",
+    cat_th_type_step: "Tipo / Etapa",
+    cat_th_concerns: "Condicoes",
+    cat_th_intensity: "Intensidade",
+    cat_th_price: "Preco",
+    cat_intensity_light: "Leve",
+    cat_intensity_moderate: "Moderado",
+    cat_intensity_intense: "Intenso",
+    cat_label_product: "Produto",
+    cat_label_service: "Servico",
+    cat_deactivate: "Desativar",
+    cat_reactivate: "Reativar",
+    cat_pagination: "Pagina {page} de {pageCount} — {total} itens",
+    cat_coverage_title: "Cobertura por condicao",
+
+    // ── Kits page ────────────────────────────────────────────────────
+    kits_title: "Kits",
+    kits_subtitle:
+      "Combos de produtos recomendados juntos para um objetivo especifico.",
+    kits_new: "Novo Kit",
+    kits_empty: "Nenhum kit criado ainda.",
+    kits_empty_hint: "Crie kits para vender combos com desconto.",
+
+    // ── Brand page ───────────────────────────────────────────────────
+    marca_title: "Marca",
+    marca_subtitle:
+      "Personalize o visual da analise para seus pacientes.",
+    marca_logo_section: "Logotipo",
+    marca_colors_section: "Cores",
+    marca_voice_section: "Tom da marca",
+    marca_disclaimer_section: "Aviso legal",
+
+    // ── Channels page ────────────────────────────────────────────────
+    chan_title: "Canais",
+    chan_subtitle:
+      "Crie multiplos links para segmentar campanhas, parceiros ou unidades.",
+    chan_new: "Novo canal",
+    chan_plan_cap: "{count} de {max} canal(is)",
+    chan_paused_label: "Pausado",
+    chan_expired_label: "Expirado",
+    chan_default_label: "Padrao",
+    chan_tab_link: "Link Direto",
+    chan_tab_qr: "QR Code",
+    chan_tab_widget: "Widget Embed",
+    chan_tab_branding: "Personalizacao",
+
+    // ── Integrations page ────────────────────────────────────────────
+    int_title: "Integracoes",
+    int_subtitle:
+      "Conecte sua loja virtual para vendas automaticas e atribuicao de comissao.",
+
+    // ── Users page ───────────────────────────────────────────────────
+    usr_title: "Usuarios",
+    usr_subtitle: "Gerencie quem tem acesso ao painel da sua organizacao.",
+    usr_invite: "Convidar usuario",
+    usr_th_email: "E-mail",
+    usr_th_role: "Papel",
+    usr_th_last_login: "Ultimo acesso",
+    usr_role_admin: "Administrador",
+    usr_role_analyst: "Analista",
+    usr_role_viewer: "Visualizador",
+
+    // ── Billing page ─────────────────────────────────────────────────
+    bill_title: "Faturamento",
+    bill_subtitle:
+      "Plano, uso e historico de pagamentos.",
+    bill_current_plan: "Plano atual",
+    bill_usage: "Uso do periodo",
+    bill_invoices: "Faturas",
+    bill_manage: "Gerenciar assinatura",
+
+    // ── Account page ─────────────────────────────────────────────────
+    acct_title: "Minha Conta",
+    acct_subtitle: "Dados pessoais, senha e preferencias.",
+    acct_section_profile: "Dados pessoais",
+    acct_section_password: "Alterar senha",
+    acct_section_locale: "Idioma do painel",
+    acct_section_delete: "Excluir minha conta",
+    acct_name_label: "Nome",
+    acct_email_label: "E-mail",
+    acct_locale_label: "Idioma",
+    acct_locale_inherit: "Usar idioma da organizacao",
+    acct_locale_hint:
+      "Sobrescreve o idioma da organizacao apenas para sua conta. Deixe vazio para herdar.",
+
+    // ── Analysis settings page ───────────────────────────────────────
+    analise_title: "Configuracao da Analise",
+    analise_subtitle:
+      "Personalize o fluxo, copy e comportamento da analise para seus pacientes.",
   },
 };
 

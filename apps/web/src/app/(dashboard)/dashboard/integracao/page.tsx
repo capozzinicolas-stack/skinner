@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { trpc } from "@/lib/trpc/client";
 import { OrganizationTabs } from "@/components/shared/organization-tabs";
+import { useI18n } from "@/lib/i18n/client";
 
 const DEFAULT_WHATSAPP_MESSAGE =
   "Ola, gostaria de adquirir o produto {produto} (R$ {preco}) recomendado pela analise Skinner.";
@@ -445,6 +446,7 @@ function ShopifyCard() {
 }
 
 export default function IntegracaoPage() {
+  const { t } = useI18n();
   const utils = trpc.useUtils();
   const tenant = trpc.tenant.getMine.useQuery();
   const updateConfig = trpc.tenant.updateConfig.useMutation({
@@ -498,16 +500,16 @@ export default function IntegracaoPage() {
   const showMercadoPagoSection = ctaMode === "mercadopago" || ctaMode === "both";
 
   if (tenant.isLoading) {
-    return <div className="p-8 text-pierre font-light text-sm">Carregando...</div>;
+    return <div className="p-8 text-pierre font-light text-sm">{t.dashboardPages.common_loading}</div>;
   }
 
   return (
     <>
       <OrganizationTabs />
-    <div className="p-8 max-w-2xl">
-      <h1 className="font-serif text-2xl text-carbone">Integracoes e Vendas</h1>
+    <div className="p-4 md:p-8 max-w-2xl">
+      <h1 className="font-serif text-xl md:text-2xl text-carbone">{t.dashboardPages.int_title}</h1>
       <p className="text-pierre text-sm font-light mt-1">
-        Configure como seus clientes compram os produtos recomendados.
+        {t.dashboardPages.int_subtitle}
       </p>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-10">

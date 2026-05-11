@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc/client";
 import { OrganizationTabs } from "@/components/shared/organization-tabs";
+import { useI18n } from "@/lib/i18n/client";
 
 const PUBLIC_ORIGIN =
   typeof window !== "undefined" && window.location.hostname === "localhost"
@@ -76,6 +77,7 @@ type ChannelRow = {
 };
 
 export default function ChannelsPage() {
+  const { t } = useI18n();
   const tenant = trpc.tenant.getMine.useQuery();
   const channelsQuery = trpc.analysisChannel.list.useQuery();
   const utils = trpc.useUtils();
@@ -109,19 +111,18 @@ export default function ChannelsPage() {
   return (
     <>
       <OrganizationTabs />
-    <div className="p-8 max-w-4xl">
-      <div className="border-b border-sable/20 pb-6 mb-8 flex items-end justify-between">
+    <div className="p-4 md:p-8 max-w-4xl">
+      <div className="border-b border-sable/20 pb-6 mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
-          <h1 className="font-serif text-2xl text-carbone">Canais de Acesso</h1>
+          <h1 className="font-serif text-xl md:text-2xl text-carbone">{t.dashboardPages.chan_title}</h1>
           <p className="text-pierre text-sm font-light mt-1">
-            Crie multiplos canais para segmentar campanhas, unidades e parceiros.
-            Cada canal tem seu link, QR e widget proprios.
+            {t.dashboardPages.chan_subtitle}
           </p>
         </div>
-        <div className="text-right">
+        <div className="md:text-right">
           <p className="text-[10px] text-pierre uppercase tracking-wider font-light">Plano {planName}</p>
           <p className="text-sm text-carbone font-light mt-1">
-            {channels.length} de {maxChannels} canal(is)
+            {t.dashboardPages.chan_plan_cap.replace("{count}", String(channels.length)).replace("{max}", String(maxChannels))}
           </p>
         </div>
       </div>

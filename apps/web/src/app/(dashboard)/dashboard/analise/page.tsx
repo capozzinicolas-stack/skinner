@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { trpc } from "@/lib/trpc/client";
+import { useI18n } from "@/lib/i18n/client";
 
 // ─── Plan restriction helpers ─────────────────────────────────────────────────
 
@@ -709,6 +710,7 @@ function LivePreview({ form }: { form: AnalysisFormState }) {
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function AnaliseConfigPage() {
+  const { t } = useI18n();
   const utils = trpc.useUtils();
   // Use getMine (tenantProcedure) which already includes tenantConfig
   const tenantQuery = trpc.tenant.getMine.useQuery();
@@ -926,10 +928,10 @@ export default function AnaliseConfigPage() {
         <div className="flex-[3] min-w-0 max-w-2xl">
           <div className="pt-8">
             <h1 className="font-serif text-2xl text-carbone">
-              Configuracao de Analise
+              {t.dashboardPages.analise_title}
             </h1>
             <p className="text-pierre text-sm font-light mt-1">
-              Personalize o fluxo de analise e os resultados exibidos para seus clientes.
+              {t.dashboardPages.analise_subtitle}
             </p>
 
             {/* Plan badge */}
