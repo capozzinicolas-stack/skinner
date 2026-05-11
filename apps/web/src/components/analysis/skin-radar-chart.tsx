@@ -1,21 +1,12 @@
 "use client";
 
 import type { ZoneAnnotation, ZoneStatus } from "@/lib/sae/types";
+import { useI18n } from "@/lib/i18n/client";
 
 // Map status to a score: good=90, attention=55, concern=25
 function statusToScore(status: ZoneStatus): number {
   return status === "good" ? 90 : status === "attention" ? 55 : 25;
 }
-
-const LABELS: Record<string, string> = {
-  forehead: "Testa",
-  left_cheek: "Boch. Esq.",
-  right_cheek: "Boch. Dir.",
-  nose: "Nariz",
-  chin: "Queixo",
-  under_eyes: "Olheiras",
-  jawline: "Mandibula",
-};
 
 const STATUS_COLORS: Record<ZoneStatus, string> = {
   good: "#4A7C59",
@@ -35,7 +26,18 @@ export function SkinRadarChart({
 }: {
   annotations: ZoneAnnotation[];
 }) {
+  const { t } = useI18n();
   if (annotations.length === 0) return null;
+
+  const LABELS: Record<string, string> = {
+    forehead: t.patient.results_zone_forehead,
+    left_cheek: t.patient.results_zone_left_cheek,
+    right_cheek: t.patient.results_zone_right_cheek,
+    nose: t.patient.results_zone_nose,
+    chin: t.patient.results_zone_chin,
+    under_eyes: t.patient.results_zone_under_eyes,
+    jawline: t.patient.results_zone_jawline,
+  };
 
   const points: RadarPoint[] = annotations.map((a) => ({
     label: LABELS[a.zone] ?? a.zone,
@@ -69,7 +71,11 @@ export function SkinRadarChart({
 
   // Calculate overall skin health score
   const overallScore = Math.round(points.reduce((sum, p) => sum + p.score, 0) / points.length);
-  const overallLabel = overallScore >= 75 ? "Boa saude" : overallScore >= 50 ? "Atencao" : "Cuidado";
+  const overallLabel = overallScore >= 75
+    ? t.patient.results_healthy
+    : overallScore >= 50
+      ? t.patient.results_attention
+      : t.patient.results_care;
   const overallColor = overallScore >= 75 ? "#4A7C59" : overallScore >= 50 ? "#C8A951" : "#A65D57";
 
   return (
@@ -77,7 +83,7 @@ export function SkinRadarChart({
       <div className="flex items-center justify-between mb-4">
         <div>
           <p className="text-[10px] text-pierre uppercase tracking-wider font-light">
-            Radar da Pele
+            {t.patient.results_skin_radar}
           </p>
         </div>
         <div className="text-right">

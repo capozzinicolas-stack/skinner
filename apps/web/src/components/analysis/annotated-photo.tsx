@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import type { ZoneAnnotation, FaceZone, ZoneStatus } from "@/lib/sae/types";
 import { detectFaceZones, type FaceZonePositions } from "@/lib/face-detection";
+import { useI18n } from "@/lib/i18n/client";
 
 // Fixed fallback positions calibrated for a centered selfie.
 // Used when face detection is unavailable or returns no result.
@@ -18,26 +19,14 @@ const ZONE_POSITIONS_FALLBACK: Record<FaceZone, { top: string; left: string }> =
   jawline:     { top: "50%", left: "36%" },
 };
 
-const ZONE_LABELS: Record<FaceZone, string> = {
-  forehead:    "Testa",
-  under_eyes:  "Area periorbital",
-  nose:        "Nariz",
-  left_cheek:  "Bochecha esquerda",
-  right_cheek: "Bochecha direita",
-  chin:        "Queixo",
-  jawline:     "Mandibula",
-};
+// Zone + status labels resolved per-render via useI18n. The pt-BR
+// defaults stay as the source-of-truth labels.ts equivalent so the
+// existing matcher / PDF / e-mail paths keep working untouched.
 
 const STATUS_COLORS: Record<ZoneStatus, string> = {
   good:      "#4A7C59",
   attention: "#C8A951",
   concern:   "#A65D57",
-};
-
-const STATUS_LABELS: Record<ZoneStatus, string> = {
-  good:      "Saudavel",
-  attention: "Atencao",
-  concern:   "Cuidado",
 };
 
 // Resolve a zone's position — uses detected landmarks when available,
@@ -60,6 +49,21 @@ export function AnnotatedPhoto({
   photoBase64: string;
   annotations: ZoneAnnotation[];
 }) {
+  const { t } = useI18n();
+  const ZONE_LABELS: Record<FaceZone, string> = {
+    forehead: t.patient.results_zone_forehead,
+    under_eyes: t.patient.results_zone_under_eyes,
+    nose: t.patient.results_zone_nose,
+    left_cheek: t.patient.results_zone_left_cheek,
+    right_cheek: t.patient.results_zone_right_cheek,
+    chin: t.patient.results_zone_chin,
+    jawline: t.patient.results_zone_jawline,
+  };
+  const STATUS_LABELS: Record<ZoneStatus, string> = {
+    good: t.patient.results_healthy,
+    attention: t.patient.results_attention,
+    concern: t.patient.results_care,
+  };
   const [activeZone, setActiveZone] = useState<FaceZone | null>(null);
 
   // Face detection state
@@ -296,7 +300,7 @@ export function AnnotatedPhoto({
       {/* Instruction text when no marker selected */}
       {!activeAnnotation && (
         <p className="text-xs text-pierre font-light mt-3 text-center">
-          Toque nos marcadores para ver detalhes de cada zona
+          {t.patient.results_zone_tap_hint}
         </p>
       )}
 

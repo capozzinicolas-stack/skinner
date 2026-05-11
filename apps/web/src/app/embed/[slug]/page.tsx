@@ -14,6 +14,7 @@ import { resolveProductChannel } from "@/lib/cart/resolve-channel";
 import { postToParent, isInsideIframe } from "@/lib/embed/post-message";
 import type { CartItem } from "@/lib/cart/types";
 import { I18nProvider } from "@/lib/i18n/client";
+import { getDictionary } from "@/lib/i18n/dictionaries";
 import { LOCALES, DEFAULT_LOCALE, type Locale } from "@/lib/i18n/types";
 import type { FullAnalysisResult } from "@/lib/sae/types";
 
@@ -122,17 +123,25 @@ function EmbedAnalysisFlow({ params }: { params: { slug: string } }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const cfg = analysisConfig.data as any;
 
+  // Resolve patient locale early so welcome/consent fallback copy uses the
+  // right language. Same posture as /analise/[slug] — see comment there.
+  const earlyRawLocale = (tenant.data as { effectiveLocale?: string } | undefined)?.effectiveLocale;
+  const earlyLocale: Locale =
+    earlyRawLocale && (LOCALES as readonly string[]).includes(earlyRawLocale)
+      ? (earlyRawLocale as Locale)
+      : DEFAULT_LOCALE;
+  const localT = getDictionary(earlyLocale);
+
   // ── Welcome screen texts ──────────────────────────────────────────────────
-  const welcomeTitle = cfg?.welcomeTitle || "Analise de Pele";
+  const welcomeTitle = cfg?.welcomeTitle || localT.patient.welcome_title;
   const welcomeDescription =
-    cfg?.welcomeDescription ||
-    "Descubra o tipo da sua pele e receba recomendacoes personalizadas de tratamento em menos de 3 minutos.";
-  const welcomeCtaText = cfg?.welcomeCtaText || "Iniciar Analise";
-  const welcomeSubtext = cfg?.welcomeSubtext || "Gratuito e sem cadastro";
+    cfg?.welcomeDescription || localT.patient.welcome_description;
+  const welcomeCtaText = cfg?.welcomeCtaText || localT.patient.welcome_cta;
+  const welcomeSubtext = cfg?.welcomeSubtext || localT.patient.welcome_subtext;
   const welcomeSubtextVisible = cfg?.welcomeSubtextVisible ?? true;
 
   // ── Consent screen texts ──────────────────────────────────────────────────
-  const consentButtonText = cfg?.consentButtonText || "Concordo e continuar";
+  const consentButtonText = cfg?.consentButtonText || localT.patient.consent_cta;
   const consentExtraText: string | null = cfg?.consentExtraText ?? null;
 
   // ── Photo screen texts ────────────────────────────────────────────────────
@@ -338,26 +347,20 @@ function EmbedAnalysisFlow({ params }: { params: { slug: string } }) {
         {/* Consent */}
         {step === "consent" && (
           <div className="w-full max-w-lg mx-auto px-4 space-y-6">
-            <h2 className="font-serif text-xl text-carbone">Consentimento</h2>
+            <h2 className="font-serif text-xl text-carbone">{localT.patient.consent_title}</h2>
             <div className="p-6 bg-ivoire border border-sable/20 text-sm text-terre space-y-3 font-light">
-              <p>
-                Para realizar a analise, precisaremos de uma foto do seu rosto.
-                Essa foto sera processada por inteligencia artificial para
-                identificar caracteristicas da sua pele.
-              </p>
-              <p className="font-normal text-carbone">Seus dados sao protegidos:</p>
+              <p>{localT.patient.consent_body}</p>
+              <p className="font-normal text-carbone">{localT.patient.consent_data_protected}</p>
               <ul className="space-y-1 ml-4 text-pierre">
-                <li>A foto e processada e descartada imediatamente</li>
-                <li>Nao armazenamos imagens faciais</li>
-                <li>A analise e anonima por padrao</li>
-                <li>Voce pode fornecer e-mail opcionalmente para receber o relatorio</li>
+                <li>{localT.patient.consent_li_1}</li>
+                <li>{localT.patient.consent_li_2}</li>
+                <li>{localT.patient.consent_li_3}</li>
+                <li>{localT.patient.consent_li_4}</li>
               </ul>
               {consentExtraText && (
                 <p className="text-sm text-terre mt-2">{consentExtraText}</p>
               )}
-              <p className="text-xs text-pierre mt-4">
-                Em conformidade com a LGPD (Lei 13.709/2018).
-              </p>
+              <p className="text-xs text-pierre mt-4">{localT.patient.consent_lgpd}</p>
             </div>
             {(photoTitle || photoInstruction || photoExtraText) && (
               <div className="p-4 bg-white border border-sable/20 space-y-1">
@@ -377,7 +380,7 @@ function EmbedAnalysisFlow({ params }: { params: { slug: string } }) {
                 onClick={() => setStep("welcome")}
                 className="flex-1 px-4 py-3 border border-sable/40 text-sm font-light text-terre hover:bg-ivoire transition-colors"
               >
-                Voltar
+                {localT.patient.consent_back}
               </button>
               <button
                 onClick={handleConsentContinue}
@@ -424,7 +427,7 @@ function EmbedAnalysisFlow({ params }: { params: { slug: string } }) {
             <ResultsScreen
               result={result}
               tenantName={tenantName}
-              disclaimer={tenant.data.disclaimer ?? undefined}
+              disclaimer={tenant.data.disclaimer ?? localT.patient.results_disclaimer_default}
               primaryColor={brandPrimary}
               secondaryColor={tenant.data.secondaryColor || undefined}
               config={resultsConfig}

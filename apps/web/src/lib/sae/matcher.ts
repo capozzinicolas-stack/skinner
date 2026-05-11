@@ -1,12 +1,75 @@
 import type { AnalysisOutput, MatchedProduct } from "./types";
 import { db } from "@skinner/db";
 import {
-  conditionLabels,
-  skinTypeLabels,
-  objectiveLabels,
+  conditionLabelsLocalized,
+  skinTypeLabelsLocalized,
+  objectiveLabelsLocalized,
+  stepRoutineLabelsLocalized,
+  useTimeLabelsLocalized,
   trList,
   tr,
 } from "./labels";
+import type { Locale } from "@/lib/i18n/types";
+
+// Reason / howToUse templates per locale. Keep aligned with the patient-flow
+// dictionary (results_indicated_for, results_aligned_objective, etc.) — these
+// duplicate the values intentionally because matcher.ts runs server-side and
+// can't import the React i18n provider.
+const MATCHER_TEMPLATES: Record<Locale, {
+  treats: string;
+  indicatedFor: string;
+  alignedObjective: string;
+  ingredientsHelp: string;
+  treatmentSessions: (count: number) => string;
+  treatmentFrequency: (freq: string) => string;
+  treatmentDuration: (minutes: number) => string;
+  treatmentLine: (sessions: string, freq: string, duration: string) => string;
+  useLine: (step: string, time: string) => string;
+  treatmentStep: string;
+}> = {
+  "pt-BR": {
+    treats: "Trata",
+    indicatedFor: "Indicado para pele",
+    alignedObjective: "Alinhado com seu objetivo",
+    ingredientsHelp: "Ingredientes que ajudam",
+    treatmentSessions: (count) => `${count} sessao${count > 1 ? "es" : ""}`,
+    treatmentFrequency: (freq) => `, frequencia ${freq}`,
+    treatmentDuration: (min) => `, duracao de ${min} minutos cada`,
+    treatmentLine: (sessions, freq, duration) =>
+      `Tratamento em ${sessions}${freq}${duration}.`,
+    useLine: (step, time) =>
+      `Usar na etapa de ${step}, ${time}. Aplicar conforme instrucao do produto.`,
+    treatmentStep: "tratamento",
+  },
+  es: {
+    treats: "Trata",
+    indicatedFor: "Indicado para piel",
+    alignedObjective: "Alineado con tu objetivo",
+    ingredientsHelp: "Ingredientes que ayudan",
+    treatmentSessions: (count) => `${count} sesion${count > 1 ? "es" : ""}`,
+    treatmentFrequency: (freq) => `, frecuencia ${freq}`,
+    treatmentDuration: (min) => `, duracion de ${min} minutos cada una`,
+    treatmentLine: (sessions, freq, duration) =>
+      `Tratamiento en ${sessions}${freq}${duration}.`,
+    useLine: (step, time) =>
+      `Usar en la etapa de ${step}, ${time}. Aplica segun las instrucciones del producto.`,
+    treatmentStep: "tratamiento",
+  },
+  en: {
+    treats: "Treats",
+    indicatedFor: "Indicated for",
+    alignedObjective: "Aligned with your goal",
+    ingredientsHelp: "Helpful ingredients",
+    treatmentSessions: (count) => `${count} session${count > 1 ? "s" : ""}`,
+    treatmentFrequency: (freq) => `, frequency ${freq}`,
+    treatmentDuration: (min) => `, ${min} minutes each`,
+    treatmentLine: (sessions, freq, duration) =>
+      `Treatment in ${sessions}${freq}${duration}.`,
+    useLine: (step, time) =>
+      `Use in the ${step} step, ${time}. Apply according to product instructions.`,
+    treatmentStep: "treatment",
+  },
+};
 
 /**
  * Match analysis results to products from the tenant's catalog.
@@ -23,8 +86,10 @@ import {
 export async function matchProducts(
   tenantId: string,
   analysis: AnalysisOutput,
-  options?: { pregnantOrNursing?: string }
+  options?: { pregnantOrNursing?: string; locale?: Locale }
 ): Promise<MatchedProduct[]> {
+  const locale: Locale = options?.locale ?? "pt-BR";
+  const tmpl = MATCHER_TEMPLATES[locale] ?? MATCHER_TEMPLATES["pt-BR"];
   const catalogItems = await db.product.findMany({
     where: { tenantId, isActive: true },
     include: { _count: { select: { recommendations: true } } },
@@ -93,50 +158,39 @@ export async function matchProducts(
 
     const matchScore = Math.round((concernScore + skinTypeMatch + objectiveMatch + severityScore + ingredientScore) * 100) / 100;
 
-    // Generate reason in patient-friendly Portuguese (translates raw IDs via labels.ts)
+    // Generate reason in patient locale (translates raw IDs via labels.ts).
     const reasons: string[] = [];
     const matchedConcerns = detectedConcerns.filter((c) => concernTags.includes(c));
     if (matchedConcerns.length > 0) {
-      reasons.push(`Trata: ${trList(conditionLabels, matchedConcerns)}`);
+      reasons.push(`${tmpl.treats}: ${trList(conditionLabelsLocalized, matchedConcerns, locale)}`);
     }
     if (skinTypeMatch > 0) {
-      reasons.push(`Indicado para pele ${tr(skinTypeLabels, analysis.skin_type)}`);
+      reasons.push(`${tmpl.indicatedFor} ${tr(skinTypeLabelsLocalized, analysis.skin_type, locale)}`);
     }
     if (objectiveMatch > 0) {
-      reasons.push(`Alinhado com seu objetivo: ${tr(objectiveLabels, analysis.primary_objective)}`);
+      reasons.push(`${tmpl.alignedObjective}: ${tr(objectiveLabelsLocalized, analysis.primary_objective, locale)}`);
     }
     if (ingredientMatches > 0) {
       const matchedIngs = activeIngs.filter((ing) => recommendedIngredients.has(ing));
-      reasons.push(`Ingredientes que ajudam: ${matchedIngs.join(", ")}`);
+      reasons.push(`${tmpl.ingredientsHelp}: ${matchedIngs.join(", ")}`);
     }
 
-    // Generate how to use
-    const stepLabels: Record<string, string> = {
-      cleanser: "Limpeza",
-      toner: "Tonico",
-      serum: "Serum",
-      moisturizer: "Hidratante",
-      SPF: "Protetor Solar",
-      treatment: "Tratamento",
-    };
-    const timeLabels: Record<string, string> = {
-      am: "manha",
-      pm: "noite",
-      both: "manha e noite",
-    };
-
+    // Generate how to use — locale-aware step + time labels.
     let howToUse: string;
     if (product.type === "service") {
       const sessionInfo = product.sessionCount
-        ? `${product.sessionCount} sessao${product.sessionCount > 1 ? "es" : ""}`
-        : "sessoes";
-      const freqInfo = product.sessionFrequency ? `, frequencia ${product.sessionFrequency}` : "";
-      const durationInfo = product.durationMinutes ? `, duracao de ${product.durationMinutes} minutos cada` : "";
-      howToUse = `Tratamento em ${sessionInfo}${freqInfo}${durationInfo}.`;
+        ? tmpl.treatmentSessions(product.sessionCount)
+        : "";
+      const freqInfo = product.sessionFrequency ? tmpl.treatmentFrequency(product.sessionFrequency) : "";
+      const durationInfo = product.durationMinutes ? tmpl.treatmentDuration(product.durationMinutes) : "";
+      howToUse = tmpl.treatmentLine(sessionInfo, freqInfo, durationInfo);
     } else {
-      const step = product.stepRoutine ? stepLabels[product.stepRoutine] ?? product.stepRoutine : "";
-      const time = timeLabels[product.useTime] ?? "manha e noite";
-      howToUse = `Usar na etapa de ${step || "tratamento"}, ${time}. Aplicar conforme instrucao do produto.`;
+      const stepRaw = product.stepRoutine
+        ? tr(stepRoutineLabelsLocalized, product.stepRoutine, locale) || product.stepRoutine
+        : tmpl.treatmentStep;
+      const step = stepRaw.charAt(0).toUpperCase() + stepRaw.slice(1);
+      const time = tr(useTimeLabelsLocalized, product.useTime, locale) || tr(useTimeLabelsLocalized, "both", locale);
+      howToUse = tmpl.useLine(step || tmpl.treatmentStep, time);
     }
 
     return {

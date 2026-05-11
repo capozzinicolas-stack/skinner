@@ -8,47 +8,12 @@ import { SkinProjection } from "@/components/analysis/skin-projection";
 import { useCartSafe } from "@/lib/cart/cart-store";
 import { resolveProductChannel } from "@/lib/cart/resolve-channel";
 import {
-  skinTypeLabels as skinTypeLabelsRaw,
-  conditionLabels as conditionLabelsRaw,
-  barrierStatusLabels,
+  skinTypeLabelsLocalized,
+  conditionLabelsLocalized,
+  barrierLabel,
+  tr,
 } from "@/lib/sae/labels";
-
-// Local capitalized variants for display headings (labels.ts uses lowercase for inline use)
-const skinTypeLabels: Record<string, string> = Object.fromEntries(
-  Object.entries(skinTypeLabelsRaw).map(([k, v]) => [k, v.charAt(0).toUpperCase() + v.slice(1)])
-);
-const conditionLabels: Record<string, string> = Object.fromEntries(
-  Object.entries(conditionLabelsRaw).map(([k, v]) => [k, v.charAt(0).toUpperCase() + v.slice(1)])
-);
-
-const barrierLabels: Record<string, { label: string; color: string; explanation: string }> = {
-  healthy: {
-    label: barrierStatusLabels.healthy.short,
-    explanation: barrierStatusLabels.healthy.explanation,
-    color: "bg-ivoire text-terre",
-  },
-  compromised: {
-    label: barrierStatusLabels.compromised.short,
-    explanation: barrierStatusLabels.compromised.explanation,
-    color: "bg-ivoire text-terre border-sable",
-  },
-  needs_attention: {
-    label: barrierStatusLabels.needs_attention.short,
-    explanation: barrierStatusLabels.needs_attention.explanation,
-    color: "bg-ivoire text-terre border-sable",
-  },
-};
-
-const severityLabels = ["", "Leve", "Moderado", "Severo"];
-
-const stepLabels: Record<string, string> = {
-  cleanser: "Limpeza",
-  toner: "Tonico",
-  serum: "Serum",
-  moisturizer: "Hidratante",
-  SPF: "Protetor Solar",
-  treatment: "Tratamento",
-};
+import { useI18n } from "@/lib/i18n/client";
 
 const sessionFrequencyLabels: Record<string, string> = {
   semanal: "Semanal",
@@ -154,6 +119,7 @@ function ProductCard({
   primaryColor?: string;
   secondaryColor?: string;
 }) {
+  const { t, locale } = useI18n();
   const cartCtx = useCartSafe();
   const useCartFlow = !!cartCtx && !!cartChannel;
 
@@ -177,6 +143,49 @@ function ProductCard({
   const inCart = useCartFlow ? cartCtx!.hasItem(rec.productId) : false;
   const brandPrimary = primaryColor || "#1C1917";
   const brandSecondary = secondaryColor || brandPrimary;
+
+  // Step routine label (localized — falls back to raw key if unknown).
+  const stepLabel = rec.stepRoutine
+    ? (tr(
+        {
+          "pt-BR": {
+            cleanser: t.patient.results_step_cleanser,
+            toner: t.patient.results_step_toner,
+            serum: t.patient.results_step_serum,
+            moisturizer: t.patient.results_step_moisturizer,
+            SPF: t.patient.results_step_spf,
+            treatment: t.patient.results_step_treatment,
+            mask: t.patient.results_step_mask,
+            exfoliant: t.patient.results_step_exfoliant,
+            "eye-cream": t.patient.results_step_eye_cream,
+          },
+          es: {
+            cleanser: t.patient.results_step_cleanser,
+            toner: t.patient.results_step_toner,
+            serum: t.patient.results_step_serum,
+            moisturizer: t.patient.results_step_moisturizer,
+            SPF: t.patient.results_step_spf,
+            treatment: t.patient.results_step_treatment,
+            mask: t.patient.results_step_mask,
+            exfoliant: t.patient.results_step_exfoliant,
+            "eye-cream": t.patient.results_step_eye_cream,
+          },
+          en: {
+            cleanser: t.patient.results_step_cleanser,
+            toner: t.patient.results_step_toner,
+            serum: t.patient.results_step_serum,
+            moisturizer: t.patient.results_step_moisturizer,
+            SPF: t.patient.results_step_spf,
+            treatment: t.patient.results_step_treatment,
+            mask: t.patient.results_step_mask,
+            exfoliant: t.patient.results_step_exfoliant,
+            "eye-cream": t.patient.results_step_eye_cream,
+          },
+        },
+        rec.stepRoutine,
+        locale,
+      ) || rec.stepRoutine)
+    : null;
 
   return (
     <div className="p-5 bg-white border border-sable/20">
@@ -203,9 +212,9 @@ function ProductCard({
                   </span>
                 )}
               </div>
-              {rec.stepRoutine && (
+              {stepLabel && (
                 <span className="text-[10px] text-pierre uppercase tracking-wider font-light">
-                  {stepLabels[rec.stepRoutine] ?? rec.stepRoutine}
+                  {stepLabel}
                 </span>
               )}
             </div>
@@ -270,7 +279,7 @@ function ProductCard({
                   inCart ? "text-blanc-casse" : "border bg-white"
                 }`}
               >
-                {inCart ? "✓ No carrinho" : "Adicionar"}
+                {inCart ? `✓ ${t.patient.results_cart_added}` : t.patient.results_cart_add}
               </button>
             ) : (
               <>
@@ -291,7 +300,7 @@ function ProductCard({
                     rel="noopener noreferrer"
                     className="inline-block px-4 py-2 bg-carbone text-blanc-casse text-xs font-light tracking-wide hover:bg-terre transition-colors"
                   >
-                    Comprar via WhatsApp
+                    {t.patient.results_buy_whatsapp}
                   </a>
                 )}
                 {showMercadoPago && (
@@ -299,7 +308,7 @@ function ProductCard({
                     href={`mailto:${mercadoPagoEmail}?subject=Pagamento ${encodeURIComponent(rec.name)}`}
                     className="inline-block px-4 py-2 border border-sable/40 text-terre text-xs font-light tracking-wide hover:bg-ivoire transition-colors"
                   >
-                    Pagar
+                    {t.patient.results_buy_mercadopago}
                   </a>
                 )}
               </>
@@ -336,6 +345,7 @@ function ServiceCard({
   mercadoPagoEnabled: boolean;
   mercadoPagoEmail?: string | null;
 }) {
+  const { t } = useI18n();
   const showWhatsApp =
     storefrontEnabled &&
     (storefrontCtaMode === "whatsapp" || storefrontCtaMode === "both") &&
@@ -426,7 +436,7 @@ function ServiceCard({
                 rel="noopener noreferrer"
                 className="inline-block px-4 py-2 bg-carbone text-blanc-casse text-xs font-light tracking-wide hover:bg-terre transition-colors"
               >
-                Agendar via WhatsApp
+                {t.patient.results_buy_whatsapp}
               </a>
             )}
             {showMercadoPago && (
@@ -434,7 +444,7 @@ function ServiceCard({
                 href={`mailto:${mercadoPagoEmail}?subject=Pagamento ${encodeURIComponent(rec.name)}`}
                 className="inline-block px-4 py-2 border border-sable/40 text-terre text-xs font-light tracking-wide hover:bg-ivoire transition-colors"
               >
-                Pagar
+                {t.patient.results_buy_mercadopago}
               </a>
             )}
           </div>
@@ -466,11 +476,45 @@ export function ResultsScreen({
   // product card uses. When undefined, ProductCard falls back to legacy CTAs.
   tenantIntegrations?: Array<{ platform: string; status: string; storeId?: string | null }>;
 }) {
+  const { t, locale } = useI18n();
   // brandHover falls back to primaryColor if the tenant didn't set a
   // secondary so we never get a flash of an unrelated color on hover.
   const brandHover = secondaryColor || primaryColor;
   const { analysis, recommendations } = result;
-  const barrier = barrierLabels[analysis.barrier_status] ?? barrierLabels.healthy;
+
+  // Localized skin type with capitalization (results-screen uses Title Case
+  // headings; labels.ts stores lowercase for inline reuse).
+  function skinTypeDisplay(key: string | null | undefined): string {
+    if (!key) return "";
+    const v = tr(skinTypeLabelsLocalized, key, locale) || key;
+    return v.charAt(0).toUpperCase() + v.slice(1);
+  }
+  function conditionDisplay(key: string | null | undefined): string {
+    if (!key) return "";
+    const v = tr(conditionLabelsLocalized, key, locale) || key;
+    return v.charAt(0).toUpperCase() + v.slice(1);
+  }
+
+  // Barrier label localized — barrierLabel(status, locale) returns
+  // { short, explanation } from labels.ts.
+  const barrierData = barrierLabel(analysis.barrier_status, locale);
+  const barrier = barrierData
+    ? {
+        label: barrierData.short,
+        explanation: barrierData.explanation,
+        color:
+          analysis.barrier_status === "healthy"
+            ? "bg-ivoire text-terre"
+            : "bg-ivoire text-terre border-sable",
+      }
+    : { label: t.patient.results_healthy, explanation: "", color: "bg-ivoire text-terre" };
+
+  const severityLabelsLocal = [
+    "",
+    t.patient.results_severity_light,
+    t.patient.results_severity_moderate,
+    t.patient.results_severity_severe,
+  ];
   const [showPlan, setShowPlan] = useState(false);
   const [email, setEmail] = useState("");
   const [emailSent, setEmailSent] = useState(false);
@@ -544,11 +588,11 @@ export function ResultsScreen({
       {/* Header */}
       <div className="text-center mb-10">
         <p className="text-[10px] text-pierre uppercase tracking-skinners font-light mb-4">
-          Resultado da Analise
+          {t.patient.results_header_eyebrow}
         </p>
         <h2 className="font-serif text-2xl text-carbone italic">
-          Sua pele e{" "}
-          {skinTypeLabels[analysis.skin_type] ?? analysis.skin_type}
+          {t.patient.results_your_skin_is}{" "}
+          {skinTypeDisplay(analysis.skin_type)}
         </h2>
         <div className="w-12 h-px bg-sable mx-auto mt-4 mb-4" />
         <p className="text-sm text-pierre font-light leading-relaxed">{analysis.summary}</p>
@@ -558,13 +602,34 @@ export function ResultsScreen({
       {analysis.skin_type_discrepancy && analysis.skin_type_self_reported && (
         <div className="mb-6 p-5 bg-ivoire border border-sable/20">
           <p className="text-[10px] text-pierre uppercase tracking-wider font-light mb-2">
-            Observacao sobre seu tipo de pele
+            {t.patient.results_observation_label}
           </p>
           <p className="text-sm text-terre font-light leading-relaxed">
-            Voce informou que sua pele e{" "}
-            <span className="text-carbone">{skinTypeLabels[analysis.skin_type_self_reported] ?? analysis.skin_type_self_reported}</span>,
-            porem nossa analise identificou que sua pele e{" "}
-            <span className="text-carbone">{skinTypeLabels[analysis.skin_type] ?? analysis.skin_type}</span>.
+            {(() => {
+              // Render the template "You said {self}, but ... {detected}." with
+              // the skin-type names emphasized in carbone. Split on the two
+              // placeholders so we can wrap each in a <span> without dangerous
+              // HTML.
+              const tmpl = t.patient.results_observation_intro;
+              const parts = tmpl.split(/(\{self\}|\{detected\})/g);
+              return parts.map((part, i) => {
+                if (part === "{self}") {
+                  return (
+                    <span key={i} className="text-carbone">
+                      {skinTypeDisplay(analysis.skin_type_self_reported!)}
+                    </span>
+                  );
+                }
+                if (part === "{detected}") {
+                  return (
+                    <span key={i} className="text-carbone">
+                      {skinTypeDisplay(analysis.skin_type)}
+                    </span>
+                  );
+                }
+                return part;
+              });
+            })()}
           </p>
           <p className="text-xs text-pierre font-light mt-2 leading-relaxed">
             {analysis.skin_type_discrepancy}
@@ -578,7 +643,7 @@ export function ResultsScreen({
           {hasAnnotations && (
             <div>
               <p className="text-[10px] text-pierre uppercase tracking-wider font-light mb-3">
-                Mapa Facial
+                {t.patient.results_face_map}
               </p>
               <AnnotatedPhoto
                 photoBase64={photoBase64!}
@@ -617,7 +682,7 @@ export function ResultsScreen({
       {showBarrier && (
         <div className="mb-6 p-5 bg-white border border-sable/20">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-pierre uppercase tracking-wider font-light">Estado da sua pele</span>
+            <span className="text-xs text-pierre uppercase tracking-wider font-light">{t.patient.results_barrier_section}</span>
             <span className={`text-xs px-3 py-1 ${barrier.color}`}>
               {barrier.label}
             </span>
@@ -634,17 +699,17 @@ export function ResultsScreen({
       {showConditions && (
         <div className="mb-8">
           <h3 className="font-serif text-lg text-carbone mb-4">
-            O que observamos na sua pele
+            {t.patient.results_section_conditions}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {analysis.conditions.map((condition) => (
               <div key={condition.name} className="p-5 bg-white border border-sable/20">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm text-carbone">
-                    {conditionLabels[condition.name] ?? condition.name}
+                    {conditionDisplay(condition.name)}
                   </span>
                   <span className="text-xs text-pierre font-light">
-                    {severityLabels[condition.severity]}
+                    {severityLabelsLocal[condition.severity]}
                   </span>
                 </div>
                 {showConditionsDesc && (
@@ -675,15 +740,15 @@ export function ResultsScreen({
             onClick={() => setShowPlan(!showPlan)}
             className="w-full flex items-center justify-between p-5 bg-white border border-sable/20 hover:bg-ivoire transition-colors"
           >
-            <span className="font-serif text-lg text-carbone">Seu cuidado em 3 fases</span>
-            <span className="text-pierre text-xs">{showPlan ? "fechar" : "abrir"}</span>
+            <span className="font-serif text-lg text-carbone">{t.patient.results_phases_title}</span>
+            <span className="text-pierre text-xs">{showPlan ? t.patient.results_close : "abrir"}</span>
           </button>
           {showPlan && (
             <div className="mt-px space-y-px">
               {[
-                { phase: "Comecando", period: "Semanas 1-2", text: analysis.action_plan.phase1 },
-                { phase: "Avancando", period: "Semanas 3-8", text: analysis.action_plan.phase2 },
-                { phase: "Mantendo", period: "Mes 3+", text: analysis.action_plan.phase3 },
+                { phase: t.patient.results_phase_starting, period: t.patient.results_phase_weeks_1_2, text: analysis.action_plan.phase1 },
+                { phase: t.patient.results_phase_progressing, period: t.patient.results_phase_weeks_3_8, text: analysis.action_plan.phase2 },
+                { phase: t.patient.results_phase_maintaining, period: t.patient.results_phase_month_3, text: analysis.action_plan.phase3 },
               ].map(({ phase, period, text }) => (
                 <div key={phase} className="p-5 bg-white border border-sable/20">
                   <div className="flex items-center gap-3 mb-2">
@@ -702,7 +767,7 @@ export function ResultsScreen({
       {showProducts && productRecs.length > 0 && (
         <div className="mb-8">
           <h3 className="font-serif text-lg text-carbone mb-4">
-            Produtos Recomendados
+            {t.patient.results_section_products}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {productRecs.map((rec, idx) => {
@@ -755,7 +820,7 @@ export function ResultsScreen({
       {showServices && serviceRecs.length > 0 && (
         <div className="mb-8">
           <h3 className="font-serif text-lg text-carbone mb-4">
-            Tratamentos Recomendados
+            {t.patient.results_section_services}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {serviceRecs.map((rec, idx) => (
@@ -782,20 +847,20 @@ export function ResultsScreen({
       {result.kitLink && (
         <div className="mb-8 p-5 bg-white border border-sable/20">
           <p className="text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
-            Kit de Tratamento
+            {t.patient.results_section_kit}
           </p>
           <h4 className="font-serif text-base text-carbone mb-2">
-            Todos os seus produtos em um link
+            {t.patient.results_kit_title}
           </h4>
           <p className="text-xs text-pierre font-light mb-4 leading-relaxed">
-            Compartilhe seu kit personalizado ou acesse-o a qualquer momento.
+            {t.patient.results_kit_description}
           </p>
           <div className="flex gap-2">
             <button
               onClick={handleCopyKit}
               className="flex-1 px-4 py-2.5 bg-carbone text-blanc-casse text-xs font-light tracking-wide hover:bg-terre transition-colors"
             >
-              {kitCopied ? "Link copiado" : "Compartilhar Kit"}
+              {kitCopied ? t.patient.results_kit_share + " ✓" : t.patient.results_kit_share}
             </button>
             <a
               href={kitUrl}
@@ -803,7 +868,7 @@ export function ResultsScreen({
               rel="noopener noreferrer"
               className="flex-1 text-center px-4 py-2.5 border border-sable/40 text-terre text-xs font-light tracking-wide hover:bg-ivoire transition-colors"
             >
-              Ver Kit Completo
+              {t.patient.results_kit_view}
             </a>
           </div>
         </div>
@@ -813,7 +878,7 @@ export function ResultsScreen({
       {showAlertSigns && analysis.alert_signs.length > 0 && (
         <div className="mb-8 p-5 bg-ivoire border border-sable/30">
           <h4 className="text-xs text-terre uppercase tracking-wider mb-3">
-            Quando consultar um dermatologista
+            {t.patient.results_section_alert}
           </h4>
           <ul className="space-y-1">
             {analysis.alert_signs.map((sign, i) => (
@@ -821,7 +886,7 @@ export function ResultsScreen({
             ))}
           </ul>
           <p className="text-xs text-pierre font-light mt-3">
-            Se apresentar qualquer um destes sinais, consulte um dermatologista.
+            {t.patient.results_alert_closing}
           </p>
         </div>
       )}
@@ -830,28 +895,28 @@ export function ResultsScreen({
       {!emailSent && (
         <div className="mb-8 p-5 bg-white border border-sable/20">
           <h4 className="text-xs text-carbone uppercase tracking-wider mb-3">
-            Receba o relatorio completo
+            {t.patient.results_email_section}
           </h4>
           <div className="flex gap-2">
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="seu@email.com"
+              placeholder={t.patient.results_email_placeholder}
               className="flex-1 px-4 py-2.5 border border-sable/40 bg-blanc-casse text-sm font-light text-carbone focus:outline-none focus:border-terre"
             />
             <button
               onClick={() => { if (email) setEmailSent(true); }}
               className="px-5 py-2.5 bg-carbone text-blanc-casse text-xs font-light tracking-wide hover:bg-terre transition-colors"
             >
-              Enviar
+              {t.patient.results_email_send}
             </button>
           </div>
         </div>
       )}
       {emailSent && (
         <div className="mb-8 p-4 bg-ivoire border border-sable/20 text-center">
-          <p className="text-sm text-terre font-light">Relatorio enviado para {email}</p>
+          <p className="text-sm text-terre font-light">{t.patient.results_email_sent} {email}</p>
         </div>
       )}
 
@@ -867,7 +932,7 @@ export function ResultsScreen({
             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = primaryColor)}
             className="inline-block px-8 py-3 text-blanc-casse text-sm font-light tracking-wide transition-colors"
           >
-            Baixar relatorio em PDF
+            {t.patient.results_download_pdf}
           </a>
         </div>
       )}
