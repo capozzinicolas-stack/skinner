@@ -130,22 +130,22 @@ export default function ChannelsPage() {
       {/* Channel list */}
       <div className="bg-white border border-sable/20 mb-8">
         <div className="border-b border-sable/20 px-5 py-3 flex items-center justify-between bg-ivoire/40">
-          <h2 className="font-serif text-base text-carbone">Seus canais</h2>
+          <h2 className="font-serif text-base text-carbone">{t.dashboardPages.chan_your_channels}</h2>
           <button
             onClick={() => setShowCreate(true)}
             disabled={!canCreate}
             className="px-4 py-2 bg-carbone text-blanc-casse text-sm font-light tracking-wide disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            + Novo canal
+            {t.dashboardPages.chan_new_button}
           </button>
         </div>
         {!canCreate && (
           <div className="px-5 py-3 bg-ivoire border-b border-sable/20 text-xs text-pierre font-light">
-            Voce atingiu o limite de canais do plano {planName}. Faca upgrade em{" "}
+            {t.dashboardPages.chan_limit_intro.replace("{plan}", planName)}{" "}
             <a href="/dashboard/faturamento" className="text-carbone underline">
-              Faturamento
+              {t.dashboard.nav_billing}
             </a>{" "}
-            para criar mais.
+            {t.dashboardPages.chan_limit_tail}
           </div>
         )}
         <div className="divide-y divide-sable/10">
@@ -164,7 +164,7 @@ export default function ChannelsPage() {
                   <div className="flex items-center gap-3">
                     <span className="text-sm text-carbone font-light truncate">{c.label}</span>
                     {c.isDefault && (
-                      <span className="text-[10px] text-pierre uppercase tracking-wider font-light">padrao</span>
+                      <span className="text-[10px] text-pierre uppercase tracking-wider font-light">{t.dashboardPages.chan_default}</span>
                     )}
                     <span
                       className={`text-[10px] uppercase tracking-wider font-light px-2 py-0.5 ${
@@ -175,7 +175,11 @@ export default function ChannelsPage() {
                           : "bg-sable/30 text-pierre"
                       }`}
                     >
-                      {c.isExpired ? "expirado" : c.status === "paused" ? "pausado" : "ativo"}
+                      {c.isExpired
+                        ? t.dashboardPages.chan_status_expired
+                        : c.status === "paused"
+                          ? t.dashboardPages.chan_status_paused
+                          : t.dashboardPages.chan_status_active}
                     </span>
                   </div>
                   <p className="text-[11px] text-pierre/70 font-mono mt-0.5 truncate">
@@ -183,9 +187,9 @@ export default function ChannelsPage() {
                   </p>
                 </div>
                 <div className="text-right text-xs text-pierre font-light flex-shrink-0 ml-4">
-                  <div>{c.analysisCount} analises</div>
+                  <div>{t.dashboardPages.chan_analyses_count.replace("{count}", String(c.analysisCount))}</div>
                   {c.expiresAt && (
-                    <div className="text-[10px] text-pierre/60">expira {fmtDate(c.expiresAt)}</div>
+                    <div className="text-[10px] text-pierre/60">{t.dashboardPages.chan_expires_label.replace("{date}", fmtDate(c.expiresAt))}</div>
                   )}
                 </div>
               </button>
@@ -213,6 +217,7 @@ export default function ChannelsPage() {
 }
 
 function ChannelDetail({ channel }: { channel: ChannelRow }) {
+  const { t } = useI18n();
   const [tab, setTab] = useState<"link" | "qr" | "embed" | "personalize">("link");
   const [embedOpts, setEmbedOpts] = useState<EmbedOptions>(DEFAULT_EMBED_OPTIONS);
   const [copied, setCopied] = useState<string | null>(null);
@@ -238,7 +243,7 @@ function ChannelDetail({ channel }: { channel: ChannelRow }) {
     <div className="bg-white border border-sable/20">
       <div className="px-5 py-4 border-b border-sable/20 flex items-center justify-between flex-wrap gap-3">
         <div className="min-w-0">
-          <p className="text-[10px] text-pierre uppercase tracking-wider font-light">Canal selecionado</p>
+          <p className="text-[10px] text-pierre uppercase tracking-wider font-light">{t.dashboardPages.chan_selected}</p>
           <h2 className="font-serif text-lg text-carbone truncate">{channel.label}</h2>
         </div>
         <div className="flex items-center gap-2">
@@ -249,7 +254,7 @@ function ChannelDetail({ channel }: { channel: ChannelRow }) {
               }
               className="px-3 py-1.5 border border-sable text-pierre text-xs font-light"
             >
-              Pausar
+              {t.dashboardPages.chan_pause}
             </button>
           )}
           {!channel.isDefault && channel.status === "paused" && (
@@ -259,7 +264,7 @@ function ChannelDetail({ channel }: { channel: ChannelRow }) {
               }
               className="px-3 py-1.5 border border-sable text-carbone text-xs font-light"
             >
-              Reativar
+              {t.dashboardPages.chan_reactivate}
             </button>
           )}
           {!channel.isDefault && (
@@ -267,7 +272,7 @@ function ChannelDetail({ channel }: { channel: ChannelRow }) {
               onClick={() => {
                 if (
                   confirm(
-                    `Excluir o canal "${channel.label}"? Esta acao nao pode ser desfeita.`
+                    t.dashboardPages.chan_confirm_delete.replace("{label}", channel.label)
                   )
                 ) {
                   archiveMutation.mutate({ id: channel.id });
@@ -275,28 +280,28 @@ function ChannelDetail({ channel }: { channel: ChannelRow }) {
               }}
               className="px-3 py-1.5 border border-terre/40 text-terre text-xs font-light"
             >
-              Excluir
+              {t.dashboardPages.chan_delete}
             </button>
           )}
         </div>
       </div>
 
       <div className="px-5 py-3 border-b border-sable/20 flex gap-1 flex-wrap">
-        {(["link", "qr", "embed", "personalize"] as const).map((t) => (
+        {(["link", "qr", "embed", "personalize"] as const).map((tabKey) => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
+            key={tabKey}
+            onClick={() => setTab(tabKey)}
             className={`px-4 py-1.5 text-xs font-light tracking-wide ${
-              tab === t ? "bg-carbone text-blanc-casse" : "text-pierre hover:bg-ivoire/40"
+              tab === tabKey ? "bg-carbone text-blanc-casse" : "text-pierre hover:bg-ivoire/40"
             }`}
           >
-            {t === "link"
-              ? "Link Direto"
-              : t === "qr"
-              ? "QR Code"
-              : t === "embed"
-              ? "Widget Embed"
-              : "Personalizacao"}
+            {tabKey === "link"
+              ? t.dashboardPages.chan_tab_link
+              : tabKey === "qr"
+              ? t.dashboardPages.chan_tab_qr
+              : tabKey === "embed"
+              ? t.dashboardPages.chan_tab_widget
+              : t.dashboardPages.chan_tab_branding}
           </button>
         ))}
       </div>
@@ -305,7 +310,7 @@ function ChannelDetail({ channel }: { channel: ChannelRow }) {
         {tab === "link" && (
           <div className="space-y-3">
             <p className="text-sm text-pierre font-light">
-              Compartilhe este link com seus clientes para iniciar a analise.
+              {t.dashboardPages.chan_link_intro}
             </p>
             <div className="flex items-center gap-2">
               <input
@@ -317,7 +322,7 @@ function ChannelDetail({ channel }: { channel: ChannelRow }) {
                 onClick={() => copy(analysisUrl, "link")}
                 className="px-4 py-2 bg-carbone text-blanc-casse text-sm font-light tracking-wide"
               >
-                {copied === "link" ? "Copiado" : "Copiar"}
+                {copied === "link" ? t.dashboardPages.chan_copied : t.dashboardPages.chan_copy}
               </button>
             </div>
           </div>
@@ -326,7 +331,7 @@ function ChannelDetail({ channel }: { channel: ChannelRow }) {
         {tab === "qr" && (
           <div className="space-y-3">
             <p className="text-sm text-pierre font-light">
-              Imprima e coloque no balcao, vitrine ou material promocional.
+              {t.dashboardPages.chan_qr_intro}
             </p>
             <div className="flex flex-col items-center gap-3">
               <img src={qrApiUrl} alt="QR Code" className="w-48 h-48 border border-sable/30" />
@@ -335,7 +340,7 @@ function ChannelDetail({ channel }: { channel: ChannelRow }) {
                 download={`skinner-qr-${channel.slug}.png`}
                 className="px-4 py-2 border border-sable text-terre text-sm font-light tracking-wide hover:bg-ivoire"
               >
-                Baixar QR Code
+                {t.dashboardPages.chan_qr_download}
               </a>
             </div>
           </div>
@@ -344,11 +349,11 @@ function ChannelDetail({ channel }: { channel: ChannelRow }) {
         {tab === "embed" && (
           <div className="space-y-5">
             <p className="text-sm text-pierre font-light">
-              Cole o snippet abaixo onde quiser que a analise apareca no seu site. Funciona em qualquer plataforma.
+              {t.dashboardPages.chan_embed_intro}
             </p>
 
             <div className="p-4 bg-blanc-casse border border-sable/20 space-y-3">
-              <p className="text-[10px] uppercase tracking-wider font-light text-pierre">Personalizacao</p>
+              <p className="text-[10px] uppercase tracking-wider font-light text-pierre">{t.dashboardPages.chan_embed_personalize}</p>
               <label className="flex items-center gap-3 text-sm text-carbone font-light">
                 <input
                   type="checkbox"
@@ -357,7 +362,7 @@ function ChannelDetail({ channel }: { channel: ChannelRow }) {
                     setEmbedOpts((o) => ({ ...o, contactOff: e.target.checked }))
                   }
                 />
-                Pular tela de captura de contato
+                {t.dashboardPages.chan_embed_skip_contact}
               </label>
               <label className="flex items-center gap-3 text-sm text-carbone font-light">
                 <input
@@ -367,10 +372,10 @@ function ChannelDetail({ channel }: { channel: ChannelRow }) {
                     setEmbedOpts((o) => ({ ...o, compact: e.target.checked }))
                   }
                 />
-                Modo compacto
+                {t.dashboardPages.chan_embed_compact}
               </label>
               <label className="flex items-center gap-3 text-sm text-carbone font-light">
-                <span className="w-32">Altura inicial (px):</span>
+                <span className="w-32">{t.dashboardPages.chan_embed_height}</span>
                 <input
                   type="number"
                   min={400}
@@ -382,7 +387,7 @@ function ChannelDetail({ channel }: { channel: ChannelRow }) {
             </div>
 
             <div>
-              <p className="text-[10px] uppercase tracking-wider font-light text-pierre mb-2">Snippet</p>
+              <p className="text-[10px] uppercase tracking-wider font-light text-pierre mb-2">{t.dashboardPages.chan_embed_snippet}</p>
               <pre className="p-4 bg-carbone text-blanc-casse text-xs font-mono overflow-x-auto whitespace-pre">
 {embedSnippet}
               </pre>
@@ -390,14 +395,14 @@ function ChannelDetail({ channel }: { channel: ChannelRow }) {
                 onClick={() => copy(embedSnippet, "snippet")}
                 className="mt-3 px-4 py-2 bg-carbone text-blanc-casse text-sm font-light tracking-wide"
               >
-                {copied === "snippet" ? "Copiado" : "Copiar codigo"}
+                {copied === "snippet" ? t.dashboardPages.chan_copied : t.dashboardPages.chan_embed_copy_code}
               </button>
             </div>
 
             <div>
-              <p className="text-[10px] uppercase tracking-wider font-light text-pierre mb-2">Auto-resize (opcional)</p>
+              <p className="text-[10px] uppercase tracking-wider font-light text-pierre mb-2">{t.dashboardPages.chan_embed_helper_title}</p>
               <p className="text-xs text-pierre font-light mb-2">
-                Cole UMA vez no seu site para que o iframe redimensione automaticamente.
+                {t.dashboardPages.chan_embed_helper_intro}
               </p>
               <pre className="p-4 bg-carbone text-blanc-casse text-xs font-mono overflow-x-auto whitespace-pre">
 {HELPER_SNIPPET}
@@ -406,7 +411,7 @@ function ChannelDetail({ channel }: { channel: ChannelRow }) {
                 onClick={() => copy(HELPER_SNIPPET, "helper")}
                 className="mt-3 px-3 py-1.5 border border-sable text-pierre text-xs font-light"
               >
-                {copied === "helper" ? "Copiado" : "Copiar"}
+                {copied === "helper" ? t.dashboardPages.chan_copied : t.dashboardPages.chan_copy}
               </button>
             </div>
           </div>
@@ -706,6 +711,7 @@ function CreateChannelModal({
   onClose: () => void;
   onCreated: () => void;
 }) {
+  const { t } = useI18n();
   const [label, setLabel] = useState("");
   const [slug, setSlug] = useState("");
   const [slugTouched, setSlugTouched] = useState(false);
@@ -747,7 +753,7 @@ function CreateChannelModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between mb-5 pb-4 border-b border-sable/30">
-          <h2 className="font-serif text-lg text-carbone">Novo canal</h2>
+          <h2 className="font-serif text-lg text-carbone">{t.dashboardPages.chan_modal_title}</h2>
           <button onClick={onClose} className="text-pierre hover:text-carbone text-lg">
             ×
           </button>
@@ -756,21 +762,21 @@ function CreateChannelModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
-              Nome interno
+              {t.dashboardPages.chan_modal_label}
             </label>
             <input
               value={label}
               onChange={(e) => handleLabelChange(e.target.value)}
               required
               maxLength={60}
-              placeholder="Ex.: Unidade Centro, Black Friday, Loja Shopify"
+              placeholder={t.dashboardPages.chan_modal_label_placeholder}
               className="w-full px-3 py-2 border border-sable/30 bg-blanc-casse text-sm text-carbone font-light"
             />
           </div>
 
           <div>
             <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
-              Slug (URL)
+              {t.dashboardPages.chan_modal_slug}
             </label>
             <input
               value={slug}
@@ -785,14 +791,14 @@ function CreateChannelModal({
               className="w-full px-3 py-2 border border-sable/30 bg-blanc-casse text-sm text-carbone font-mono"
             />
             <p className="text-[10px] text-pierre/70 font-light mt-1 break-all">
-              URL: {PUBLIC_ORIGIN}/analise/{slug || "..."}
+              {t.dashboardPages.chan_modal_url_preview} {PUBLIC_ORIGIN}/analise/{slug || "..."}
             </p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
-                Expira em (opcional)
+                {t.dashboardPages.chan_modal_expires}
               </label>
               <input
                 type="date"
@@ -803,14 +809,14 @@ function CreateChannelModal({
             </div>
             <div>
               <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
-                Limite de analises
+                {t.dashboardPages.chan_modal_max}
               </label>
               <input
                 type="number"
                 min={1}
                 value={maxAnalyses}
                 onChange={(e) => setMaxAnalyses(e.target.value)}
-                placeholder="ilimitado"
+                placeholder={t.dashboardPages.chan_modal_max_placeholder}
                 className="w-full px-3 py-2 border border-sable/30 bg-blanc-casse text-sm text-carbone font-light"
               />
             </div>
@@ -824,14 +830,14 @@ function CreateChannelModal({
               disabled={createMutation.isPending}
               className="px-4 py-2 bg-carbone text-blanc-casse text-sm font-light tracking-wide disabled:opacity-50"
             >
-              {createMutation.isPending ? "Criando..." : "Criar canal"}
+              {createMutation.isPending ? t.dashboardPages.chan_modal_creating : t.dashboardPages.chan_modal_create}
             </button>
             <button
               type="button"
               onClick={onClose}
               className="px-4 py-2 border border-sable text-pierre text-sm font-light"
             >
-              Cancelar
+              {t.dashboardPages.common_cancel}
             </button>
           </div>
         </form>

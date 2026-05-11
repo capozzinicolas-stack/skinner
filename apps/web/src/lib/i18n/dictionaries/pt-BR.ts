@@ -579,6 +579,51 @@ export const ptBR: DictShape = {
     chan_tab_qr: "QR Code",
     chan_tab_widget: "Widget Embed",
     chan_tab_branding: "Personalizacao",
+    chan_your_channels: "Seus canais",
+    chan_new_button: "+ Novo canal",
+    chan_limit_intro:
+      "Voce atingiu o limite de canais do plano {plan}. Faca upgrade em",
+    chan_limit_tail: "para criar mais.",
+    chan_status_active: "ativo",
+    chan_status_paused: "pausado",
+    chan_status_expired: "expirado",
+    chan_default: "padrao",
+    chan_analyses_count: "{count} analises",
+    chan_expires_label: "expira {date}",
+    chan_selected: "Canal selecionado",
+    chan_pause: "Pausar",
+    chan_reactivate: "Reativar",
+    chan_delete: "Excluir",
+    chan_confirm_delete:
+      "Excluir o canal \"{label}\"? Esta acao nao pode ser desfeita.",
+    chan_link_intro:
+      "Compartilhe este link com seus clientes para iniciar a analise.",
+    chan_copy: "Copiar",
+    chan_copied: "Copiado",
+    chan_qr_intro:
+      "Imprima e coloque no balcao, vitrine ou material promocional.",
+    chan_qr_download: "Baixar QR Code",
+    chan_embed_intro:
+      "Cole o snippet abaixo onde quiser que a analise apareca no seu site. Funciona em qualquer plataforma.",
+    chan_embed_personalize: "Personalizacao",
+    chan_embed_skip_contact: "Pular tela de captura de contato",
+    chan_embed_compact: "Modo compacto",
+    chan_embed_height: "Altura inicial (px):",
+    chan_embed_snippet: "Snippet",
+    chan_embed_copy_code: "Copiar codigo",
+    chan_embed_helper_title: "Auto-resize (opcional)",
+    chan_embed_helper_intro:
+      "Cole UMA vez no seu site para que o iframe redimensione automaticamente.",
+    chan_modal_title: "Novo canal",
+    chan_modal_label: "Nome interno",
+    chan_modal_label_placeholder: "Ex.: Unidade Centro, Black Friday, Loja Shopify",
+    chan_modal_slug: "Slug (URL)",
+    chan_modal_url_preview: "URL:",
+    chan_modal_expires: "Expira em (opcional)",
+    chan_modal_max: "Limite de analises",
+    chan_modal_max_placeholder: "ilimitado",
+    chan_modal_creating: "Criando...",
+    chan_modal_create: "Criar canal",
 
     // ── Integrations page ────────────────────────────────────────────
     int_title: "Integracoes",
@@ -706,6 +751,39 @@ export const ptBR: DictShape = {
     analise_title: "Configuracao da Analise",
     analise_subtitle:
       "Personalize o fluxo, copy e comportamento da analise para seus pacientes.",
+    analise_plan_atual: "Plano atual",
+    analise_pre: "Pre-Analise",
+    analise_capture: "Captura",
+    analise_results: "Resultado",
+    analise_sec_welcome: "Tela de Boas-vindas",
+    analise_sec_welcome_desc:
+      "Personalize os textos exibidos antes do cliente iniciar a analise.",
+    analise_sec_consent: "Tela de Consentimento",
+    analise_sec_consent_desc:
+      "Adicione texto extra ou personalize o botao de confirmacao.",
+    analise_sec_photo: "Tela de Foto",
+    analise_sec_photo_desc:
+      "Instrucoes exibidas ao cliente no momento da captura da foto.",
+    analise_sec_quest: "Questionario",
+    analise_sec_quest_desc:
+      "Ative ou desative perguntas opcionais.",
+    analise_sec_photo_only: "Modo Somente Foto",
+    analise_sec_contact: "Captura de contato",
+    analise_sec_contact_desc:
+      "Decida se voce quer capturar o nome, e-mail ou telefone do paciente.",
+    analise_sec_delivery: "Entrega e notificacoes",
+    analise_sec_delivery_desc:
+      "Como entregar o resultado e quem deve receber notificacoes.",
+    analise_sec_tone: "Tom da analise",
+    analise_sec_tone_desc:
+      "Define como a IA escreve o resultado para o paciente. Tecnico ou humanizado.",
+    analise_sec_benchmark: "Benchmark da plataforma",
+    analise_sec_benchmark_desc:
+      "Compartilhe dados agregados (anonimizados) e veja como sua clinica se compara.",
+    analise_sec_results_texts: "Textos dos Resultados",
+    analise_sec_visible: "Secoes Visiveis",
+    analise_sec_visible_desc: "Controle quais sessoes aparecem na tela final do paciente.",
+    analise_sec_limits: "Limites de Recomendacao",
   },
 };
 

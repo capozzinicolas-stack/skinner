@@ -937,7 +937,7 @@ export default function AnaliseConfigPage() {
             {/* Plan badge */}
             <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 border border-sable/30 bg-ivoire">
               <p className="text-[10px] text-pierre uppercase tracking-wider font-light">
-                Plano atual
+                {t.dashboardPages.analise_plan_atual}
               </p>
               <span className="text-[10px] text-carbone uppercase tracking-wider font-light">
                 {plan === "growth" ? "Growth" : plan === "pro" ? "Pro" : "Enterprise"}
@@ -947,15 +947,15 @@ export default function AnaliseConfigPage() {
             {/* ── PRE-ANALISE ─────────────────────────────────────── */}
             <div className="mt-10">
               <p className="text-[10px] text-pierre uppercase tracking-wider font-light">
-                Pre-Analise
+                {t.dashboardPages.analise_pre}
               </p>
               <div className="h-px bg-sable/20 mt-2" />
             </div>
 
             {/* Welcome screen texts */}
             <Section
-              title="Tela de Boas-vindas"
-              description="Personalize os textos exibidos antes do cliente iniciar a analise."
+              title={t.dashboardPages.analise_sec_welcome}
+              description={t.dashboardPages.analise_sec_welcome_desc}
             >
               <div className="p-5 bg-white border border-sable/20 space-y-4">
                 <TextField
@@ -1001,8 +1001,8 @@ export default function AnaliseConfigPage() {
 
             {/* Consent screen */}
             <Section
-              title="Tela de Consentimento"
-              description="Adicione texto extra ou personalize o botao de confirmacao."
+              title={t.dashboardPages.analise_sec_consent}
+              description={t.dashboardPages.analise_sec_consent_desc}
             >
               <div className="p-5 bg-white border border-sable/20 space-y-4">
                 <TextField
@@ -1024,8 +1024,8 @@ export default function AnaliseConfigPage() {
 
             {/* Photo screen */}
             <Section
-              title="Tela de Foto"
-              description="Instrucoes exibidas ao cliente no momento da captura da foto."
+              title={t.dashboardPages.analise_sec_photo}
+              description={t.dashboardPages.analise_sec_photo_desc}
             >
               <div className="p-5 bg-white border border-sable/20 space-y-4">
                 <TextField
@@ -1053,8 +1053,8 @@ export default function AnaliseConfigPage() {
 
             {/* Questionnaire toggles */}
             <Section
-              title="Questionario"
-              description="Controle quais perguntas sao exibidas durante a analise. Perguntas bloqueadas sao essenciais para o resultado."
+              title={t.dashboardPages.analise_sec_quest}
+              description={t.dashboardPages.analise_sec_quest_desc}
             >
               <ToggleRow
                 label="Tipo de pele"
@@ -1114,7 +1114,7 @@ export default function AnaliseConfigPage() {
             </Section>
 
             {/* Photo-only mode */}
-            <Section title="Modo Somente Foto">
+            <Section title={t.dashboardPages.analise_sec_photo_only}>
               <div className="p-5 bg-white border border-sable/20">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
@@ -1157,8 +1157,8 @@ export default function AnaliseConfigPage() {
 
             {/* Captura de contato (lead generation) */}
             <Section
-              title="Captura de contato"
-              description="Pede nome, e-mail e WhatsApp do paciente entre o consentimento e o questionario. Pacientes que autorizam o contato aparecem na pestaña Leads."
+              title={t.dashboardPages.analise_sec_contact}
+              description={t.dashboardPages.analise_sec_contact_desc}
             >
               <div className="p-5 bg-white border border-sable/20 space-y-5">
                 <div className="flex items-start justify-between gap-4">
@@ -1212,8 +1212,8 @@ export default function AnaliseConfigPage() {
 
             {/* Entrega + notificacoes */}
             <Section
-              title="Entrega e notificacoes"
-              description="Como o resultado chega ao paciente e como sua equipe e avisada de novas leads."
+              title={t.dashboardPages.analise_sec_delivery}
+              description={t.dashboardPages.analise_sec_delivery_desc}
             >
               <div className="p-5 bg-white border border-sable/20 space-y-5">
                 <div className="flex items-start justify-between gap-4">
@@ -1256,8 +1256,8 @@ export default function AnaliseConfigPage() {
 
             {/* Tom da analise */}
             <Section
-              title="Tom da analise"
-              description="Define como a IA escreve o resultado para o paciente."
+              title={t.dashboardPages.analise_sec_tone}
+              description={t.dashboardPages.analise_sec_tone_desc}
             >
               <div className="p-5 bg-white border border-sable/20 space-y-4">
                 <div>
@@ -1319,8 +1319,8 @@ export default function AnaliseConfigPage() {
 
             {/* Benchmark cross-tenant opt-in */}
             <Section
-              title="Benchmark da plataforma"
-              description="Compare seus indicadores com a media de outros clientes Skinner."
+              title={t.dashboardPages.analise_sec_benchmark}
+              description={t.dashboardPages.analise_sec_benchmark_desc}
             >
               <div className="p-5 bg-white border border-sable/20">
                 <div className="flex items-start justify-between gap-4">
@@ -1350,8 +1350,8 @@ export default function AnaliseConfigPage() {
 
             {/* Results text */}
             <Section
-              title="Textos dos Resultados"
-              description="Mensagens personalizadas exibidas na tela de resultados."
+              title={t.dashboardPages.analise_sec_results_texts}
+              description={t.dashboardPages.analise_sec_results_texts}
             >
               <div className="p-5 bg-white border border-sable/20 space-y-4">
                 <TextField
@@ -1387,8 +1387,8 @@ export default function AnaliseConfigPage() {
 
             {/* Results section toggles */}
             <Section
-              title="Secoes Visiveis"
-              description="Controle quais secoes sao exibidas na tela de resultados."
+              title={t.dashboardPages.analise_sec_visible}
+              description={t.dashboardPages.analise_sec_visible_desc}
             >
               <ToggleRow
                 label="Barreira cutanea"
@@ -1501,8 +1501,8 @@ export default function AnaliseConfigPage() {
 
             {/* Limits */}
             <Section
-              title="Limites de Recomendacao"
-              description="Define o numero maximo de produtos e servicos exibidos nos resultados."
+              title={t.dashboardPages.analise_sec_limits}
+              description={t.dashboardPages.analise_sec_limits}
             >
               <div className="p-5 bg-white border border-sable/20 space-y-4">
                 <div className="grid grid-cols-2 gap-4">

@@ -528,6 +528,51 @@ export const es: Dictionary = {
     chan_tab_qr: "Codigo QR",
     chan_tab_widget: "Widget embebido",
     chan_tab_branding: "Personalizacion",
+    chan_your_channels: "Tus canales",
+    chan_new_button: "+ Nuevo canal",
+    chan_limit_intro:
+      "Alcanzaste el limite de canales del plan {plan}. Haz upgrade en",
+    chan_limit_tail: "para crear mas.",
+    chan_status_active: "activo",
+    chan_status_paused: "pausado",
+    chan_status_expired: "expirado",
+    chan_default: "predeterminado",
+    chan_analyses_count: "{count} analisis",
+    chan_expires_label: "expira {date}",
+    chan_selected: "Canal seleccionado",
+    chan_pause: "Pausar",
+    chan_reactivate: "Reactivar",
+    chan_delete: "Eliminar",
+    chan_confirm_delete:
+      "¿Eliminar el canal \"{label}\"? Esta accion no se puede deshacer.",
+    chan_link_intro:
+      "Comparte este enlace con tus clientes para iniciar el analisis.",
+    chan_copy: "Copiar",
+    chan_copied: "Copiado",
+    chan_qr_intro:
+      "Imprime y coloca en el mostrador, vidriera o material promocional.",
+    chan_qr_download: "Descargar codigo QR",
+    chan_embed_intro:
+      "Pega el snippet abajo donde quieras que aparezca el analisis en tu sitio. Funciona en cualquier plataforma.",
+    chan_embed_personalize: "Personalizacion",
+    chan_embed_skip_contact: "Omitir pantalla de captura de contacto",
+    chan_embed_compact: "Modo compacto",
+    chan_embed_height: "Altura inicial (px):",
+    chan_embed_snippet: "Snippet",
+    chan_embed_copy_code: "Copiar codigo",
+    chan_embed_helper_title: "Auto-redimensionar (opcional)",
+    chan_embed_helper_intro:
+      "Pegalo UNA vez en tu sitio para que el iframe se redimensione automaticamente.",
+    chan_modal_title: "Nuevo canal",
+    chan_modal_label: "Nombre interno",
+    chan_modal_label_placeholder: "Ej.: Sucursal Centro, Black Friday, Tienda Shopify",
+    chan_modal_slug: "Slug (URL)",
+    chan_modal_url_preview: "URL:",
+    chan_modal_expires: "Expira el (opcional)",
+    chan_modal_max: "Limite de analisis",
+    chan_modal_max_placeholder: "ilimitado",
+    chan_modal_creating: "Creando...",
+    chan_modal_create: "Crear canal",
 
     int_title: "Integraciones",
     int_subtitle:
@@ -649,5 +694,38 @@ export const es: Dictionary = {
     analise_title: "Configuracion del Analisis",
     analise_subtitle:
       "Personaliza el flujo, los textos y el comportamiento del analisis para tus pacientes.",
+    analise_plan_atual: "Plan actual",
+    analise_pre: "Pre-Analisis",
+    analise_capture: "Captura",
+    analise_results: "Resultado",
+    analise_sec_welcome: "Pantalla de Bienvenida",
+    analise_sec_welcome_desc:
+      "Personaliza los textos mostrados antes de que el cliente inicie el analisis.",
+    analise_sec_consent: "Pantalla de Consentimiento",
+    analise_sec_consent_desc:
+      "Agrega texto extra o personaliza el boton de confirmacion.",
+    analise_sec_photo: "Pantalla de Foto",
+    analise_sec_photo_desc:
+      "Instrucciones mostradas al cliente al momento de capturar la foto.",
+    analise_sec_quest: "Cuestionario",
+    analise_sec_quest_desc:
+      "Activa o desactiva preguntas opcionales.",
+    analise_sec_photo_only: "Modo Solo Foto",
+    analise_sec_contact: "Captura de contacto",
+    analise_sec_contact_desc:
+      "Decide si quieres capturar el nombre, email o telefono del paciente.",
+    analise_sec_delivery: "Entrega y notificaciones",
+    analise_sec_delivery_desc:
+      "Como entregar el resultado y quien debe recibir notificaciones.",
+    analise_sec_tone: "Tono del analisis",
+    analise_sec_tone_desc:
+      "Define como la IA escribe el resultado para el paciente. Tecnico o humanizado.",
+    analise_sec_benchmark: "Benchmark de la plataforma",
+    analise_sec_benchmark_desc:
+      "Comparte datos agregados (anonimizados) y mira como tu clinica se compara.",
+    analise_sec_results_texts: "Textos de los Resultados",
+    analise_sec_visible: "Secciones Visibles",
+    analise_sec_visible_desc: "Controla que secciones aparecen en la pantalla final del paciente.",
+    analise_sec_limits: "Limites de Recomendacion",
   },
 };

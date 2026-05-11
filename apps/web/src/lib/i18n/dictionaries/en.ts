@@ -524,6 +524,51 @@ export const en: Dictionary = {
     chan_tab_qr: "QR code",
     chan_tab_widget: "Embed widget",
     chan_tab_branding: "Branding",
+    chan_your_channels: "Your channels",
+    chan_new_button: "+ New channel",
+    chan_limit_intro:
+      "You hit the channel limit of plan {plan}. Upgrade in",
+    chan_limit_tail: "to create more.",
+    chan_status_active: "active",
+    chan_status_paused: "paused",
+    chan_status_expired: "expired",
+    chan_default: "default",
+    chan_analyses_count: "{count} analyses",
+    chan_expires_label: "expires {date}",
+    chan_selected: "Selected channel",
+    chan_pause: "Pause",
+    chan_reactivate: "Reactivate",
+    chan_delete: "Delete",
+    chan_confirm_delete:
+      "Delete channel \"{label}\"? This action cannot be undone.",
+    chan_link_intro:
+      "Share this link with your clients to start the analysis.",
+    chan_copy: "Copy",
+    chan_copied: "Copied",
+    chan_qr_intro:
+      "Print and place on the counter, window or promotional material.",
+    chan_qr_download: "Download QR code",
+    chan_embed_intro:
+      "Paste the snippet below wherever you want the analysis to appear on your site. Works on any platform.",
+    chan_embed_personalize: "Customization",
+    chan_embed_skip_contact: "Skip contact capture screen",
+    chan_embed_compact: "Compact mode",
+    chan_embed_height: "Initial height (px):",
+    chan_embed_snippet: "Snippet",
+    chan_embed_copy_code: "Copy code",
+    chan_embed_helper_title: "Auto-resize (optional)",
+    chan_embed_helper_intro:
+      "Paste ONCE in your site so the iframe auto-resizes.",
+    chan_modal_title: "New channel",
+    chan_modal_label: "Internal name",
+    chan_modal_label_placeholder: "Ex.: Downtown Branch, Black Friday, Shopify Store",
+    chan_modal_slug: "Slug (URL)",
+    chan_modal_url_preview: "URL:",
+    chan_modal_expires: "Expires on (optional)",
+    chan_modal_max: "Analysis limit",
+    chan_modal_max_placeholder: "unlimited",
+    chan_modal_creating: "Creating...",
+    chan_modal_create: "Create channel",
 
     int_title: "Integrations",
     int_subtitle:
@@ -645,5 +690,38 @@ export const en: Dictionary = {
     analise_title: "Analysis Settings",
     analise_subtitle:
       "Customize the flow, copy and behavior of the analysis for your patients.",
+    analise_plan_atual: "Current plan",
+    analise_pre: "Pre-Analysis",
+    analise_capture: "Capture",
+    analise_results: "Result",
+    analise_sec_welcome: "Welcome Screen",
+    analise_sec_welcome_desc:
+      "Customize the texts shown before the client starts the analysis.",
+    analise_sec_consent: "Consent Screen",
+    analise_sec_consent_desc:
+      "Add extra text or customize the confirmation button.",
+    analise_sec_photo: "Photo Screen",
+    analise_sec_photo_desc:
+      "Instructions shown to the client at photo capture time.",
+    analise_sec_quest: "Questionnaire",
+    analise_sec_quest_desc:
+      "Enable or disable optional questions.",
+    analise_sec_photo_only: "Photo-Only Mode",
+    analise_sec_contact: "Contact capture",
+    analise_sec_contact_desc:
+      "Decide whether to capture the patient's name, email or phone.",
+    analise_sec_delivery: "Delivery and notifications",
+    analise_sec_delivery_desc:
+      "How to deliver the result and who should receive notifications.",
+    analise_sec_tone: "Analysis tone",
+    analise_sec_tone_desc:
+      "Sets how the AI writes the result for the patient. Technical or humanized.",
+    analise_sec_benchmark: "Platform benchmark",
+    analise_sec_benchmark_desc:
+      "Share aggregated (anonymized) data and see how your clinic compares.",
+    analise_sec_results_texts: "Result Texts",
+    analise_sec_visible: "Visible Sections",
+    analise_sec_visible_desc: "Control which sections appear on the patient's final screen.",
+    analise_sec_limits: "Recommendation Limits",
   },
 };
