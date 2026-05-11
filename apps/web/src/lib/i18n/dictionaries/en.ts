@@ -528,6 +528,50 @@ export const en: Dictionary = {
     int_title: "Integrations",
     int_subtitle:
       "Connect your online store for automatic sales and commission attribution.",
+    int_storefront_title: "Storefront Lite",
+    int_storefront_intro:
+      "Enable to use the sales options below. When disabled, products only show CTA if they have an external link saved.",
+    int_storefront_enable_label: "Enable Storefront Lite",
+    int_storefront_enable_hint:
+      "Allows selling directly via WhatsApp or MercadoPago without an online store.",
+    int_cta_mode_title: "Sales Mode",
+    int_cta_mode_intro:
+      "Choose how the buy button appears for consumers on result and kit screens.",
+    int_cta_mode_external: "External link",
+    int_cta_mode_external_desc:
+      "Uses the ecommerce link saved on each product. Current behavior.",
+    int_cta_mode_whatsapp: "WhatsApp",
+    int_cta_mode_whatsapp_desc:
+      "Each product shows a button that opens WhatsApp with a pre-filled message.",
+    int_cta_mode_mercadopago: "MercadoPago",
+    int_cta_mode_mercadopago_desc:
+      "Each product shows a button to pay via MercadoPago.",
+    int_cta_mode_both: "WhatsApp + MercadoPago",
+    int_cta_mode_both_desc:
+      "Shows both buttons side by side on each recommended product.",
+    int_whatsapp_title: "WhatsApp Configuration",
+    int_whatsapp_intro:
+      "Set the number and message sent when the consumer clicks Buy via WhatsApp.",
+    int_whatsapp_number: "WhatsApp number",
+    int_whatsapp_number_hint:
+      "Recommended format: +1 555 123 4567. Include country and area code.",
+    int_whatsapp_message: "Message template",
+    int_whatsapp_variables: "Available variables:",
+    int_whatsapp_preview: "Message preview",
+    int_whatsapp_preview_to: "Sent to:",
+    int_mp_title: "MercadoPago Configuration",
+    int_mp_intro: "Configure receiving payments via MercadoPago.",
+    int_mp_enable_label: "Enable MercadoPago",
+    int_mp_enable_hint: "Shows the pay button on recommended products.",
+    int_mp_email_label: "MercadoPago email",
+    int_mp_email_hint:
+      "Email associated with your MercadoPago account to receive payments.",
+    int_mp_disclaimer:
+      "The system generates a MercadoPago payment link per product at click time. Full checkout integration coming soon.",
+    int_save: "Save settings",
+    int_saved: "Saved.",
+    int_section_integrations: "Integrations",
+    int_section_integrations_sub: "Direct connections with ecommerce platforms and ERP.",
 
     usr_title: "Users",
     usr_subtitle: "Manage who has access to your organization panel.",

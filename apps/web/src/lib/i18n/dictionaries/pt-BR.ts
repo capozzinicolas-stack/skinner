@@ -584,6 +584,50 @@ export const ptBR: DictShape = {
     int_title: "Integracoes",
     int_subtitle:
       "Conecte sua loja virtual para vendas automaticas e atribuicao de comissao.",
+    int_storefront_title: "Storefront Lite",
+    int_storefront_intro:
+      "Ative para usar as opcoes de venda abaixo. Quando desativado, os produtos so exibem CTA se tiverem link externo cadastrado.",
+    int_storefront_enable_label: "Habilitar Storefront Lite",
+    int_storefront_enable_hint:
+      "Permite vender diretamente via WhatsApp ou MercadoPago sem loja virtual.",
+    int_cta_mode_title: "Modo de Venda",
+    int_cta_mode_intro:
+      "Escolha como o botao de compra aparece para os consumidores nas telas de resultado e kit.",
+    int_cta_mode_external: "Link externo",
+    int_cta_mode_external_desc:
+      "Usa o link de ecommerce cadastrado em cada produto. Comportamento atual.",
+    int_cta_mode_whatsapp: "WhatsApp",
+    int_cta_mode_whatsapp_desc:
+      "Cada produto exibe um botao que abre o WhatsApp com uma mensagem pre-preenchida.",
+    int_cta_mode_mercadopago: "MercadoPago",
+    int_cta_mode_mercadopago_desc:
+      "Cada produto exibe um botao para pagar via MercadoPago.",
+    int_cta_mode_both: "WhatsApp + MercadoPago",
+    int_cta_mode_both_desc:
+      "Exibe os dois botoes lado a lado em cada produto recomendado.",
+    int_whatsapp_title: "Configuracao do WhatsApp",
+    int_whatsapp_intro:
+      "Defina o numero e a mensagem enviada quando o consumidor clicar em Comprar via WhatsApp.",
+    int_whatsapp_number: "Numero do WhatsApp",
+    int_whatsapp_number_hint:
+      "Formato recomendado: +55 11 99999-9999. Inclua o codigo do pais e DDD.",
+    int_whatsapp_message: "Modelo de mensagem",
+    int_whatsapp_variables: "Variaveis disponiveis:",
+    int_whatsapp_preview: "Preview da mensagem",
+    int_whatsapp_preview_to: "Enviado para:",
+    int_mp_title: "Configuracao do MercadoPago",
+    int_mp_intro: "Configure o recebimento de pagamentos via MercadoPago.",
+    int_mp_enable_label: "Habilitar MercadoPago",
+    int_mp_enable_hint: "Exibe o botao de pagamento nos produtos recomendados.",
+    int_mp_email_label: "Email do MercadoPago",
+    int_mp_email_hint:
+      "Email associado a sua conta MercadoPago para receber os pagamentos.",
+    int_mp_disclaimer:
+      "O sistema gera um link de pagamento MercadoPago por produto no momento do clique. Integracao completa com checkout disponivel em breve.",
+    int_save: "Salvar configuracoes",
+    int_saved: "Salvo.",
+    int_section_integrations: "Integracoes",
+    int_section_integrations_sub: "Conexoes diretas com plataformas de ecommerce e ERP.",
 
     // ── Users page ───────────────────────────────────────────────────
     usr_title: "Usuarios",

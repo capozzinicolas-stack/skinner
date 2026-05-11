@@ -532,6 +532,50 @@ export const es: Dictionary = {
     int_title: "Integraciones",
     int_subtitle:
       "Conecta tu tienda en linea para ventas automaticas y atribucion de comision.",
+    int_storefront_title: "Storefront Lite",
+    int_storefront_intro:
+      "Activalo para usar las opciones de venta de abajo. Cuando esta desactivado, los productos solo muestran CTA si tienen enlace externo cargado.",
+    int_storefront_enable_label: "Habilitar Storefront Lite",
+    int_storefront_enable_hint:
+      "Permite vender directamente via WhatsApp o MercadoPago sin tienda online.",
+    int_cta_mode_title: "Modo de Venta",
+    int_cta_mode_intro:
+      "Elige como aparece el boton de compra para los consumidores en las pantallas de resultado y kit.",
+    int_cta_mode_external: "Enlace externo",
+    int_cta_mode_external_desc:
+      "Usa el enlace de ecommerce cargado en cada producto. Comportamiento actual.",
+    int_cta_mode_whatsapp: "WhatsApp",
+    int_cta_mode_whatsapp_desc:
+      "Cada producto muestra un boton que abre WhatsApp con un mensaje pre-cargado.",
+    int_cta_mode_mercadopago: "MercadoPago",
+    int_cta_mode_mercadopago_desc:
+      "Cada producto muestra un boton para pagar via MercadoPago.",
+    int_cta_mode_both: "WhatsApp + MercadoPago",
+    int_cta_mode_both_desc:
+      "Muestra los dos botones lado a lado en cada producto recomendado.",
+    int_whatsapp_title: "Configuracion de WhatsApp",
+    int_whatsapp_intro:
+      "Define el numero y el mensaje enviado cuando el consumidor haga clic en Comprar via WhatsApp.",
+    int_whatsapp_number: "Numero de WhatsApp",
+    int_whatsapp_number_hint:
+      "Formato recomendado: +52 55 1234 5678. Incluye el codigo del pais y area.",
+    int_whatsapp_message: "Plantilla de mensaje",
+    int_whatsapp_variables: "Variables disponibles:",
+    int_whatsapp_preview: "Preview del mensaje",
+    int_whatsapp_preview_to: "Enviado a:",
+    int_mp_title: "Configuracion de MercadoPago",
+    int_mp_intro: "Configura la recepcion de pagos via MercadoPago.",
+    int_mp_enable_label: "Habilitar MercadoPago",
+    int_mp_enable_hint: "Muestra el boton de pago en los productos recomendados.",
+    int_mp_email_label: "Email de MercadoPago",
+    int_mp_email_hint:
+      "Email asociado a tu cuenta MercadoPago para recibir los pagos.",
+    int_mp_disclaimer:
+      "El sistema genera un enlace de pago MercadoPago por producto al momento del clic. Integracion completa con checkout disponible proximamente.",
+    int_save: "Guardar configuraciones",
+    int_saved: "Guardado.",
+    int_section_integrations: "Integraciones",
+    int_section_integrations_sub: "Conexiones directas con plataformas de ecommerce y ERP.",
 
     usr_title: "Usuarios",
     usr_subtitle: "Administra quien tiene acceso al panel de tu organizacion.",

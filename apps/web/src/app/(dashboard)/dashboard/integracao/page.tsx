@@ -448,6 +448,30 @@ function ShopifyCard() {
 export default function IntegracaoPage() {
   const { t } = useI18n();
   const utils = trpc.useUtils();
+
+  // Translation-aware option rendering (replaces module-level constant)
+  const ctaModeOptionsI18n: { value: CtaMode; label: string; description: string }[] = [
+    {
+      value: "external",
+      label: t.dashboardPages.int_cta_mode_external,
+      description: t.dashboardPages.int_cta_mode_external_desc,
+    },
+    {
+      value: "whatsapp",
+      label: t.dashboardPages.int_cta_mode_whatsapp,
+      description: t.dashboardPages.int_cta_mode_whatsapp_desc,
+    },
+    {
+      value: "mercadopago",
+      label: t.dashboardPages.int_cta_mode_mercadopago,
+      description: t.dashboardPages.int_cta_mode_mercadopago_desc,
+    },
+    {
+      value: "both",
+      label: t.dashboardPages.int_cta_mode_both,
+      description: t.dashboardPages.int_cta_mode_both_desc,
+    },
+  ];
   const tenant = trpc.tenant.getMine.useQuery();
   const updateConfig = trpc.tenant.updateConfig.useMutation({
     onSuccess: () => {
@@ -516,15 +540,15 @@ export default function IntegracaoPage() {
 
         {/* Section 1: Storefront enable toggle */}
         <div>
-          <h2 className="font-serif text-xl text-carbone mb-1">Storefront Lite</h2>
+          <h2 className="font-serif text-xl text-carbone mb-1">{t.dashboardPages.int_storefront_title}</h2>
           <p className="text-pierre text-sm font-light mb-4">
-            Ative para usar as opcoes de venda abaixo. Quando desativado, os produtos so exibem CTA se tiverem link externo cadastrado.
+            {t.dashboardPages.int_storefront_intro}
           </p>
           <div className="flex items-start justify-between p-5 bg-white border border-sable/20">
             <div>
-              <p className="text-sm text-carbone">Habilitar Storefront Lite</p>
+              <p className="text-sm text-carbone">{t.dashboardPages.int_storefront_enable_label}</p>
               <p className="text-xs text-pierre font-light mt-1">
-                Permite vender diretamente via WhatsApp ou MercadoPago sem loja virtual.
+                {t.dashboardPages.int_storefront_enable_hint}
               </p>
             </div>
             <button
@@ -550,12 +574,12 @@ export default function IntegracaoPage() {
 
         {/* Section 2: Modo de Venda */}
         <div>
-          <h2 className="font-serif text-xl text-carbone mb-1">Modo de Venda</h2>
+          <h2 className="font-serif text-xl text-carbone mb-1">{t.dashboardPages.int_cta_mode_title}</h2>
           <p className="text-pierre text-sm font-light mb-4">
-            Escolha como o botao de compra aparece para os consumidores nas telas de resultado e kit.
+            {t.dashboardPages.int_cta_mode_intro}
           </p>
           <div className="space-y-2">
-            {ctaModeOptions.map((option) => (
+            {ctaModeOptionsI18n.map((option) => (
               <label
                 key={option.value}
                 className={`flex items-start gap-4 p-4 border cursor-pointer transition-colors ${
@@ -600,15 +624,15 @@ export default function IntegracaoPage() {
         {showWhatsAppSection && (
           <div>
             <h2 className="font-serif text-xl text-carbone mb-1">
-              Configuracao do WhatsApp
+              {t.dashboardPages.int_whatsapp_title}
             </h2>
             <p className="text-pierre text-sm font-light mb-4">
-              Defina o numero e a mensagem enviada quando o consumidor clicar em Comprar via WhatsApp.
+              {t.dashboardPages.int_whatsapp_intro}
             </p>
             <div className="space-y-5">
               <div>
                 <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-2">
-                  Numero do WhatsApp
+                  {t.dashboardPages.int_whatsapp_number}
                 </label>
                 <input
                   type="tel"
@@ -618,13 +642,13 @@ export default function IntegracaoPage() {
                   className="w-full px-3 py-2 border border-sable/40 bg-white text-sm text-carbone font-light focus:outline-none focus:border-carbone"
                 />
                 <p className="text-xs text-pierre font-light mt-1">
-                  Formato recomendado: +55 11 99999-9999. Inclua o codigo do pais e DDD.
+                  {t.dashboardPages.int_whatsapp_number_hint}
                 </p>
               </div>
 
               <div>
                 <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-2">
-                  Modelo de mensagem
+                  {t.dashboardPages.int_whatsapp_message}
                 </label>
                 <textarea
                   value={whatsappMessage}
@@ -633,7 +657,7 @@ export default function IntegracaoPage() {
                   className="w-full px-3 py-2 border border-sable/40 bg-white text-sm text-carbone font-light focus:outline-none focus:border-carbone"
                 />
                 <p className="text-xs text-pierre font-light mt-1">
-                  Variaveis disponiveis: {"{produto}"}, {"{preco}"}, {"{kit}"}, {"{cliente}"}
+                  {t.dashboardPages.int_whatsapp_variables} {"{produto}"}, {"{preco}"}, {"{kit}"}, {"{cliente}"}
                 </p>
               </div>
 
@@ -641,13 +665,13 @@ export default function IntegracaoPage() {
               {whatsappNumber && (
                 <div className="p-4 bg-ivoire border border-sable/20">
                   <p className="text-[10px] text-pierre uppercase tracking-wider font-light mb-2">
-                    Preview da mensagem
+                    {t.dashboardPages.int_whatsapp_preview}
                   </p>
                   <p className="text-xs text-terre font-light leading-relaxed">
                     {previewMessage}
                   </p>
                   <p className="text-[10px] text-pierre font-light mt-2">
-                    Enviado para: {whatsappNumber}
+                    {t.dashboardPages.int_whatsapp_preview_to} {whatsappNumber}
                   </p>
                 </div>
               )}
@@ -659,17 +683,17 @@ export default function IntegracaoPage() {
         {showMercadoPagoSection && (
           <div>
             <h2 className="font-serif text-xl text-carbone mb-1">
-              Configuracao do MercadoPago
+              {t.dashboardPages.int_mp_title}
             </h2>
             <p className="text-pierre text-sm font-light mb-4">
-              Configure o recebimento de pagamentos via MercadoPago.
+              {t.dashboardPages.int_mp_intro}
             </p>
             <div className="space-y-5">
               <div className="flex items-start justify-between p-5 bg-white border border-sable/20">
                 <div>
-                  <p className="text-sm text-carbone">Habilitar MercadoPago</p>
+                  <p className="text-sm text-carbone">{t.dashboardPages.int_mp_enable_label}</p>
                   <p className="text-xs text-pierre font-light mt-1">
-                    Exibe o botao de pagamento nos produtos recomendados.
+                    {t.dashboardPages.int_mp_enable_hint}
                   </p>
                 </div>
                 <button
@@ -694,7 +718,7 @@ export default function IntegracaoPage() {
 
               <div>
                 <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-2">
-                  Email do MercadoPago
+                  {t.dashboardPages.int_mp_email_label}
                 </label>
                 <input
                   type="email"
@@ -704,14 +728,13 @@ export default function IntegracaoPage() {
                   className="w-full px-3 py-2 border border-sable/40 bg-white text-sm text-carbone font-light focus:outline-none focus:border-carbone"
                 />
                 <p className="text-xs text-pierre font-light mt-1">
-                  Email associado a sua conta MercadoPago para receber os pagamentos.
+                  {t.dashboardPages.int_mp_email_hint}
                 </p>
               </div>
 
               <div className="p-4 bg-ivoire border border-sable/20">
                 <p className="text-xs text-terre font-light leading-relaxed">
-                  O sistema gera um link de pagamento MercadoPago por produto no momento do clique.
-                  Integracao completa com checkout disponivel em breve.
+                  {t.dashboardPages.int_mp_disclaimer}
                 </p>
               </div>
             </div>
@@ -725,10 +748,10 @@ export default function IntegracaoPage() {
             disabled={updateConfig.isPending}
             className="px-6 py-2 bg-carbone text-blanc-casse text-sm font-light tracking-wide hover:bg-terre disabled:opacity-50 transition-colors"
           >
-            {updateConfig.isPending ? "Salvando..." : "Salvar configuracoes"}
+            {updateConfig.isPending ? t.dashboardPages.common_saving : t.dashboardPages.int_save}
           </button>
           {saved && (
-            <span className="text-sm text-pierre font-light">Salvo.</span>
+            <span className="text-sm text-pierre font-light">{t.dashboardPages.int_saved}</span>
           )}
           {updateConfig.error && (
             <span className="text-sm text-red-600 font-light">
@@ -743,9 +766,9 @@ export default function IntegracaoPage() {
 
       {/* Section 5: Integrations */}
       <div>
-        <h2 className="font-serif text-xl text-carbone mb-1">Integracoes</h2>
+        <h2 className="font-serif text-xl text-carbone mb-1">{t.dashboardPages.int_section_integrations}</h2>
         <p className="text-pierre text-sm font-light mb-6">
-          Conexoes diretas com plataformas de ecommerce e ERP.
+          {t.dashboardPages.int_section_integrations_sub}
         </p>
         <div className="space-y-3">
           <NuvemshopCard />
