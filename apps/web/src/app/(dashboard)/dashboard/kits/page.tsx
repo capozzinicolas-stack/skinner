@@ -69,23 +69,24 @@ export default function KitsPage() {
           href="/dashboard/kits/novo"
           className="px-5 py-2 bg-carbone text-blanc-casse text-sm font-light tracking-wide hover:bg-terre transition-colors min-h-[44px] md:min-h-0 flex items-center"
         >
-          {t.dashboardPages.kits_new}
+          {t.dashboardPages.kits_new_manual}
         </Link>
       </div>
 
-      {/* Tabs */}
+      {/* Tabs — note: inner variable shadows outer `t` (i18n hook) so we
+          rename the map var to tabKey */}
       <div className="flex gap-0 mt-8 border-b border-sable/20">
-        {(["auto", "manual"] as TabId[]).map((t) => (
+        {(["auto", "manual"] as TabId[]).map((tabKey) => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
+            key={tabKey}
+            onClick={() => setTab(tabKey)}
             className={`px-5 py-3 text-[10px] uppercase tracking-wider font-light transition-colors ${
-              tab === t
+              tab === tabKey
                 ? "text-carbone border-b-2 border-carbone -mb-px"
                 : "text-pierre hover:text-carbone"
             }`}
           >
-            {t === "auto" ? "Kits Automaticos" : "Kits Manuais"}
+            {tabKey === "auto" ? t.dashboardPages.kits_tab_auto : t.dashboardPages.kits_tab_manual}
           </button>
         ))}
       </div>
@@ -94,12 +95,12 @@ export default function KitsPage() {
       {tab === "auto" && (
         <div className="mt-6">
           {autoKits.isLoading && (
-            <p className="text-pierre font-light text-sm">Carregando...</p>
+            <p className="text-pierre font-light text-sm">{t.dashboardPages.common_loading}</p>
           )}
           {autoKits.data && autoKits.data.items.length === 0 && (
             <div className="text-center py-16 bg-white border border-sable/20">
               <p className="text-pierre font-light text-sm">
-                Nenhuma analise com kit gerado ainda.
+                {t.dashboardPages.kits_auto_empty}
               </p>
             </div>
           )}
@@ -109,22 +110,22 @@ export default function KitsPage() {
                 <thead>
                   <tr className="border-b border-sable/20 bg-ivoire/50">
                     <th className="text-left px-5 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
-                      Data
+                      {t.dashboardPages.common_date}
                     </th>
                     <th className="text-left px-5 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
-                      Cliente
+                      {t.dashboardPages.reports_th_client}
                     </th>
                     <th className="text-left px-5 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
-                      Tipo de Pele
+                      {t.dashboardPages.reports_th_skin_type}
                     </th>
                     <th className="text-left px-5 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
-                      Produtos
+                      {t.dashboardPages.reports_th_products}
                     </th>
                     <th className="text-right px-5 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
-                      Valor Total
+                      {t.dashboardPages.kits_th_total}
                     </th>
                     <th className="text-right px-5 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
-                      Acoes
+                      {t.dashboardPages.common_actions}
                     </th>
                   </tr>
                 </thead>
@@ -145,7 +146,7 @@ export default function KitsPage() {
                         </td>
                         <td className="px-5 py-4">
                           <p className="text-sm text-carbone font-light">
-                            {analysis.clientName ?? "Anonimo"}
+                            {analysis.clientName ?? t.dashboardPages.kits_anonymous}
                           </p>
                           {analysis.clientEmail && (
                             <p className="text-xs text-pierre font-light">
@@ -178,8 +179,8 @@ export default function KitsPage() {
                           <p className="text-[10px] text-pierre font-light mt-1">
                             {analysis.recommendations.length}{" "}
                             {analysis.recommendations.length === 1
-                              ? "produto"
-                              : "produtos"}
+                              ? t.dashboardPages.kits_product_one
+                              : t.dashboardPages.kits_product_many}
                           </p>
                         </td>
                         <td className="px-5 py-4 text-right text-sm text-carbone font-light whitespace-nowrap">
@@ -198,8 +199,8 @@ export default function KitsPage() {
                                   className="text-xs text-pierre hover:text-carbone font-light underline"
                                 >
                                   {copiedId === analysis.id
-                                    ? "Copiado"
-                                    : "Copiar link"}
+                                    ? t.dashboardPages.kits_copied
+                                    : t.dashboardPages.kits_copy_link}
                                 </button>
                                 <a
                                   href={kitUrl!}
@@ -207,7 +208,7 @@ export default function KitsPage() {
                                   rel="noopener noreferrer"
                                   className="text-xs text-carbone hover:text-terre font-light underline"
                                 >
-                                  Ver kit
+                                  {t.dashboardPages.kits_view_kit}
                                 </a>
                               </>
                             )}
@@ -222,7 +223,7 @@ export default function KitsPage() {
           )}
           {autoKits.data && autoKits.data.total > 50 && (
             <p className="text-xs text-pierre font-light mt-3">
-              Mostrando 50 de {autoKits.data.total} kits.
+              {t.dashboardPages.kits_showing_50.replace("{total}", String(autoKits.data.total))}
             </p>
           )}
         </div>
@@ -232,18 +233,18 @@ export default function KitsPage() {
       {tab === "manual" && (
         <div className="mt-6">
           {manualKits.isLoading && (
-            <p className="text-pierre font-light text-sm">Carregando...</p>
+            <p className="text-pierre font-light text-sm">{t.dashboardPages.common_loading}</p>
           )}
           {manualKits.data && manualKits.data.length === 0 && (
             <div className="text-center py-16 bg-white border border-sable/20">
               <p className="text-pierre font-light text-sm">
-                Nenhum kit manual criado ainda.
+                {t.dashboardPages.kits_manual_empty}
               </p>
               <Link
                 href="/dashboard/kits/novo"
                 className="inline-block mt-4 px-5 py-2 bg-carbone text-blanc-casse text-sm font-light tracking-wide hover:bg-terre transition-colors"
               >
-                Criar primeiro kit
+                {t.dashboardPages.kits_create_first}
               </Link>
             </div>
           )}
@@ -274,7 +275,7 @@ export default function KitsPage() {
                           <h3 className="text-sm text-carbone">{kit.name}</h3>
                           {!kit.isActive && (
                             <span className="text-[10px] text-pierre uppercase tracking-wider font-light px-2 py-0.5 bg-ivoire">
-                              Inativo
+                              {t.dashboardPages.kits_inactive}
                             </span>
                           )}
                           {kit.discount != null && (
@@ -306,12 +307,12 @@ export default function KitsPage() {
                         <div className="flex items-center gap-4 mt-2">
                           <span className="text-[10px] text-pierre font-light uppercase tracking-wider">
                             {kit._count.items}{" "}
-                            {kit._count.items === 1 ? "produto" : "produtos"}
+                            {kit._count.items === 1 ? t.dashboardPages.kits_product_one : t.dashboardPages.kits_product_many}
                           </span>
                           {totalPrice > 0 && (
                             <span className="text-[10px] text-pierre font-light uppercase tracking-wider">
                               {discountedTotal !== null
-                                ? `R$ ${discountedTotal.toFixed(2)} com desconto`
+                                ? `R$ ${discountedTotal.toFixed(2)} ${t.dashboardPages.kits_with_discount}`
                                 : `R$ ${totalPrice.toFixed(2)}`}
                             </span>
                           )}
@@ -322,13 +323,13 @@ export default function KitsPage() {
                           href={`/dashboard/kits/${kit.id}/editar`}
                           className="text-xs text-pierre hover:text-carbone font-light underline"
                         >
-                          Editar
+                          {t.dashboardPages.common_edit}
                         </Link>
                         <button
                           onClick={() => copyManualLink(kit.slug, kit.id)}
                           className="text-xs text-pierre hover:text-carbone font-light underline"
                         >
-                          {copiedId === kit.id ? "Copiado" : "Copiar link"}
+                          {copiedId === kit.id ? t.dashboardPages.kits_copied : t.dashboardPages.kits_copy_link}
                         </button>
                         <a
                           href={`/kit/manual/${tenantSlug}/${kit.slug}`}
@@ -336,18 +337,18 @@ export default function KitsPage() {
                           rel="noopener noreferrer"
                           className="text-xs text-carbone hover:text-terre font-light underline"
                         >
-                          Ver kit
+                          {t.dashboardPages.kits_view_kit}
                         </a>
                         {kit.isActive && (
                           <button
                             onClick={() => {
-                              if (confirm("Desativar este kit?")) {
+                              if (confirm(t.dashboardPages.kits_confirm_deactivate)) {
                                 deleteKit.mutate({ id: kit.id });
                               }
                             }}
                             className="text-xs text-pierre hover:text-carbone font-light underline"
                           >
-                            Desativar
+                            {t.dashboardPages.cat_deactivate}
                           </button>
                         )}
                       </div>
