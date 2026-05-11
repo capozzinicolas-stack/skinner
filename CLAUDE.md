@@ -974,6 +974,72 @@ testing and demo purposes until a translator review completes.
 - PDF locale uses tenant default only; channel-locale override would
   require an extra DB join in `/api/report`
 
+## Mobile responsive (May-2026)
+
+B2B + Admin portals optimized for phone use after first paying customers
+asked to operate everything from mobile.
+
+### Chrome pattern
+- `components/shared/sidebar.tsx` is a mobile drawer on `<md` viewports
+  and a sticky sidebar on `md+`. State is owned by the parent chrome
+  (`isOpen` / `onClose` props); the Sidebar is dumb about how it opens.
+- Drawer pattern: fixed overlay + carbone/40 backdrop + slide-in via
+  `transform translate-x`. Body scroll is locked via `useEffect` while
+  the drawer is open, restored on close/unmount. Clicking a nav link
+  auto-closes the drawer (UX standard — don't leave it obscuring the
+  destination page).
+- `app/(dashboard)/_chrome.tsx` and `app/(admin)/_chrome.tsx` both hold
+  the `sidebarOpen` state and render a mobile top bar (`md:hidden
+  sticky`) with hamburger + logo. Admin chrome was promoted to a client
+  component (`AdminChrome`) wrapped by the server layout to share the
+  pattern.
+- **Impersonation banner stacking**: dashboard chrome wraps
+  `<ImpersonationBanner />` + mobile header in a single
+  `<div className="sticky top-0 z-40">` so the banner doesn't overlap
+  the hamburger during impersonation. Without the wrapper, both
+  elements would individually stick at `top:0` and the banner's
+  z-100 would hide the header underneath.
+
+### Responsive patterns applied
+- Page padding: `p-8` → `p-4 md:p-8`
+- Page headers: `flex items-end justify-between flex-wrap` → `flex
+  flex-col md:flex-row md:items-end md:justify-between`
+- Headings: `text-2xl` → `text-xl md:text-2xl`
+- Buttons (44px Apple HIG): `min-h-[44px] md:min-h-0` on primary CTAs
+- Inputs that were `w-64` desktop-only → `w-full md:w-64`
+- Tables: either wrap in `overflow-x-auto + min-w-[Npx]` (catalog,
+  reports desktop) OR render a parallel `md:hidden` card layout that
+  stacks the same data vertically (leads, reports mobile)
+
+### Pages refactored
+- `/dashboard` — header stacks; 6-month trend chart wraps in
+  horizontal-scroll container (`min-w-[480px]`).
+- `/dashboard/leads` — full mobile card layout with WhatsApp / E-mail /
+  PDF as 44px full-width buttons.
+- `/dashboard/catalogo` — header wraps; search input goes full-width;
+  table stays as-is with horizontal scroll (admin-heavy UI, scroll is
+  acceptable for catalog management).
+- `/dashboard/relatorios` — full mobile card layout with "Ver PDF" CTA.
+
+### Pages NOT yet polished (acceptable for prototype)
+- `/dashboard/{canais,faturamento,marca,integracao,kits,analise,conta,
+  usuarios,organizacao}` — inherit the responsive chrome, mostly
+  forms which stack OK by default. Polish per-page if a specific UI
+  proves cramped during real mobile use.
+- `/admin/*` pages — chrome works on mobile but page bodies (especially
+  tables in `/admin/tenants`, `/admin/usuarios`, `/admin/leads`) still
+  scroll horizontally. Admin is used 90%+ on desktop today.
+
+### When adding a new page
+- Top-level container: `p-4 md:p-8` (not `p-8`).
+- Headers with controls on the right: stack vertically on mobile.
+- Any data table with >4 columns: provide a mobile card alternative OR
+  use `overflow-x-auto + min-w-[Npx]`. Don't ship a table with 7
+  columns and no mobile fallback — it just becomes a horizontal-scroll
+  hairball at 360px width.
+- Touch targets: any primary patient/operator-facing action must be
+  `min-h-[44px]` on mobile.
+
 ## Conventions
 
 - All user-facing text in Portuguese (Brazilian)

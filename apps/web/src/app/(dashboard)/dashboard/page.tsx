@@ -609,11 +609,11 @@ export default function TenantDashboard() {
   const data = overview.data;
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto">
       {/* Header + period filter */}
-      <div className="flex items-end justify-between flex-wrap gap-4">
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
-          <h1 className="font-serif text-2xl text-carbone">Dashboard</h1>
+          <h1 className="font-serif text-xl md:text-2xl text-carbone">Dashboard</h1>
           <p className="text-pierre text-sm font-light mt-1">
             Visão estratégica do seu negócio.
           </p>
@@ -748,8 +748,8 @@ export default function TenantDashboard() {
           {trend.data && trend.data.length > 0 && (
             <>
               <SectionTitle subtitle="Volume e receita nos últimos 6 meses">Tendência</SectionTitle>
-              <div className="p-5 bg-white border border-sable/20">
-                <div className="grid grid-cols-6 gap-3">
+              <div className="p-4 md:p-5 bg-white border border-sable/20 overflow-x-auto">
+                <div className="grid grid-cols-6 gap-2 md:gap-3 min-w-[480px]">
                   {trend.data.map((m) => {
                     const max = Math.max(...trend.data!.map((x) => x.analyses), 1);
                     const height = (m.analyses / max) * 100;

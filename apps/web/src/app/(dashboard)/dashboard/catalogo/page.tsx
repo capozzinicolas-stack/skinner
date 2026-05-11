@@ -302,7 +302,7 @@ export default function CatalogPage() {
   }
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       {/* Confirmation dialog */}
       {pendingDeactivate && (
         <ConfirmDialog
@@ -313,32 +313,32 @@ export default function CatalogPage() {
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="font-serif text-2xl text-carbone">Catálogo de Produtos</h1>
+          <h1 className="font-serif text-xl md:text-2xl text-carbone">Catálogo de Produtos</h1>
           <p className="text-sm text-pierre font-light mt-1">
             {stats.data
               ? `${stats.data.active} ativos de ${stats.data.total} produtos`
               : "Carregando..."}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             onClick={handleExportCSV}
             disabled={exportQuery.isFetching}
-            className="px-4 py-2 border border-sable text-terre text-sm font-light tracking-wide disabled:opacity-50"
+            className="px-4 py-2 border border-sable text-terre text-sm font-light tracking-wide disabled:opacity-50 min-h-[44px] md:min-h-0"
           >
             {exportQuery.isFetching ? "Exportando..." : "Exportar CSV"}
           </button>
           <Link
             href="/dashboard/catalogo/importar"
-            className="px-4 py-2 border border-sable text-terre text-sm font-light tracking-wide"
+            className="px-4 py-2 border border-sable text-terre text-sm font-light tracking-wide min-h-[44px] md:min-h-0 flex items-center"
           >
             Importar CSV
           </Link>
           <Link
             href="/dashboard/catalogo/novo"
-            className="px-4 py-2 bg-carbone text-blanc-casse text-sm font-light tracking-wide"
+            className="px-4 py-2 bg-carbone text-blanc-casse text-sm font-light tracking-wide min-h-[44px] md:min-h-0 flex items-center"
           >
             Novo Produto
           </Link>
@@ -351,7 +351,7 @@ export default function CatalogPage() {
           value={search}
           onChange={(e) => handleSearchChange(e.target.value)}
           placeholder="Buscar por nome ou SKU..."
-          className="px-3 py-2 border border-sable/40 text-sm text-carbone font-light w-64 focus:outline-none focus:border-pierre bg-blanc-casse"
+          className="px-3 py-2 border border-sable/40 text-sm text-carbone font-light w-full md:w-64 focus:outline-none focus:border-pierre bg-blanc-casse"
         />
         <select
           value={concernFilter}
@@ -444,8 +444,8 @@ export default function CatalogPage() {
         )}
 
         {products.length > 0 && (
-          <div className="border border-sable/20 overflow-hidden">
-            <table className="w-full">
+          <div className="border border-sable/20 overflow-x-auto">
+            <table className="w-full min-w-[800px]">
               <thead>
                 <tr className="border-b border-sable/20 bg-ivoire">
                   <th className="px-4 py-3 text-left w-8">
