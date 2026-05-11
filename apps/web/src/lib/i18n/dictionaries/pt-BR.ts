@@ -17,6 +17,12 @@ type DictShape = {
   home: Record<string, string>;
   auth: Record<string, string>;
   dashboard: Record<string, string>;
+  // Patient-facing analysis flow. Locale = effective patient locale
+  // (channel.overrides.locale → tenant.defaultLocale → fallback).
+  patient: Record<string, string>;
+  // Dashboard page bodies. Locale = User.locale → Tenant.defaultLocale
+  // → cookie / header. Visited by B2B staff.
+  dashboardPages: Record<string, string>;
 };
 export const ptBR: DictShape = {
   // ── Marketing header / footer / switcher ───────────────────────────
@@ -129,6 +135,126 @@ export const ptBR: DictShape = {
     nav_organization: "Organizacao",
     nav_account: "Minha Conta",
     nav_logout: "Sair",
+  },
+
+  // ── Patient analysis flow ──────────────────────────────────────────
+  patient: {
+    // Contact capture
+    contact_title: "Para personalizar sua analise",
+    contact_default_message:
+      "{tenant} gostaria de manter contato para acompanhar sua jornada e enviar o resultado completo da analise.",
+    contact_name_label: "Nome (opcional)",
+    contact_name_placeholder: "Como podemos te chamar",
+    contact_email_label_optional: "E-mail (opcional)",
+    contact_email_label_required: "E-mail (obrigatorio)",
+    contact_email_placeholder: "seu@email.com",
+    contact_phone_label_optional: "WhatsApp (opcional)",
+    contact_phone_label_required: "WhatsApp (obrigatorio)",
+    contact_phone_placeholder: "(11) 99999-9999",
+    contact_consent_text:
+      "Concordo em receber contato da {tenant} sobre o resultado da minha analise e recomendacoes de tratamento. Em conformidade com a LGPD (Lei 13.709/2018).",
+    contact_error_both_required:
+      "Informe seu e-mail E seu WhatsApp para continuar.",
+    contact_error_consent_required:
+      "Marque o consentimento LGPD para continuar.",
+    contact_error_consent_with_contact:
+      "Voce informou um contato. Confirme o consentimento LGPD para prosseguir, ou limpe os campos.",
+    contact_skip: "Pular",
+    contact_continue: "Continuar",
+
+    // Photo capture
+    photo_title: "Fotografe seu rosto",
+    photo_instruction:
+      "Para uma analise precisa, posicione seu rosto dentro da guia oval. Sem maquiagem, sem oculos e de frente para a camera.",
+    photo_error_camera:
+      "Nao foi possivel acessar a camera. Verifique as permissoes do navegador ou tente fazer upload de uma foto.",
+    photo_error_camera_start: "Nao foi possivel iniciar a camera.",
+    photo_error_file_type: "Por favor, selecione uma imagem.",
+    photo_error_file_size: "Imagem muito grande. Maximo 10MB.",
+    photo_position_face: "Posicione seu rosto",
+    photo_oval_label: "dentro da guia oval",
+    photo_top_hint: "↓ Topo da testa aqui ↓",
+    photo_bottom_hint: "↑ Queixo aqui ↑",
+    photo_forehead_label: "Testa aqui",
+    photo_chin_label: "Queixo aqui",
+    photo_take: "Tirar foto",
+    photo_upload: "Fazer upload",
+    photo_camera_initializing: "Iniciando camera...",
+    photo_align_text: "Alinhe o topo da testa e o queixo com a guia oval",
+    photo_cancel: "Cancelar",
+    photo_capture: "Capturar",
+    photo_wait: "Aguarde...",
+    photo_retry: "Tirar outra",
+    photo_use: "Usar esta foto",
+    photo_tips_title: "Para uma analise precisa",
+    photo_tip_lighting_title: "Iluminacao",
+    photo_tip_lighting_text:
+      "Luz natural frontal. Evite sombras no rosto e luz forte atras de voce.",
+    photo_tip_position_title: "Posicao",
+    photo_tip_position_text:
+      "Olhe direto para a camera, rosto reto sem inclinar para os lados.",
+    photo_tip_prep_title: "Preparacao",
+    photo_tip_prep_text:
+      "Sem maquiagem, sem oculos, cabelo preso mostrando a testa.",
+    photo_tip_frame_title: "Enquadramento",
+    photo_tip_frame_text:
+      "Preencha o oval do topo da testa ate o queixo. So o rosto, sem corpo.",
+
+    // Loading screen
+    loading_title: "Analisando sua pele",
+    loading_did_you_know: "Voce sabia",
+    loading_msg_1: "Analisando o tipo da sua pele...",
+    loading_msg_2: "Identificando condicoes e preocupacoes...",
+    loading_msg_3: "Avaliando a barreira cutanea...",
+    loading_msg_4: "Cruzando dados com nossa base dermatologica...",
+    loading_msg_5: "Selecionando os melhores produtos para voce...",
+    loading_msg_6: "Montando seu plano de acao personalizado...",
+    loading_msg_7: "Quase pronto. Finalizando seu relatorio...",
+    loading_tip_1: "A pele leva cerca de 28 dias para se renovar completamente.",
+    loading_tip_2: "Protetor solar e o anti-aging mais eficaz que existe.",
+    loading_tip_3: "Niacinamida e compativel com quase todos os tipos de pele.",
+    loading_tip_4: "Hidratacao adequada melhora ate mesmo peles oleosas.",
+    loading_tip_5: "Ingredientes ativos devem ser introduzidos gradualmente.",
+    loading_preparing: "Preparando analise...",
+
+    // Questionnaire
+    quest_progress: "Pergunta {current} de {total}",
+    quest_multi_hint: "Selecione ate {max} opcoes",
+    quest_text_placeholder: "Digite aqui (opcional)...",
+    quest_back: "Voltar",
+    quest_next: "Proxima",
+    quest_skip: "Pular",
+    quest_see_results: "Ver resultados",
+  },
+
+  // ── Dashboard page bodies ──────────────────────────────────────────
+  dashboardPages: {
+    // Organização page
+    org_title: "Minha Organizacao",
+    org_subtitle:
+      "Informacoes gerais da sua clinica e preferencias regionais.",
+    org_identifiers: "Identificadores",
+    org_id_label: "ID da organizacao",
+    org_slug_label: "Slug publico",
+    org_slug_hint: "Usado em URLs como app.skinner.lat/analise/{slug}",
+    org_plan_label: "Plano atual",
+    org_status_label: "Status",
+    org_data_section: "Dados da organizacao",
+    org_read_only_notice:
+      "Apenas administradores podem alterar estes campos. Voce esta em modo de leitura.",
+    org_name_label: "Nome comercial",
+    org_country_label: "Pais",
+    org_country_placeholder: "— Selecione —",
+    org_timezone_label: "Fuso horario",
+    org_timezone_placeholder: "— Selecione —",
+    org_timezone_hint: "Usado para agendamentos e notificacoes.",
+    org_locale_label: "Idioma padrao da conta",
+    org_locale_hint:
+      "Define o idioma do painel B2B, dos relatorios entregues aos pacientes e do flow de analise. Cada canal pode sobrescrever individualmente.",
+    org_save: "Salvar dados",
+    org_saving: "Salvando...",
+    org_saved: "Dados atualizados.",
+    common_loading: "Carregando...",
   },
 };
 

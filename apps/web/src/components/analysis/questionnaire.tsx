@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useI18n } from "@/lib/i18n/client";
+import { translateQuestionText } from "@/lib/i18n/patient-questions";
 
 export type QuestionnaireAnswers = Record<string, string | string[]>;
 
@@ -168,6 +170,7 @@ function PhotoOnlyBypass({
   onComplete: (answers: QuestionnaireAnswers) => void;
   questions: DynamicQuestion[];
 }) {
+  const { t } = useI18n();
   useEffect(() => {
     const defaults = computeDefaults(questions);
     // Set sensible defaults for core fields
@@ -183,7 +186,7 @@ function PhotoOnlyBypass({
 
   return (
     <div className="w-full max-w-lg mx-auto px-4 text-center py-12">
-      <p className="text-pierre font-light text-sm">Preparando analise...</p>
+      <p className="text-pierre font-light text-sm">{t.patient.loading_preparing}</p>
     </div>
   );
 }
@@ -215,6 +218,7 @@ function QuestionnaireInner({
   config?: QuestionnaireConfig;
   allQuestions: DynamicQuestion[];
 }) {
+  const { t, locale } = useI18n();
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState<QuestionnaireAnswers>({});
 
@@ -278,7 +282,11 @@ function QuestionnaireInner({
       {/* Progress */}
       <div className="mb-8">
         <div className="flex justify-between text-xs text-pierre font-light mb-2">
-          <span>Pergunta {currentIdx + 1} de {questions.length}</span>
+          <span>
+            {t.patient.quest_progress
+              .replace("{current}", String(currentIdx + 1))
+              .replace("{total}", String(questions.length))}
+          </span>
           <span>{Math.round(progress)}%</span>
         </div>
         <div className="w-full h-0.5 bg-sable/30 overflow-hidden">
@@ -290,7 +298,9 @@ function QuestionnaireInner({
       </div>
 
       {/* Question */}
-      <h2 className="font-serif text-xl text-carbone mb-6">{question.text}</h2>
+      <h2 className="font-serif text-xl text-carbone mb-6">
+        {translateQuestionText(question.text, locale)}
+      </h2>
 
       {/* Options */}
       {question.type === "single" && question.options && (
@@ -305,7 +315,7 @@ function QuestionnaireInner({
                   : "border-sable/30 text-pierre hover:border-sable hover:text-carbone"
               }`}
             >
-              {opt.label}
+              {translateQuestionText(opt.label, locale)}
             </button>
           ))}
         </div>
@@ -314,7 +324,10 @@ function QuestionnaireInner({
       {question.type === "multi" && question.options && (
         <div className="space-y-2">
           <p className="text-xs text-pierre font-light mb-3">
-            Selecione ate {question.maxSelect ?? 3} opcoes
+            {t.patient.quest_multi_hint.replace(
+              "{max}",
+              String(question.maxSelect ?? 3),
+            )}
           </p>
           {question.options.map((opt) => {
             const selected = ((currentAnswer as string[]) ?? []).includes(opt.value);
@@ -328,7 +341,7 @@ function QuestionnaireInner({
                     : "border-sable/30 text-pierre hover:border-sable hover:text-carbone"
                 }`}
               >
-                {opt.label}
+                {translateQuestionText(opt.label, locale)}
               </button>
             );
           })}
@@ -340,7 +353,7 @@ function QuestionnaireInner({
           value={(currentAnswer as string) ?? ""}
           onChange={(e) => setAnswers((a) => ({ ...a, [question.id]: e.target.value }))}
           rows={3}
-          placeholder="Digite aqui (opcional)..."
+          placeholder={t.patient.quest_text_placeholder}
           className="w-full px-5 py-3.5 border border-sable/30 bg-blanc-casse text-sm font-light text-carbone focus:outline-none focus:border-terre"
         />
       )}
@@ -352,7 +365,7 @@ function QuestionnaireInner({
             onClick={() => setCurrentIdx((i) => i - 1)}
             className="px-6 py-3 border border-sable/40 text-sm font-light text-terre hover:bg-ivoire transition-colors"
           >
-            Voltar
+            {t.patient.quest_back}
           </button>
         )}
         <button
@@ -360,7 +373,11 @@ function QuestionnaireInner({
           disabled={!canProceed && question.required}
           className="flex-1 px-6 py-3 bg-carbone text-blanc-casse text-sm font-light tracking-wide hover:bg-terre disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
-          {isLast ? "Ver resultados" : question.required ? "Proxima" : "Pular"}
+          {isLast
+            ? t.patient.quest_see_results
+            : question.required
+              ? t.patient.quest_next
+              : t.patient.quest_skip}
         </button>
       </div>
     </div>

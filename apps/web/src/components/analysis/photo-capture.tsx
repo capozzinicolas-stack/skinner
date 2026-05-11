@@ -2,12 +2,14 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { loadModels } from "@/lib/face-detection";
+import { useI18n } from "@/lib/i18n/client";
 
 export function PhotoCapture({
   onCapture,
 }: {
   onCapture: (base64: string) => void;
 }) {
+  const { t } = useI18n();
   const [mode, setMode] = useState<"choose" | "camera" | "preview">("choose");
   const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -30,12 +32,12 @@ export function PhotoCapture({
       video.srcObject = streamRef.current;
       video.onloadedmetadata = () => {
         video.play().then(() => setCameraReady(true)).catch(() => {
-          setError("Nao foi possivel iniciar a camera.");
+          setError(t.patient.photo_error_camera_start);
           setMode("choose");
         });
       };
     }
-  }, [mode]);
+  }, [mode, t]);
 
   const startCamera = useCallback(async () => {
     setError("");
@@ -52,11 +54,9 @@ export function PhotoCapture({
       // Switch to camera mode - the useEffect above will attach the stream
       setMode("camera");
     } catch {
-      setError(
-        "Nao foi possivel acessar a camera. Verifique as permissoes do navegador ou tente fazer upload de uma foto."
-      );
+      setError(t.patient.photo_error_camera);
     }
-  }, []);
+  }, [t]);
 
   function stopCamera() {
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -85,11 +85,11 @@ export function PhotoCapture({
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      setError("Por favor, selecione uma imagem.");
+      setError(t.patient.photo_error_file_type);
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      setError("Imagem muito grande. Maximo 10MB.");
+      setError(t.patient.photo_error_file_size);
       return;
     }
     setError("");
@@ -114,11 +114,10 @@ export function PhotoCapture({
   return (
     <div className="w-full max-w-lg mx-auto px-4">
       <h2 className="font-serif text-xl text-carbone mb-2 text-center">
-        Fotografe seu rosto
+        {t.patient.photo_title}
       </h2>
       <p className="text-sm text-pierre text-center mb-6 font-light leading-relaxed">
-        Para uma analise precisa, posicione seu rosto dentro da guia oval.
-        Sem maquiagem, sem oculos e de frente para a camera.
+        {t.patient.photo_instruction}
       </p>
 
       {error && (
@@ -135,23 +134,23 @@ export function PhotoCapture({
             <div className="relative w-52 h-72 border-2 border-dashed border-sable/60 rounded-[50%] flex items-center justify-center">
               <div className="flex flex-col items-center gap-1">
                 <span className="text-[10px] text-pierre uppercase tracking-wider font-light">
-                  Posicione seu rosto
+                  {t.patient.photo_position_face}
                 </span>
                 <span className="text-[10px] text-pierre/50 font-light">
-                  dentro da guia oval
+                  {t.patient.photo_oval_label}
                 </span>
               </div>
             </div>
             {/* Top guide label */}
             <div className="absolute top-2 left-0 right-0 flex justify-center">
               <span className="text-[9px] text-pierre/60 uppercase tracking-wider font-light px-2 py-1 bg-ivoire">
-                ↓ Topo da testa aqui ↓
+                {t.patient.photo_top_hint}
               </span>
             </div>
             {/* Bottom guide label */}
             <div className="absolute bottom-2 left-0 right-0 flex justify-center">
               <span className="text-[9px] text-pierre/60 uppercase tracking-wider font-light px-2 py-1 bg-ivoire">
-                ↑ Queixo aqui ↑
+                {t.patient.photo_bottom_hint}
               </span>
             </div>
           </div>
@@ -161,13 +160,13 @@ export function PhotoCapture({
               onClick={startCamera}
               className="px-4 py-3 bg-carbone text-blanc-casse text-sm font-light tracking-wide hover:bg-terre transition-colors"
             >
-              Tirar foto
+              {t.patient.photo_take}
             </button>
             <button
               onClick={() => fileInputRef.current?.click()}
               className="px-4 py-3 border border-sable/40 text-terre text-sm font-light hover:bg-ivoire transition-colors"
             >
-              Fazer upload
+              {t.patient.photo_upload}
             </button>
           </div>
           <input
@@ -180,31 +179,39 @@ export function PhotoCapture({
 
           <div className="mt-6 p-4 bg-white border border-sable/20 space-y-3">
             <p className="text-[10px] text-pierre uppercase tracking-wider font-light">
-              Para uma analise precisa
+              {t.patient.photo_tips_title}
             </p>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <p className="text-xs text-carbone font-light">Iluminacao</p>
+                <p className="text-xs text-carbone font-light">
+                  {t.patient.photo_tip_lighting_title}
+                </p>
                 <p className="text-[11px] text-pierre/70 font-light leading-relaxed">
-                  Luz natural frontal. Evite sombras no rosto e luz forte atras de voce.
+                  {t.patient.photo_tip_lighting_text}
                 </p>
               </div>
               <div className="space-y-1">
-                <p className="text-xs text-carbone font-light">Posicao</p>
+                <p className="text-xs text-carbone font-light">
+                  {t.patient.photo_tip_position_title}
+                </p>
                 <p className="text-[11px] text-pierre/70 font-light leading-relaxed">
-                  Olhe direto para a camera, rosto reto sem inclinar para os lados.
+                  {t.patient.photo_tip_position_text}
                 </p>
               </div>
               <div className="space-y-1">
-                <p className="text-xs text-carbone font-light">Preparacao</p>
+                <p className="text-xs text-carbone font-light">
+                  {t.patient.photo_tip_prep_title}
+                </p>
                 <p className="text-[11px] text-pierre/70 font-light leading-relaxed">
-                  Sem maquiagem, sem oculos, cabelo preso mostrando a testa.
+                  {t.patient.photo_tip_prep_text}
                 </p>
               </div>
               <div className="space-y-1">
-                <p className="text-xs text-carbone font-light">Enquadramento</p>
+                <p className="text-xs text-carbone font-light">
+                  {t.patient.photo_tip_frame_title}
+                </p>
                 <p className="text-[11px] text-pierre/70 font-light leading-relaxed">
-                  Preencha o oval do topo da testa ate o queixo. So o rosto, sem corpo.
+                  {t.patient.photo_tip_frame_text}
                 </p>
               </div>
             </div>
@@ -239,7 +246,7 @@ export function PhotoCapture({
                     className="text-[10px] uppercase tracking-wider font-light px-3 py-1"
                     style={{ backgroundColor: "rgba(0,0,0,0.5)", color: "rgba(255,255,255,0.8)" }}
                   >
-                    Testa aqui
+                    {t.patient.photo_forehead_label}
                   </span>
                 </div>
                 {/* Bottom label — anchored to bottom of oval */}
@@ -248,7 +255,7 @@ export function PhotoCapture({
                     className="text-[10px] uppercase tracking-wider font-light px-3 py-1"
                     style={{ backgroundColor: "rgba(0,0,0,0.5)", color: "rgba(255,255,255,0.8)" }}
                   >
-                    Queixo aqui
+                    {t.patient.photo_chin_label}
                   </span>
                 </div>
               </div>
@@ -257,13 +264,13 @@ export function PhotoCapture({
             {!cameraReady && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/80">
                 <p className="text-sm text-white/60 font-light">
-                  Iniciando camera...
+                  {t.patient.photo_camera_initializing}
                 </p>
               </div>
             )}
           </div>
           <p className="text-xs text-pierre font-light text-center">
-            Alinhe o topo da testa e o queixo com a guia oval
+            {t.patient.photo_align_text}
           </p>
           <div className="flex gap-3">
             <button
@@ -273,14 +280,14 @@ export function PhotoCapture({
               }}
               className="flex-1 px-4 py-3 border border-sable/40 text-terre text-sm font-light hover:bg-ivoire"
             >
-              Cancelar
+              {t.patient.photo_cancel}
             </button>
             <button
               onClick={takePhoto}
               disabled={!cameraReady}
               className="flex-1 px-4 py-3 bg-carbone text-blanc-casse text-sm font-light tracking-wide hover:bg-terre disabled:opacity-40"
             >
-              {cameraReady ? "Capturar" : "Aguarde..."}
+              {cameraReady ? t.patient.photo_capture : t.patient.photo_wait}
             </button>
           </div>
         </div>
@@ -300,13 +307,13 @@ export function PhotoCapture({
               onClick={retry}
               className="flex-1 px-4 py-3 border border-sable/40 text-terre text-sm font-light hover:bg-ivoire"
             >
-              Tirar outra
+              {t.patient.photo_retry}
             </button>
             <button
               onClick={confirm}
               className="flex-1 px-4 py-3 bg-carbone text-blanc-casse text-sm font-light tracking-wide hover:bg-terre"
             >
-              Usar esta foto
+              {t.patient.photo_use}
             </button>
           </div>
         </div>

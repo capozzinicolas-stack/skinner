@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useI18n } from "@/lib/i18n/client";
 
 export type ContactData = {
   clientName: string;
@@ -28,8 +29,8 @@ const EMPTY: ContactData = {
  *     cases we want a stable identityKey for analysis.run, so collecting
  *     both channels reduces ambiguity (a patient who used phone last time
  *     and email this time would otherwise look like two distinct people).
- *   - LGPD consent checkbox is mandatory.
- *   - "Pular" (skip) button is hidden.
+ *   - LGPD / privacy consent checkbox is mandatory.
+ *   - "Skip" button is hidden.
  */
 export function ContactCapture({
   tenantName,
@@ -42,6 +43,7 @@ export function ContactCapture({
   required?: boolean;
   onComplete: (data: ContactData) => void;
 }) {
+  const { t } = useI18n();
   const [data, setData] = useState<ContactData>(EMPTY);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,17 +61,16 @@ export function ContactCapture({
     e.preventDefault();
     setError(null);
     if (required) {
-      // Both e-mail AND WhatsApp required — see component docstring for why.
       if (!hasBothContacts) {
-        setError("Informe seu e-mail E seu WhatsApp para continuar.");
+        setError(t.patient.contact_error_both_required);
         return;
       }
       if (!data.consentToContact) {
-        setError("Marque o consentimento LGPD para continuar.");
+        setError(t.patient.contact_error_consent_required);
         return;
       }
     } else if (needsConsent) {
-      setError("Voce informou um contato. Confirme o consentimento LGPD para prosseguir, ou limpe os campos.");
+      setError(t.patient.contact_error_consent_with_contact);
       return;
     }
     onComplete({
@@ -82,13 +83,18 @@ export function ContactCapture({
 
   const message =
     customMessage?.trim() ||
-    `${tenantName} gostaria de manter contato para acompanhar sua jornada e enviar o resultado completo da analise.`;
+    t.patient.contact_default_message.replace("{tenant}", tenantName);
+
+  const consentLabel = t.patient.contact_consent_text.replace(
+    "{tenant}",
+    tenantName,
+  );
 
   return (
     <div className="w-full max-w-lg mx-auto px-4 space-y-6">
       <div>
         <h2 className="font-serif text-xl text-carbone">
-          Para personalizar sua analise
+          {t.patient.contact_title}
         </h2>
         <p className="text-sm text-pierre font-light mt-2 leading-relaxed">
           {message}
@@ -98,25 +104,27 @@ export function ContactCapture({
       <form onSubmit={handleContinue} className="space-y-4">
         <div>
           <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
-            Nome (opcional)
+            {t.patient.contact_name_label}
           </label>
           <input
             type="text"
             value={data.clientName}
             onChange={(e) => setData((d) => ({ ...d, clientName: e.target.value }))}
-            placeholder="Como podemos te chamar"
+            placeholder={t.patient.contact_name_placeholder}
             className="w-full px-3 py-2 border border-sable/40 bg-white text-sm text-carbone font-light focus:outline-none focus:border-pierre"
           />
         </div>
         <div>
           <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
-            E-mail {required ? "(obrigatorio)" : "(opcional)"}
+            {required
+              ? t.patient.contact_email_label_required
+              : t.patient.contact_email_label_optional}
           </label>
           <input
             type="email"
             value={data.clientEmail}
             onChange={(e) => setData((d) => ({ ...d, clientEmail: e.target.value }))}
-            placeholder="seu@email.com"
+            placeholder={t.patient.contact_email_placeholder}
             required={required}
             aria-required={required}
             className="w-full px-3 py-2 border border-sable/40 bg-white text-sm text-carbone font-light focus:outline-none focus:border-pierre"
@@ -124,13 +132,15 @@ export function ContactCapture({
         </div>
         <div>
           <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
-            WhatsApp {required ? "(obrigatorio)" : "(opcional)"}
+            {required
+              ? t.patient.contact_phone_label_required
+              : t.patient.contact_phone_label_optional}
           </label>
           <input
             type="tel"
             value={data.clientPhone}
             onChange={(e) => setData((d) => ({ ...d, clientPhone: e.target.value }))}
-            placeholder="(11) 99999-9999"
+            placeholder={t.patient.contact_phone_placeholder}
             required={required}
             aria-required={required}
             className="w-full px-3 py-2 border border-sable/40 bg-white text-sm text-carbone font-light focus:outline-none focus:border-pierre"
@@ -147,11 +157,7 @@ export function ContactCapture({
               }
               className="mt-1 w-4 h-4"
             />
-            <span className="leading-snug">
-              Concordo em receber contato da {tenantName} sobre o resultado da
-              minha analise e recomendacoes de tratamento. Em conformidade com
-              a LGPD (Lei 13.709/2018).
-            </span>
+            <span className="leading-snug">{consentLabel}</span>
           </label>
         )}
 
@@ -166,14 +172,14 @@ export function ContactCapture({
               onClick={handleSkip}
               className="flex-1 px-4 py-3 border border-sable/40 text-sm font-light text-terre hover:bg-ivoire transition-colors"
             >
-              Pular
+              {t.patient.contact_skip}
             </button>
           )}
           <button
             type="submit"
             className="flex-1 px-4 py-3 bg-carbone text-blanc-casse text-sm font-light tracking-wide hover:bg-terre transition-colors"
           >
-            Continuar
+            {t.patient.contact_continue}
           </button>
         </div>
       </form>

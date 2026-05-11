@@ -110,4 +110,117 @@ export const en: Dictionary = {
     nav_account: "My Account",
     nav_logout: "Sign out",
   },
+
+  patient: {
+    contact_title: "To personalize your analysis",
+    contact_default_message:
+      "{tenant} would like to keep in touch to follow your journey and send you the full analysis result.",
+    contact_name_label: "Name (optional)",
+    contact_name_placeholder: "How should we address you",
+    contact_email_label_optional: "Email (optional)",
+    contact_email_label_required: "Email (required)",
+    contact_email_placeholder: "you@email.com",
+    contact_phone_label_optional: "WhatsApp (optional)",
+    contact_phone_label_required: "WhatsApp (required)",
+    contact_phone_placeholder: "+1 555 123 4567",
+    contact_consent_text:
+      "I agree to receive contact from {tenant} about my analysis result and treatment recommendations. In compliance with applicable data protection regulations.",
+    contact_error_both_required:
+      "Provide your email AND WhatsApp to continue.",
+    contact_error_consent_required:
+      "Check the privacy consent to continue.",
+    contact_error_consent_with_contact:
+      "You provided a contact. Confirm the privacy consent to proceed, or clear the fields.",
+    contact_skip: "Skip",
+    contact_continue: "Continue",
+
+    photo_title: "Take a photo of your face",
+    photo_instruction:
+      "For an accurate analysis, position your face inside the oval guide. No makeup, no glasses and facing the camera.",
+    photo_error_camera:
+      "Could not access the camera. Check your browser permissions or upload a photo.",
+    photo_error_camera_start: "Could not start the camera.",
+    photo_error_file_type: "Please select an image.",
+    photo_error_file_size: "Image too large. Maximum 10MB.",
+    photo_position_face: "Position your face",
+    photo_oval_label: "inside the oval guide",
+    photo_top_hint: "↓ Top of forehead here ↓",
+    photo_bottom_hint: "↑ Chin here ↑",
+    photo_forehead_label: "Forehead here",
+    photo_chin_label: "Chin here",
+    photo_take: "Take photo",
+    photo_upload: "Upload photo",
+    photo_camera_initializing: "Starting camera...",
+    photo_align_text: "Align the top of your forehead and chin with the oval guide",
+    photo_cancel: "Cancel",
+    photo_capture: "Capture",
+    photo_wait: "Please wait...",
+    photo_retry: "Retake",
+    photo_use: "Use this photo",
+    photo_tips_title: "For an accurate analysis",
+    photo_tip_lighting_title: "Lighting",
+    photo_tip_lighting_text:
+      "Natural front-facing light. Avoid shadows on the face and strong light behind you.",
+    photo_tip_position_title: "Position",
+    photo_tip_position_text:
+      "Look straight at the camera, face level without tilting to the sides.",
+    photo_tip_prep_title: "Prep",
+    photo_tip_prep_text:
+      "No makeup, no glasses, hair pulled back showing the forehead.",
+    photo_tip_frame_title: "Framing",
+    photo_tip_frame_text:
+      "Fill the oval from the top of the forehead to the chin. Face only, no body.",
+
+    loading_title: "Analyzing your skin",
+    loading_did_you_know: "Did you know",
+    loading_msg_1: "Analyzing your skin type...",
+    loading_msg_2: "Identifying conditions and concerns...",
+    loading_msg_3: "Evaluating skin barrier...",
+    loading_msg_4: "Cross-referencing with our dermatology base...",
+    loading_msg_5: "Selecting the best products for you...",
+    loading_msg_6: "Building your personalized action plan...",
+    loading_msg_7: "Almost done. Finalizing your report...",
+    loading_tip_1: "Skin takes about 28 days to fully renew itself.",
+    loading_tip_2: "Sunscreen is the most effective anti-aging product there is.",
+    loading_tip_3: "Niacinamide is compatible with almost every skin type.",
+    loading_tip_4: "Proper hydration improves even oily skin.",
+    loading_tip_5: "Active ingredients should be introduced gradually.",
+    loading_preparing: "Preparing analysis...",
+
+    quest_progress: "Question {current} of {total}",
+    quest_multi_hint: "Select up to {max} options",
+    quest_text_placeholder: "Type here (optional)...",
+    quest_back: "Back",
+    quest_next: "Next",
+    quest_skip: "Skip",
+    quest_see_results: "See results",
+  },
+
+  dashboardPages: {
+    org_title: "My Organization",
+    org_subtitle:
+      "General information of your clinic and regional preferences.",
+    org_identifiers: "Identifiers",
+    org_id_label: "Organization ID",
+    org_slug_label: "Public slug",
+    org_slug_hint: "Used in URLs like app.skinner.lat/analise/{slug}",
+    org_plan_label: "Current plan",
+    org_status_label: "Status",
+    org_data_section: "Organization data",
+    org_read_only_notice:
+      "Only administrators can modify these fields. You are in read-only mode.",
+    org_name_label: "Commercial name",
+    org_country_label: "Country",
+    org_country_placeholder: "— Select —",
+    org_timezone_label: "Timezone",
+    org_timezone_placeholder: "— Select —",
+    org_timezone_hint: "Used for scheduling and notifications.",
+    org_locale_label: "Default account language",
+    org_locale_hint:
+      "Sets the language for the B2B panel, patient reports and the analysis flow. Each channel can override individually.",
+    org_save: "Save data",
+    org_saving: "Saving...",
+    org_saved: "Data updated.",
+    common_loading: "Loading...",
+  },
 };

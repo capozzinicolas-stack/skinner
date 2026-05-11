@@ -1,26 +1,32 @@
 "use client";
 
-import { useState, useEffect } from "react";
-
-const messages = [
-  "Analisando o tipo da sua pele...",
-  "Identificando condicoes e preocupacoes...",
-  "Avaliando a barreira cutanea...",
-  "Cruzando dados com nossa base dermatologica...",
-  "Selecionando os melhores produtos para voce...",
-  "Montando seu plano de acao personalizado...",
-  "Quase pronto. Finalizando seu relatorio...",
-];
-
-const tips = [
-  "A pele leva cerca de 28 dias para se renovar completamente.",
-  "Protetor solar e o anti-aging mais eficaz que existe.",
-  "Niacinamida e compativel com quase todos os tipos de pele.",
-  "Hidratacao adequada melhora ate mesmo peles oleosas.",
-  "Ingredientes ativos devem ser introduzidos gradualmente.",
-];
+import { useState, useEffect, useMemo } from "react";
+import { useI18n } from "@/lib/i18n/client";
 
 export function LoadingScreen() {
+  const { t } = useI18n();
+  const messages = useMemo(
+    () => [
+      t.patient.loading_msg_1,
+      t.patient.loading_msg_2,
+      t.patient.loading_msg_3,
+      t.patient.loading_msg_4,
+      t.patient.loading_msg_5,
+      t.patient.loading_msg_6,
+      t.patient.loading_msg_7,
+    ],
+    [t],
+  );
+  const tips = useMemo(
+    () => [
+      t.patient.loading_tip_1,
+      t.patient.loading_tip_2,
+      t.patient.loading_tip_3,
+      t.patient.loading_tip_4,
+      t.patient.loading_tip_5,
+    ],
+    [t],
+  );
   const [msgIdx, setMsgIdx] = useState(0);
   const [tipIdx] = useState(() => Math.floor(Math.random() * tips.length));
 
@@ -29,11 +35,10 @@ export function LoadingScreen() {
       setMsgIdx((i) => (i + 1) % messages.length);
     }, 2200);
     return () => clearInterval(interval);
-  }, []);
+  }, [messages.length]);
 
   return (
     <div className="w-full max-w-lg mx-auto px-4 text-center">
-      {/* Minimal animated indicator */}
       <div className="flex justify-center gap-3 mb-10">
         {[0, 1, 2].map((i) => (
           <div
@@ -45,7 +50,7 @@ export function LoadingScreen() {
       </div>
 
       <h2 className="font-serif text-xl text-carbone mb-2">
-        Analisando sua pele
+        {t.patient.loading_title}
       </h2>
       <p className="text-sm text-pierre font-light min-h-[20px]">
         {messages[msgIdx]}
@@ -57,7 +62,7 @@ export function LoadingScreen() {
 
       <div className="mt-12 p-6 bg-ivoire border border-sable/20">
         <p className="text-[10px] text-pierre uppercase tracking-skinners font-light mb-2">
-          Voce sabia
+          {t.patient.loading_did_you_know}
         </p>
         <p className="text-sm text-terre font-light italic">{tips[tipIdx]}</p>
       </div>

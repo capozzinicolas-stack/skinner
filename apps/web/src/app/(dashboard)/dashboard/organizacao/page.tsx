@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { trpc } from "@/lib/trpc/client";
 import { OrganizationTabs } from "@/components/shared/organization-tabs";
+import { useI18n } from "@/lib/i18n/client";
 
 // Static lists kept inline so we don't fetch them on every page hit.
 // Country list focused on LATAM + key Skinner-targeted markets.
@@ -41,6 +43,8 @@ const TIMEZONES: Array<{ value: string; label: string }> = [
 ];
 
 export default function MinhaOrganizacaoPage() {
+  const { t } = useI18n();
+  const router = useRouter();
   const utils = trpc.useUtils();
   const tenant = trpc.tenant.getMine.useQuery();
   const me = trpc.user.me.useQuery();
@@ -66,8 +70,14 @@ export default function MinhaOrganizacaoPage() {
 
   const update = trpc.tenant.updateOrganization.useMutation({
     onSuccess: () => {
-      setMsg({ type: "ok", text: "Dados atualizados." });
+      setMsg({ type: "ok", text: t.dashboardPages.org_saved });
       utils.tenant.getMine.invalidate();
+      // The dashboard layout (Server Component) resolves the user/tenant locale
+      // on render via resolveDashboardLocale(). Without router.refresh() it
+      // keeps serving the old locale until a hard reload. Refresh triggers a
+      // re-render of the server tree with the new defaultLocale picked up,
+      // which propagates into the I18nProvider that wraps the dashboard.
+      router.refresh();
     },
     onError: (err) => setMsg({ type: "err", text: err.message }),
   });
@@ -87,42 +97,42 @@ export default function MinhaOrganizacaoPage() {
   }
 
   if (tenant.isLoading) {
-    return <p className="p-8 text-sm text-pierre font-light">Carregando...</p>;
+    return <p className="p-8 text-sm text-pierre font-light">{t.dashboardPages.common_loading}</p>;
   }
 
   return (
     <div>
       <OrganizationTabs />
-      <div className="p-8 max-w-3xl">
+      <div className="p-4 md:p-8 max-w-3xl">
       <div className="border-b border-sable/20 pb-6 mb-8">
-        <h1 className="font-serif text-2xl text-carbone">Minha Organizacao</h1>
+        <h1 className="font-serif text-xl md:text-2xl text-carbone">{t.dashboardPages.org_title}</h1>
         <p className="text-sm text-pierre font-light mt-1">
-          Informacoes gerais da sua clinica e preferencias regionais.
+          {t.dashboardPages.org_subtitle}
         </p>
       </div>
 
       {/* Identificadores (read-only) */}
       <section className="mb-12">
-        <h2 className="font-serif text-base text-carbone mb-4">Identificadores</h2>
+        <h2 className="font-serif text-base text-carbone mb-4">{t.dashboardPages.org_identifiers}</h2>
         <div className="bg-white border border-sable/20 p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <p className="text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
-              ID da organizacao
+              {t.dashboardPages.org_id_label}
             </p>
             <p className="text-sm text-carbone font-mono">{tenant.data?.id}</p>
           </div>
           <div>
             <p className="text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
-              Slug publico
+              {t.dashboardPages.org_slug_label}
             </p>
             <p className="text-sm text-carbone font-mono">{tenant.data?.slug}</p>
             <p className="text-[10px] text-pierre/70 font-light mt-1">
-              Usado em URLs como app.skinner.lat/analise/{tenant.data?.slug}
+              {t.dashboardPages.org_slug_hint.replace("{slug}", tenant.data?.slug ?? "")}
             </p>
           </div>
           <div>
             <p className="text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
-              Plano atual
+              {t.dashboardPages.org_plan_label}
             </p>
             <p className="text-sm text-carbone font-light">
               {tenant.data?.planLabel ?? tenant.data?.plan}
@@ -130,7 +140,7 @@ export default function MinhaOrganizacaoPage() {
           </div>
           <div>
             <p className="text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
-              Status
+              {t.dashboardPages.org_status_label}
             </p>
             <p className="text-sm text-carbone font-light capitalize">
               {tenant.data?.status}
@@ -141,10 +151,10 @@ export default function MinhaOrganizacaoPage() {
 
       {/* Dados editaveis */}
       <section className="mb-12">
-        <h2 className="font-serif text-base text-carbone mb-4">Dados da organizacao</h2>
+        <h2 className="font-serif text-base text-carbone mb-4">{t.dashboardPages.org_data_section}</h2>
         {!isAdmin && (
           <p className="mb-4 px-4 py-3 bg-ivoire border border-sable/30 text-xs text-pierre font-light">
-            Apenas administradores podem alterar estes campos. Voce esta em modo de leitura.
+            {t.dashboardPages.org_read_only_notice}
           </p>
         )}
         <form
@@ -153,7 +163,7 @@ export default function MinhaOrganizacaoPage() {
         >
           <div>
             <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
-              Nome comercial
+              {t.dashboardPages.org_name_label}
             </label>
             <input
               value={form.name}
@@ -169,7 +179,7 @@ export default function MinhaOrganizacaoPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
-                Pais
+                {t.dashboardPages.org_country_label}
               </label>
               <select
                 value={form.country}
@@ -177,7 +187,7 @@ export default function MinhaOrganizacaoPage() {
                 disabled={!isAdmin}
                 className="w-full px-3 py-2 border border-sable/30 bg-blanc-casse text-sm text-carbone font-light focus:outline-none focus:border-pierre disabled:bg-ivoire/50 disabled:text-pierre"
               >
-                <option value="">— Selecione —</option>
+                <option value="">{t.dashboardPages.org_country_placeholder}</option>
                 {COUNTRIES.map((c) => (
                   <option key={c.code} value={c.code}>
                     {c.name}
@@ -188,7 +198,7 @@ export default function MinhaOrganizacaoPage() {
 
             <div>
               <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
-                Fuso horario
+                {t.dashboardPages.org_timezone_label}
               </label>
               <select
                 value={form.timezone}
@@ -196,22 +206,22 @@ export default function MinhaOrganizacaoPage() {
                 disabled={!isAdmin}
                 className="w-full px-3 py-2 border border-sable/30 bg-blanc-casse text-sm text-carbone font-light focus:outline-none focus:border-pierre disabled:bg-ivoire/50 disabled:text-pierre"
               >
-                <option value="">— Selecione —</option>
-                {TIMEZONES.map((t) => (
-                  <option key={t.value} value={t.value}>
-                    {t.label}
+                <option value="">{t.dashboardPages.org_timezone_placeholder}</option>
+                {TIMEZONES.map((tz) => (
+                  <option key={tz.value} value={tz.value}>
+                    {tz.label}
                   </option>
                 ))}
               </select>
               <p className="text-[10px] text-pierre/70 font-light mt-1">
-                Em breve. Usado para agendamentos e notificacoes.
+                {t.dashboardPages.org_timezone_hint}
               </p>
             </div>
           </div>
 
           <div>
             <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
-              Idioma padrao para pacientes
+              {t.dashboardPages.org_locale_label}
             </label>
             <select
               value={form.defaultLocale}
@@ -229,8 +239,7 @@ export default function MinhaOrganizacaoPage() {
               <option value="en">English</option>
             </select>
             <p className="text-[10px] text-pierre/70 font-light mt-1">
-              Em breve. Define o idioma do flow de analise e dos relatorios entregues
-              aos pacientes. Cada canal pode sobrescrever este valor individualmente.
+              {t.dashboardPages.org_locale_hint}
             </p>
           </div>
 
@@ -239,9 +248,9 @@ export default function MinhaOrganizacaoPage() {
               <button
                 type="submit"
                 disabled={update.isPending}
-                className="px-4 py-2 bg-carbone text-blanc-casse text-sm font-light tracking-wide disabled:opacity-50"
+                className="px-4 py-2 bg-carbone text-blanc-casse text-sm font-light tracking-wide disabled:opacity-50 min-h-[44px] md:min-h-0"
               >
-                {update.isPending ? "Salvando..." : "Salvar dados"}
+                {update.isPending ? t.dashboardPages.org_saving : t.dashboardPages.org_save}
               </button>
               {msg && (
                 <p
