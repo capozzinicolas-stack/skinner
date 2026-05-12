@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomBytes, createHash } from "crypto";
 import { db } from "@skinner/db";
 import { sendEmail, buildPasswordResetEmail } from "@/lib/email";
+import { forgotLimiter, getClientIp } from "@/lib/rate-limit";
 
 /**
  * Issue a one-shot password reset token. We store ONLY the SHA-256 hash of the
@@ -16,6 +17,15 @@ const EXPIRY_MINUTES = 60;
 
 export async function POST(req: NextRequest) {
   try {
+    // Per-IP rate limit (3/hour) — prevents enumeration spam + email blast.
+    // We always return 200 even on rate-limit so the limiter doesn't itself
+    // leak "this IP was active here" via differential timing/status.
+    const ip = getClientIp(req.headers);
+    const rl = await forgotLimiter.limit(ip);
+    if (!rl.success) {
+      return NextResponse.json({ ok: true });
+    }
+
     const body = await req.json();
     const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
     if (!email || !email.includes("@")) {

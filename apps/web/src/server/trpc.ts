@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import superjson from "superjson";
 import { db } from "@skinner/db";
 import { authOptions } from "@/lib/auth";
+import { mutationLimiter } from "@/lib/rate-limit";
 
 export type Context = {
   db: typeof db;
@@ -128,6 +129,37 @@ const isAdmin = t.middleware(({ ctx, next }) => {
   return next({ ctx });
 });
 
-export const protectedProcedure = t.procedure.use(isAuthed);
-export const tenantProcedure = t.procedure.use(isAuthed).use(hasTenant);
-export const adminProcedure = t.procedure.use(isAuthed).use(isAdmin);
+// Per-user mutation rate limit (60 req/user/min sliding window). Only fires
+// on `type === "mutation"` so query bursts from parallel dashboard loads are
+// untouched. Caps runaway scripts, accidental loops, and post-auth abuse
+// without affecting any legitimate human workflow (60/min = 1/sec average).
+// Keyed by userId — shared NAT IPs cannot collide. Fails open on Upstash
+// errors via the underlying noop limiter (see lib/rate-limit.ts).
+const rateLimitMutations = t.middleware(async ({ ctx, next, type }) => {
+  if (type === "mutation" && ctx.userId) {
+    try {
+      const rl = await mutationLimiter.limit(`mut:${ctx.userId}`);
+      if (!rl.success) {
+        throw new TRPCError({
+          code: "TOO_MANY_REQUESTS",
+          message:
+            "Muitas operacoes em pouco tempo. Aguarde alguns segundos e tente novamente.",
+        });
+      }
+    } catch (err) {
+      // Re-throw the TRPCError; swallow only infra-level errors so a Redis
+      // outage doesn't lock the whole panel.
+      if (err instanceof TRPCError) throw err;
+    }
+  }
+  // Pass through without modifying ctx — preserves the narrowed types
+  // set by upstream middlewares (e.g. hasTenant narrowing tenantId to string).
+  return next();
+});
+
+export const protectedProcedure = t.procedure.use(isAuthed).use(rateLimitMutations);
+export const tenantProcedure = t.procedure
+  .use(isAuthed)
+  .use(hasTenant)
+  .use(rateLimitMutations);
+export const adminProcedure = t.procedure.use(isAuthed).use(isAdmin).use(rateLimitMutations);

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@skinner/db";
 import { fetchProduct, mapNuvemshopProduct } from "@/lib/integrations/nuvemshop";
+import { webhookLimiter, getClientIp } from "@/lib/rate-limit";
 
 /**
  * Real-time catalog sync. Nuvemshop fires this webhook on product/created and
@@ -17,6 +18,11 @@ import { fetchProduct, mapNuvemshopProduct } from "@/lib/integrations/nuvemshop"
  * costly than letting one slip through. We log + return 200.
  */
 export async function POST(req: NextRequest) {
+  const rl = await webhookLimiter.limit(`nuvemshop:product:${getClientIp(req.headers)}`);
+  if (!rl.success) {
+    return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+  }
+
   let body: { store_id?: number | string; event?: string; id?: number | string } = {};
   try {
     body = await req.json();

@@ -46,10 +46,54 @@
 
 ## Rate Limits
 
-- `analysis.run` (tRPC mutation): 10 requests per IP per hour (sliding window)
-- `/api/projection`: 3 requests per IP per hour (sliding window, expensive ~$0.12/call)
-- Falls back to no-op limiter when Upstash not configured (dev)
-- Returns 429 with Portuguese message when exceeded
+All limiters live in `lib/rate-limit.ts` (Upstash Redis sliding-window). Each
+falls back to a no-op limiter when `UPSTASH_REDIS_REST_URL` / `_TOKEN` are
+unset so local dev works without Redis.
+
+### Per-IP (public surface)
+- `analysis.run` (tRPC mutation): **10 req/IP/hour**
+- `/api/projection`: **3 req/IP/hour** (~$0.12/call Gemini)
+- `/api/auth/forgot`: **3 req/IP/hour** — anti enumeration + email spam.
+  Always returns 200 even when rate-limited so the limiter itself does not
+  leak "this IP was active" via differential timing/status.
+- NextAuth credentials login (`authorize()`): **5 attempts/IP/15min** —
+  brute-force protection. Rate-limited requests return `null` from
+  `authorize()` so the client sees the same "invalid credentials" error
+  (no leak of rate-limit state via error code differential). Fails open
+  on any limiter infra error so auth is never blocked by Redis outages.
+
+### Per-user (authenticated B2B)
+- tRPC mutations (`protectedProcedure`, `tenantProcedure`, `adminProcedure`):
+  **60 req/user/min** via `rateLimitMutations` middleware. Only fires on
+  `type === "mutation"` so query bursts from parallel dashboard loads pass
+  through untouched. Keyed by `userId` — shared NAT IPs cannot collide.
+  Throws `TRPCError({ code: "TOO_MANY_REQUESTS", ... })` on exceed.
+  Re-throws only TRPCError; swallows infra errors so a Redis outage
+  doesn't lock the panel.
+
+### External webhooks
+- Nuvemshop `order` / `product` / `uninstall`: **200 req/IP/min**
+- Shopify `order` / `product` / `uninstall`: **200 req/IP/min**
+- Returns 429 on exceed so Shopify/Nuvemshop retry with backoff
+  (legitimate initial-sync bursts recover automatically).
+
+### Explicitly NOT rate-limited (intentional)
+- **Stripe webhook**: legitimate retry/replay bursts when reconciling.
+  HMAC verification + the `WebhookEvent` idempotency table are the actual
+  security controls — rate-limiting would risk dropping legit billing
+  events.
+- **Nuvemshop `customers-data` / `customers-redact` / `store-redact`**:
+  mandatory LGPD/GDPR compliance webhooks; rate-limiting them risks app
+  revocation by Nuvemshop.
+- **`/api/cron/*`**: guarded by `CRON_SECRET` bearer token instead.
+
+### Behavior on exceed
+- Public IP-keyed endpoints (analysis, projection): 429 with pt-BR message.
+- Forgot: silent 200.
+- Login: silent `null` from authorize (same as wrong password).
+- tRPC mutations: `TRPCError TOO_MANY_REQUESTS`, surfaced to the user with
+  "Muitas operacoes em pouco tempo. Aguarde alguns segundos..."
+- Webhooks: 429 JSON, source retries.
 
 ## Analysis Pipeline
 

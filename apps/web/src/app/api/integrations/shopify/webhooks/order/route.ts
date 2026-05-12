@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@skinner/db";
 import { verifyWebhookHmac } from "@/lib/integrations/shopify";
+import { webhookLimiter, getClientIp } from "@/lib/rate-limit";
 
 /**
  * Webhook handler for Shopify orders/create events.
@@ -22,6 +23,11 @@ import { verifyWebhookHmac } from "@/lib/integrations/shopify";
  * party could POST fake orders and create commissions out of thin air.
  */
 export async function POST(req: NextRequest) {
+  const rl = await webhookLimiter.limit(`shopify:order:${getClientIp(req.headers)}`);
+  if (!rl.success) {
+    return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+  }
+
   const rawBody = await req.text();
   const hmacHeader = req.headers.get("x-shopify-hmac-sha256");
   const valid = await verifyWebhookHmac(rawBody, hmacHeader);

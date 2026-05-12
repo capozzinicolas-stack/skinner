@@ -1,7 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@skinner/db";
+import { webhookLimiter, getClientIp } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
+  // Anti-flood guard for the webhook surface (200/IP/min). 429 lets
+  // Nuvemshop retry with backoff so legit bursts (initial sync) recover
+  // automatically. HMAC verification + idempotency table remain the real
+  // security controls — this is defense in depth.
+  const rl = await webhookLimiter.limit(`nuvemshop:order:${getClientIp(req.headers)}`);
+  if (!rl.success) {
+    return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+  }
+
   let body: any;
   try {
     body = await req.json();

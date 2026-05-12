@@ -5,12 +5,24 @@ import { Ratelimit } from "@upstash/ratelimit";
  * Rate limiting helper using Upstash Redis.
  *
  * Limits are applied per client IP on public endpoints that consume external
- * API credits (Claude analysis, Gemini projection). Without this, any script
- * could burn a tenant's credits or our Gemini/Claude quota.
+ * API credits (Claude analysis, Gemini projection) and on auth/mutation
+ * surfaces that can be abused (brute-force login, email spam, runaway scripts).
  *
  * Limits:
- *   - analysis.run:      10 requests per IP per hour
- *   - /api/projection:    3 requests per IP per hour (more expensive)
+ *   - analysis.run:                10 req/IP/hour
+ *   - /api/projection:              3 req/IP/hour (more expensive)
+ *   - login (credentials):          5 attempts/IP/15min (anti brute-force)
+ *   - /api/auth/forgot:             3 req/IP/hour (anti email spam + enum)
+ *   - tRPC mutations (tenantProcedure): 60 req/user/min (anti runaway scripts)
+ *   - external webhooks (Nuvemshop + Shopify order/product/uninstall):
+ *                                  200 req/IP/min (anti flood of fake HMACs)
+ *
+ * Explicitly NOT rate-limited:
+ *   - Stripe webhook: legitimate retry/replay bursts + HMAC verification
+ *     + WebhookEvent idempotency table are the actual security controls.
+ *   - Nuvemshop customers-data / customers-redact / store-redact: mandatory
+ *     LGPD/GDPR compliance webhooks; rate-limiting risks app revocation.
+ *   - /api/cron/*: guarded by CRON_SECRET bearer token.
  *
  * Returns a no-op limiter when Upstash is not configured (dev / fallback) so
  * that local development does not require Redis.
@@ -70,6 +82,21 @@ function createLimiter(limit: number, windowSeconds: number, prefix: string) {
 // Configured limiters
 export const analysisLimiter = createLimiter(10, 3600, "skinner:rl:analysis");
 export const projectionLimiter = createLimiter(3, 3600, "skinner:rl:projection");
+
+// Auth / abuse-prevention limiters (May-2026).
+export const loginLimiter = createLimiter(5, 900, "skinner:rl:login");
+export const forgotLimiter = createLimiter(3, 3600, "skinner:rl:forgot");
+
+// Mutation limiter for authenticated B2B writes — caps runaway scripts or
+// loops without affecting legitimate dashboard flows. Keyed by userId so
+// shared NAT IPs don't collide. 60/min = 1 mutation/second average, well
+// above any human workflow.
+export const mutationLimiter = createLimiter(60, 60, "skinner:rl:mutation");
+
+// External e-commerce webhook limiter. Initial catalog syncs can burst but
+// 200/min covers Nuvemshop's max product create rate by ~5x. Excludes Stripe
+// + LGPD/GDPR webhooks (see module docstring above).
+export const webhookLimiter = createLimiter(200, 60, "skinner:rl:webhook");
 
 /**
  * Extract the client IP from common Next.js headers. Falls back to a fixed

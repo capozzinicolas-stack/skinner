@@ -6,6 +6,7 @@ import {
   resolveShopifyEcommerceLink,
   verifyWebhookHmac,
 } from "@/lib/integrations/shopify";
+import { webhookLimiter, getClientIp } from "@/lib/rate-limit";
 
 /**
  * Real-time catalog sync. Shopify fires this on products/create,
@@ -22,6 +23,11 @@ import {
  * Recommendation/Conversion FKs.
  */
 export async function POST(req: NextRequest) {
+  const rl = await webhookLimiter.limit(`shopify:product:${getClientIp(req.headers)}`);
+  if (!rl.success) {
+    return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+  }
+
   const rawBody = await req.text();
   const hmacHeader = req.headers.get("x-shopify-hmac-sha256");
   const valid = await verifyWebhookHmac(rawBody, hmacHeader);

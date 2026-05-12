@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
 import { createHash } from "crypto";
 import { db } from "@skinner/db";
+import { loginLimiter, getClientIp } from "@/lib/rate-limit";
 
 export const authOptions: AuthOptions = {
   providers: [
@@ -19,8 +20,32 @@ export const authOptions: AuthOptions = {
         // must explicitly come through admin.skinner.lat).
         mode: { label: "Mode", type: "text" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         if (!credentials?.email || !credentials?.password) return null;
+
+        // Brute-force protection: 5 attempts per IP per 15min sliding window.
+        // Rate-limited callers get null — same response as wrong password — so
+        // we don't leak rate-limit state via differential errors. Legit users
+        // typing wrong passwords 5x in 15min is an edge case; the window is
+        // short enough that recovery is automatic. Headers come from
+        // NextAuth's req (Node IncomingMessage-shaped); fail open if missing
+        // (auth flow still works in unusual setups).
+        try {
+          const rawHeaders = (req as { headers?: Record<string, string | string[]> })
+            ?.headers;
+          if (rawHeaders) {
+            const h = new Headers();
+            for (const [k, v] of Object.entries(rawHeaders)) {
+              if (typeof v === "string") h.set(k, v);
+              else if (Array.isArray(v)) h.set(k, v.join(", "));
+            }
+            const ip = getClientIp(h);
+            const rl = await loginLimiter.limit(`login:${ip}`);
+            if (!rl.success) return null;
+          }
+        } catch {
+          // Fail open — never block auth because of rate-limit infra issue.
+        }
 
         const user = await db.user.findUnique({
           where: { email: credentials.email },

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@skinner/db";
 import { verifyWebhookHmac } from "@/lib/integrations/shopify";
+import { webhookLimiter, getClientIp } from "@/lib/rate-limit";
 
 /**
  * Fired by Shopify when the merchant removes our app from their store. The
@@ -17,6 +18,11 @@ import { verifyWebhookHmac } from "@/lib/integrations/shopify";
  * and DoS our integrations.
  */
 export async function POST(req: NextRequest) {
+  const rl = await webhookLimiter.limit(`shopify:uninstall:${getClientIp(req.headers)}`);
+  if (!rl.success) {
+    return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+  }
+
   const rawBody = await req.text();
   const hmacHeader = req.headers.get("x-shopify-hmac-sha256");
   const valid = await verifyWebhookHmac(rawBody, hmacHeader);

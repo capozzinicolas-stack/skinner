@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@skinner/db";
+import { webhookLimiter, getClientIp } from "@/lib/rate-limit";
 
 /**
  * Fired by Nuvemshop when the merchant removes our app from their store.
@@ -16,6 +17,11 @@ import { db } from "@skinner/db";
  * (tenantId, platform) unique key and flips status back to "active".
  */
 export async function POST(req: NextRequest) {
+  const rl = await webhookLimiter.limit(`nuvemshop:uninstall:${getClientIp(req.headers)}`);
+  if (!rl.success) {
+    return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+  }
+
   let body: { store_id?: number | string; event?: string } = {};
   try {
     body = await req.json();
