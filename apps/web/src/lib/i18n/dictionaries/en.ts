@@ -675,6 +675,12 @@ export const en: Dictionary = {
     chan_modal_max_placeholder: "unlimited",
     chan_modal_creating: "Creating...",
     chan_modal_create: "Create channel",
+    chan_modal_locale: "Channel language",
+    chan_modal_locale_inherit: "Use organization language",
+    chan_modal_locale_hint:
+      "Sets the language of the analysis flow and the result for patients entering through this link. Overrides the organization default only on this channel.",
+    chan_branding_locale: "Channel language",
+    chan_branding_locale_reset: "Use default",
 
     int_title: "Integrations",
     int_subtitle:

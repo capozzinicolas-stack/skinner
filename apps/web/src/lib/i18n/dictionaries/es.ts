@@ -679,6 +679,12 @@ export const es: Dictionary = {
     chan_modal_max_placeholder: "ilimitado",
     chan_modal_creating: "Creando...",
     chan_modal_create: "Crear canal",
+    chan_modal_locale: "Idioma del canal",
+    chan_modal_locale_inherit: "Usar idioma de la organizacion",
+    chan_modal_locale_hint:
+      "Define el idioma del flujo de analisis y del resultado para los pacientes que entran por este enlace. Sobrescribe el idioma predeterminado de la organizacion solo en este canal.",
+    chan_branding_locale: "Idioma del canal",
+    chan_branding_locale_reset: "Usar predeterminado",
 
     int_title: "Integraciones",
     int_subtitle:

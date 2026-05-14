@@ -616,9 +616,16 @@ All `dashboardRouter` queries now accept an optional `channelId` input that adds
 `AnalysisChannel.overrides` is a JSON map of TenantConfig field overrides serialized as a string. When a slug resolves to a channel, `tenant.getBySlug` and `tenant.getAnalysisConfig` parse `overrides` and merge it onto the resolved `tenantConfig` (channel keys win). Patients arriving via that channel see the channel-specific copy without changing the tenant's defaults.
 
 Whitelist enforced at write time in `analysisChannel.update` via `CHANNEL_OVERRIDE_FIELDS`:
-welcomeTitle, welcomeDescription, welcomeCtaText, welcomeSubtext, welcomeSubtextVisible, consentExtraText, consentButtonText, photoTitle, photoInstruction, photoExtraText, contactCaptureEnabled, contactCaptureRequired, contactCustomMessage, productCtaText, serviceCtaText, resultsTopMessage, resultsFooterText.
+welcomeTitle, welcomeDescription, welcomeCtaText, welcomeSubtext, welcomeSubtextVisible, consentExtraText, consentButtonText, photoTitle, photoInstruction, photoExtraText, contactCaptureEnabled, contactCaptureRequired, contactCustomMessage, productCtaText, serviceCtaText, resultsTopMessage, resultsFooterText, **locale**.
 
 Anything outside the list is silently dropped — operational fields like `analysisLimit`, `commissionRate`, `maxUsers` MUST NEVER be channel-overrideable. UI lives in `/dashboard/canais` → channel detail → "Personalizacao" tab.
+
+### Per-channel locale override (May-2026 expansion)
+`overrides.locale` is now exposed in the channel CREATE form (`CreateChannelModal`) AND the edit form (`ChannelOverridesForm`). When the tenant picks a locale ("pt-BR" / "es" / "en"), `analysisChannel.create` seeds `overrides = JSON.stringify({ locale })` directly so the patient flow uses that locale from the very first visit — no second update step needed. Picking "Usar idioma da organização" (empty value) writes `overrides = null`, falling through to `Tenant.defaultLocale` at read time.
+
+Read path: `tenant.getBySlug` → `effectiveLocale = channelLocaleOverride ?? tenant.defaultLocale ?? "pt-BR"`. Drives both the React I18nProvider on the patient page AND `analysis.run`'s `resolvedLocale` → matcher reasons + Claude prompt language.
+
+Validation is double-locked: the `create` input schema uses `z.enum(["pt-BR", "es", "en"])` and the `update` whitelist filter rejects any locale value outside that enum before persisting. Useful for demo accounts that need 3 sample links (one per locale) without duplicating the catalog/branding/seed.
 
 ### Nuvemshop channel attribution (May-2026)
 `lib/cart/dispatch.ts` now appends `channel_id={id}` to both the cart URL query string AND the `note=` parameter when the dispatchContext has a `channelId`. The order webhook handler (`/api/integrations/nuvemshop/webhooks/order`) scans `body.note` for `channel_id=...` and persists it to `UsageEvent.metadata.channel_id` alongside the existing `skr_ref`. Primary attribution still flows via `Recommendation → Analysis.channelId`; the note value is an audit trail / cross-check signal.

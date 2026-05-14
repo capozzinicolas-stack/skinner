@@ -106,6 +106,11 @@ export const analysisChannelRouter = router({
           .regex(slugRegex, "Use letras minusculas, numeros e hifens"),
         expiresAt: z.iso.datetime().optional().nullable(),
         maxAnalyses: z.number().int().positive().optional().nullable(),
+        // Optional per-channel locale override (May-2026). When omitted, the
+        // channel inherits from Tenant.defaultLocale at read time. Validated
+        // as an enum here AND again in update() via the whitelist filter so a
+        // future "fr" passed by a misbehaving client never gets persisted.
+        locale: z.enum(["pt-BR", "es", "en"]).optional().nullable(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -141,6 +146,13 @@ export const analysisChannelRouter = router({
           message: "Este slug ja esta em uso. Escolha outro.",
         });
       }
+      // Seed channel.overrides with { locale } if the caller picked one.
+      // Persist as a stringified JSON to match the storage shape used by
+      // update(); tenant.getBySlug parses + reads overrides.locale at
+      // request time. Omitting locale = inherit Tenant.defaultLocale.
+      const overridesJson = input.locale
+        ? JSON.stringify({ locale: input.locale })
+        : null;
       return ctx.db.analysisChannel.create({
         data: {
           tenantId: ctx.tenantId,
@@ -150,6 +162,7 @@ export const analysisChannelRouter = router({
           status: "active",
           expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
           maxAnalyses: input.maxAnalyses ?? null,
+          overrides: overridesJson,
         },
       });
     }),

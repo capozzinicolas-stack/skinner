@@ -447,6 +447,7 @@ const OVERRIDE_FIELDS: Array<{
 ];
 
 function ChannelOverridesForm({ channelId }: { channelId: string }) {
+  const { t } = useI18n();
   const utils = trpc.useUtils();
   const channelsQuery = trpc.analysisChannel.list.useQuery();
   const channel = channelsQuery.data?.channels.find((c) => c.id === channelId);
@@ -632,6 +633,43 @@ function ChannelOverridesForm({ channelId }: { channelId: string }) {
         )}
       </div>
 
+      {/* Locale override — rendered separately because it's a select, not a
+          text/textarea/boolean like the rest of OVERRIDE_FIELDS. Reads/writes
+          the same overrides.locale slot the create modal seeds. */}
+      <div className="border-b border-sable/15 pb-3">
+        <div className="flex items-center justify-between gap-2 mb-1">
+          <label className="block text-[10px] text-pierre uppercase tracking-wider font-light">
+            {t.dashboardPages.chan_branding_locale}
+          </label>
+          {typeof values.locale === "string" && values.locale !== "" && (
+            <button
+              type="button"
+              onClick={() => clearField("locale")}
+              className="text-[10px] text-pierre hover:text-terre underline font-light"
+            >
+              {t.dashboardPages.chan_branding_locale_reset}
+            </button>
+          )}
+        </div>
+        <select
+          value={typeof values.locale === "string" ? values.locale : ""}
+          onChange={(e) => {
+            const v = e.target.value;
+            if (v === "") clearField("locale");
+            else setField("locale", v);
+          }}
+          className="w-full px-3 py-2 border border-sable/30 bg-blanc-casse text-sm text-carbone font-light"
+        >
+          <option value="">{t.dashboardPages.chan_modal_locale_inherit}</option>
+          <option value="pt-BR">Portugues (Brasil)</option>
+          <option value="es">Espanol</option>
+          <option value="en">English</option>
+        </select>
+        <p className="text-[10px] text-pierre/70 font-light mt-1">
+          {t.dashboardPages.chan_modal_locale_hint}
+        </p>
+      </div>
+
       {OVERRIDE_FIELDS.map((field) => {
         const v = values[field.key];
         const isSet = v !== undefined;
@@ -717,6 +755,9 @@ function CreateChannelModal({
   const [slugTouched, setSlugTouched] = useState(false);
   const [expiresAt, setExpiresAt] = useState("");
   const [maxAnalyses, setMaxAnalyses] = useState("");
+  // "" = inherit from Tenant.defaultLocale; otherwise persist an explicit
+  // override on channel.overrides.locale.
+  const [locale, setLocaleValue] = useState<"" | "pt-BR" | "es" | "en">("");
   const [error, setError] = useState<string | null>(null);
 
   const createMutation = trpc.analysisChannel.create.useMutation({
@@ -740,6 +781,7 @@ function CreateChannelModal({
       slug: slug.trim(),
       expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
       maxAnalyses: maxAnalyses ? parseInt(maxAnalyses, 10) : null,
+      locale: locale === "" ? null : locale,
     });
   }
 
@@ -820,6 +862,27 @@ function CreateChannelModal({
                 className="w-full px-3 py-2 border border-sable/30 bg-blanc-casse text-sm text-carbone font-light"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-1">
+              {t.dashboardPages.chan_modal_locale}
+            </label>
+            <select
+              value={locale}
+              onChange={(e) =>
+                setLocaleValue(e.target.value as "" | "pt-BR" | "es" | "en")
+              }
+              className="w-full px-3 py-2 border border-sable/30 bg-blanc-casse text-sm text-carbone font-light"
+            >
+              <option value="">{t.dashboardPages.chan_modal_locale_inherit}</option>
+              <option value="pt-BR">Portugues (Brasil)</option>
+              <option value="es">Espanol</option>
+              <option value="en">English</option>
+            </select>
+            <p className="text-[10px] text-pierre/70 font-light mt-1">
+              {t.dashboardPages.chan_modal_locale_hint}
+            </p>
           </div>
 
           {error && <p className="text-sm text-terre font-light">{error}</p>}

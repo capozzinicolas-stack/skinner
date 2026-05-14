@@ -734,6 +734,12 @@ export const ptBR: DictShape = {
     chan_modal_max_placeholder: "ilimitado",
     chan_modal_creating: "Criando...",
     chan_modal_create: "Criar canal",
+    chan_modal_locale: "Idioma do canal",
+    chan_modal_locale_inherit: "Usar idioma da organizacao",
+    chan_modal_locale_hint:
+      "Define o idioma do fluxo de analise e do resultado para pacientes que entram por este link. Sobrescreve o idioma padrao da organizacao apenas neste canal.",
+    chan_branding_locale: "Idioma do canal",
+    chan_branding_locale_reset: "Usar padrao",
 
     // ── Integrations page ────────────────────────────────────────────
     int_title: "Integracoes",
