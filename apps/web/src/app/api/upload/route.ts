@@ -10,7 +10,12 @@ const BUCKET_NAME = "product-images";
 // Both env vars are REQUIRED in every environment — no hardcoded fallbacks
 // because (a) leaks the project ID into git, (b) a wrong-project upload would
 // silently succeed against the dev bucket. Missing key → 500 with clear log.
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+//
+// Trailing slashes are stripped because @supabase/supabase-js concatenates
+// /storage/v1/... onto the base URL, and a trailing "/" produces a double
+// slash that Supabase rejects with "Invalid path specified in request URL".
+// Operators paste URLs in lots of shapes; normalize once at the source.
+const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/+$/, "");
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
 
 function getSupabase() {

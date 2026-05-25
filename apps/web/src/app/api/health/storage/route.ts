@@ -31,8 +31,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+  const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+  // Strip trailing slashes for the same reason as api/upload/route.ts.
+  const url = rawUrl.replace(/\/+$/, "");
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+  const trailingSlashStripped = rawUrl !== url;
 
   // Mask URL — show only the host so the operator can sanity-check they're
   // pointing at the right Supabase project without leaking the full URL into
@@ -50,6 +53,14 @@ export async function GET(req: NextRequest) {
       NEXT_PUBLIC_SUPABASE_ANON_KEY: key ? "set" : "MISSING",
     },
     urlHost,
+    urlPath: (() => {
+      try {
+        return url ? new URL(url).pathname : null;
+      } catch {
+        return null;
+      }
+    })(),
+    trailingSlashStripped,
     bucket: BUCKET_NAME,
   };
 
