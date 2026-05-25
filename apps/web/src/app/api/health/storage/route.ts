@@ -32,10 +32,16 @@ export async function GET(req: NextRequest) {
   }
 
   const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-  // Strip trailing slashes for the same reason as api/upload/route.ts.
-  const url = rawUrl.replace(/\/+$/, "");
+  // Reduce to origin (protocol+host) so any pasted shape works — see the
+  // comment in api/upload/route.ts for the full rationale.
+  let url = "";
+  try {
+    url = rawUrl ? new URL(rawUrl).origin : "";
+  } catch {
+    url = "";
+  }
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
-  const trailingSlashStripped = rawUrl !== url;
+  const urlWasNormalized = rawUrl !== "" && rawUrl !== url;
 
   // Mask URL — show only the host so the operator can sanity-check they're
   // pointing at the right Supabase project without leaking the full URL into
@@ -47,20 +53,23 @@ export async function GET(req: NextRequest) {
     urlHost = "invalid-url";
   }
 
+  // Surface the raw URL path that was stripped so the operator can SEE that
+  // they pasted the wrong shape and fix it in Vercel for next time. We only
+  // expose the path, never the full raw URL or the key, so no secret leaks.
+  let rawPath: string | null = null;
+  try {
+    rawPath = rawUrl ? new URL(rawUrl).pathname : null;
+  } catch {
+    rawPath = null;
+  }
   const baseResult = {
     env: {
       NEXT_PUBLIC_SUPABASE_URL: url ? "set" : "MISSING",
       NEXT_PUBLIC_SUPABASE_ANON_KEY: key ? "set" : "MISSING",
     },
     urlHost,
-    urlPath: (() => {
-      try {
-        return url ? new URL(url).pathname : null;
-      } catch {
-        return null;
-      }
-    })(),
-    trailingSlashStripped,
+    urlPathReceived: rawPath,
+    urlWasNormalized,
     bucket: BUCKET_NAME,
   };
 

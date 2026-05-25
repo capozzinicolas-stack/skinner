@@ -11,11 +11,26 @@ const BUCKET_NAME = "product-images";
 // because (a) leaks the project ID into git, (b) a wrong-project upload would
 // silently succeed against the dev bucket. Missing key → 500 with clear log.
 //
-// Trailing slashes are stripped because @supabase/supabase-js concatenates
-// /storage/v1/... onto the base URL, and a trailing "/" produces a double
-// slash that Supabase rejects with "Invalid path specified in request URL".
-// Operators paste URLs in lots of shapes; normalize once at the source.
-const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/+$/, "");
+// URL normalization: @supabase/supabase-js concatenates /storage/v1/... onto
+// the base URL, so anything OTHER than a clean origin (protocol + host)
+// breaks. Operators paste URLs in many shapes:
+//   - https://xyz.supabase.co                  ✓
+//   - https://xyz.supabase.co/                 ✗ trailing slash → double slash
+//   - https://xyz.supabase.co/rest/v1          ✗ pasted REST endpoint
+//   - https://xyz.supabase.co/rest/v1/         ✗ pasted REST endpoint
+//   - https://xyz.supabase.co/storage/v1       ✗ pasted Storage endpoint
+// All produce "Invalid path specified in request URL" on the first storage
+// call. Reduce to origin once at the source — guarantees a clean base URL
+// regardless of what was pasted in Vercel. Invalid URLs fall through as "".
+function normalizeSupabaseUrl(raw: string): string {
+  if (!raw) return "";
+  try {
+    return new URL(raw).origin;
+  } catch {
+    return "";
+  }
+}
+const supabaseUrl = normalizeSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "");
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
 
 function getSupabase() {
