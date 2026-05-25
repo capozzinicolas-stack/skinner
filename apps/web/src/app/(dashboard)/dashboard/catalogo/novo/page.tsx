@@ -235,7 +235,10 @@ function ProductForm() {
       sku: form.sku,
       name: form.name,
       description: fullDescription,
-      imageUrl: form.imageUrl || undefined,
+      // "" = user removed the image → send null so Prisma writes NULL to
+      // the column. undefined would skip the field and the old value
+      // would persist (existing bug before May-2026 fix).
+      imageUrl: form.imageUrl === "" ? null : form.imageUrl,
       price: form.price ? parseFloat(form.price) : undefined,
       ecommerceLink: !isService ? (form.ecommerceLink || undefined) : undefined,
       type: form.type,

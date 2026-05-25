@@ -50,7 +50,10 @@ const productInput = z.object({
   sku: z.string().min(1),
   name: z.string().min(2),
   description: z.string().optional(),
-  imageUrl: z.string().optional(),
+  // Nullable so the form can send `null` to CLEAR the field (e.g. user
+  // clicked "Remover" in the ImageUpload). `undefined` would Prisma-skip
+  // the field and the old imageUrl would stick around.
+  imageUrl: z.string().nullable().optional(),
   price: z.number().min(0).optional(),
   ecommerceLink: z.string().optional(),
   activeIngredients: z.string().optional(),
