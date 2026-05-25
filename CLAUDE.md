@@ -411,6 +411,28 @@ welcome → consent → contact (NEW) → questionnaire → photo → loading �
 - `captureRequestError` is re-exported from `instrumentation.ts` so Next.js auto-captures unhandled errors in route handlers (including tRPC).
 - Pre-existing `ResizeObserver` and "Non-Error promise rejection" noise is filtered via `ignoreErrors`.
 
+### Diagnostic endpoints (admin-only)
+- `GET /api/health/storage` — Supabase Storage health probe. Returns
+  `{ ok, reason?, env: { url: "set" | "MISSING", key: "set" | "MISSING" },
+  urlHost, bucket, bucketPublic? }`. Verifies env vars are present AND the
+  `product-images` bucket is reachable with the configured key. Gated to
+  `skinner_admin` JWT (returns 401 otherwise). Useful to confirm the
+  Production env var wiring without opening the Vercel dashboard — common
+  when a tenant reports the "Armazenamento de imagens não configurado"
+  error from `/api/upload`.
+- The upload route (`/api/upload`) now logs a structured error
+  (`[upload] Supabase Storage not configured. Missing env vars: { ... }`)
+  when either env var is empty, so the same gap is visible in Vercel logs
+  without needing the health endpoint.
+- **Required env vars in Vercel Production**: `NEXT_PUBLIC_SUPABASE_URL`
+  AND `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Both must be set per-environment
+  (Production / Preview / Development); a key set only in Preview will
+  silently fail in Production. Bug history: May-2026 a paying tenant
+  couldn't upload product images because the key existed in Preview only.
+- Removed an old hardcoded fallback Supabase URL in `api/upload/route.ts`
+  that masked missing-env-var failures and leaked the project ID into
+  git. Going forward, missing URL = 500 with a clear log.
+
 ## Conversion pixel docs
 
 - Public docs page at `/integracoes/pixel` explains how clients install the existing `POST /api/pixel` (purchase) and `GET /api/pixel?ref=...` (click pixel image) on their thank-you pages. Includes copy-paste snippets and an LGPD note (no PII collected, no third-party cookies).

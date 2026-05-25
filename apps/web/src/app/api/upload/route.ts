@@ -7,13 +7,26 @@ const BUCKET_NAME = "product-images";
 
 // Server-side Supabase client using the anon key.
 // The bucket is public so the anon key is sufficient to upload + read.
-const supabaseUrl =
-  process.env.NEXT_PUBLIC_SUPABASE_URL ??
-  "https://xveputgkwmxjitcxwmya.supabase.co";
+// Both env vars are REQUIRED in every environment — no hardcoded fallbacks
+// because (a) leaks the project ID into git, (b) a wrong-project upload would
+// silently succeed against the dev bucket. Missing key → 500 with clear log.
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
 
 function getSupabase() {
-  if (!supabaseAnonKey) return null;
+  if (!supabaseUrl || !supabaseAnonKey) {
+    // Server-side diagnostic log — surfaces in Vercel function logs so the
+    // operator can immediately see WHICH var is missing without guessing.
+    // Hit /api/health/storage from a browser session for the same info.
+    console.error(
+      "[upload] Supabase Storage not configured. Missing env vars:",
+      {
+        NEXT_PUBLIC_SUPABASE_URL: supabaseUrl ? "set" : "MISSING",
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: supabaseAnonKey ? "set" : "MISSING",
+      },
+    );
+    return null;
+  }
   return createClient(supabaseUrl, supabaseAnonKey);
 }
 
