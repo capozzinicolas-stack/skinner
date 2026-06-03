@@ -97,6 +97,12 @@ unset so local dev works without Redis.
 
 ## Analysis Pipeline
 
+### "Unable to transform response from server" — patient-facing analysis failure (fixed 2026-06-03)
+A patient reported the results screen showing "Erro na analise / Unable to transform response from server" on mobile (production). That string is the tRPC client failing to deserialize the server response with superjson — it means Vercel returned an **infrastructure error page (504/413/500), not a tRPC envelope**. The `try/catch → mock` fallback in `analysis.run` does NOT protect against this because the failure happens at the Vercel layer, outside the handler. Two independent root causes, both producing the identical symptom:
+- **Serverless timeout (504)**: `apps/web/src/app/api/trpc/[trpc]/route.ts` had no `maxDuration`, so it ran on Vercel's ~10-15s default. The Claude vision call (big injected KB + 4096 tokens) routinely takes 20-40s → 504. **Fix**: `export const maxDuration = 60` on that route. Raises the ceiling only; fast calls are unaffected.
+- **Payload too large (413)**: `photo-capture.tsx` gallery-upload path (`handleFileUpload`) accepted files up to 10 MB and sent them as raw base64 (~33% inflation), exceeding Vercel's 4.5 MB request-body limit → 413. **Fix**: a `compressImage()` helper downscales to max 1280px longest side at JPEG 0.85 in `confirm()` — the single chokepoint both the camera and upload paths funnel through, so the optimized image is what reaches Claude, `annotated-photo.tsx`, AND the Gemini projection. Aspect ratio is preserved with a single scale factor (REQUIRED by the annotated-photo marker-alignment invariant). Compression failure falls back to the original (no worse than before). Reuses existing i18n `photo_wait`/`photo_use`; adds a `processing` state to disable the confirm button mid-compress.
+- Not done (optional follow-up): map the cryptic transform error in the patient page `onError` (`analise/[slug]/page.tsx:57`) to a localized friendly message — today it shows `err.message` raw with a "Tentar novamente" button (`errorBlocking` stays false because a parse error carries no `data.code`).
+
 ### Scoring Formula (matcher.ts)
 - Concern match: 35% — overlap between detected conditions and product concernTags
 - Skin type match: 20% — binary, product has detected skin_type in skinTypeTags

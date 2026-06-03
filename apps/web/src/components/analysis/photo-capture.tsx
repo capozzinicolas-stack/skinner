@@ -4,6 +4,47 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { loadModels } from "@/lib/face-detection";
 import { useI18n } from "@/lib/i18n/client";
 
+/**
+ * Downscale + re-encode an image data URL so the payload sent to the server
+ * stays well under Vercel's 4.5 MB request-body limit. A gallery photo from a
+ * modern phone can be 5-10 MB; sent as base64 it inflates ~33% and the
+ * serverless function returns 413, which the tRPC client surfaces as the
+ * cryptic "Unable to transform response from server".
+ *
+ * Aspect ratio is preserved (single scale factor) — REQUIRED by
+ * annotated-photo.tsx, whose marker alignment depends on the image's natural
+ * aspect ratio matching its container. 1280px on the longest side at JPEG 0.85
+ * is ample resolution for Claude's facial skin analysis, the on-screen
+ * annotated photo, and the Gemini projection (all three reuse this same image).
+ */
+function compressImage(
+  dataUrl: string,
+  maxDim = 1280,
+  quality = 0.85
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const longest = Math.max(img.naturalWidth, img.naturalHeight);
+      const scale = longest > maxDim ? maxDim / longest : 1;
+      const w = Math.round(img.naturalWidth * scale);
+      const h = Math.round(img.naturalHeight * scale);
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        reject(new Error("no 2d context"));
+        return;
+      }
+      ctx.drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL("image/jpeg", quality));
+    };
+    img.onerror = () => reject(new Error("image load failed"));
+    img.src = dataUrl;
+  });
+}
+
 export function PhotoCapture({
   onCapture,
 }: {
@@ -13,6 +54,7 @@ export function PhotoCapture({
   const [mode, setMode] = useState<"choose" | "camera" | "preview">("choose");
   const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [processing, setProcessing] = useState(false);
   const [cameraReady, setCameraReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -102,8 +144,24 @@ export function PhotoCapture({
     reader.readAsDataURL(file);
   }
 
-  function confirm() {
-    if (preview) onCapture(preview);
+  async function confirm() {
+    if (!preview || processing) return;
+    setProcessing(true);
+    try {
+      // Single chokepoint: both the camera and the gallery-upload paths funnel
+      // through here, so compressing once guarantees the payload (and the image
+      // reused by Claude, annotated-photo, and the Gemini projection) stays
+      // under Vercel's body limit.
+      const optimized = await compressImage(preview);
+      onCapture(optimized);
+    } catch {
+      // If canvas compression fails for any reason, fall back to the original
+      // so the flow never dead-ends. A large original may still 413, but that
+      // is strictly no worse than the pre-fix behavior.
+      onCapture(preview);
+    } finally {
+      setProcessing(false);
+    }
   }
 
   function retry() {
@@ -311,9 +369,10 @@ export function PhotoCapture({
             </button>
             <button
               onClick={confirm}
-              className="flex-1 px-4 py-3 bg-carbone text-blanc-casse text-sm font-light tracking-wide hover:bg-terre"
+              disabled={processing}
+              className="flex-1 px-4 py-3 bg-carbone text-blanc-casse text-sm font-light tracking-wide hover:bg-terre disabled:opacity-40"
             >
-              {t.patient.photo_use}
+              {processing ? t.patient.photo_wait : t.patient.photo_use}
             </button>
           </div>
         </div>
