@@ -7,13 +7,20 @@ interface ImageUploadProps {
   value: string;
   onChange: (url: string) => void;
   disabled?: boolean;
+  /** Alt text / accessible label for the preview image. Defaults to product copy. */
+  previewAlt?: string;
 }
 
 const ACCEPTED = "image/jpeg,image/png,image/webp";
 const MAX_MB = 5;
 const MAX_BYTES = MAX_MB * 1024 * 1024;
 
-export function ImageUpload({ value, onChange, disabled }: ImageUploadProps) {
+export function ImageUpload({
+  value,
+  onChange,
+  disabled,
+  previewAlt = "Imagem do produto",
+}: ImageUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -95,7 +102,7 @@ export function ImageUpload({ value, onChange, disabled }: ImageUploadProps) {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={value}
-          alt="Imagem do produto"
+          alt={previewAlt}
           className="w-full h-40 object-contain bg-ivoire"
         />
         <div className="flex items-center justify-between px-3 py-2 border-t border-sable/20">

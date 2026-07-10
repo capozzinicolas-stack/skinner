@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { trpc } from "@/lib/trpc/client";
 import { OrganizationTabs } from "@/components/shared/organization-tabs";
+import { ImageUpload } from "@/components/shared/image-upload";
 import { useI18n } from "@/lib/i18n/client";
 
 export default function BrandConfigPage() {
@@ -103,11 +104,11 @@ export default function BrandConfigPage() {
           <label className="block text-[10px] text-pierre uppercase tracking-wider font-light mb-2">
             {t.dashboardPages.marca_logo_label}
           </label>
-          <input
+          <ImageUpload
             value={form.logoUrl}
-            onChange={(e) => setForm((f) => ({ ...f, logoUrl: e.target.value }))}
-            placeholder={t.dashboardPages.marca_logo_placeholder}
-            className="w-full px-3 py-2 border border-sable/40 bg-white text-sm text-carbone font-light focus:outline-none focus:border-carbone"
+            onChange={(url) => setForm((f) => ({ ...f, logoUrl: url }))}
+            disabled={updateBrand.isPending}
+            previewAlt="Logo da marca"
           />
           <p className="text-xs text-pierre font-light mt-1">
             {t.dashboardPages.marca_logo_hint}
