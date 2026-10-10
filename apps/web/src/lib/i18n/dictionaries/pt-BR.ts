@@ -77,7 +77,7 @@ export const ptBR: DictShape = {
       "Avaliacao dermatologica baseada em foto + questionario. Resultados em segundos, com nivel clinico.",
     pillar2_title: "Recomendacao",
     pillar2_text:
-      "Catalogo proprio do tenant. Match score por concern, tipo de pele, ingredientes e contraindicacoes.",
+      "Catálogo próprio da clínica. Pontuação de compatibilidade por condição, tipo de pele, ingredientes e contraindicações.",
     pillar3_title: "Conversao",
     pillar3_text:
       "Carrinho integrado a Nuvemshop, Shopify ou WhatsApp. Atribuicao de comissao automatica.",
@@ -120,7 +120,7 @@ export const ptBR: DictShape = {
   // migrated incrementally as content stabilizes.
   dashboard: {
     portal_subtitle: "Portal B2B",
-    nav_onboarding: "Onboarding",
+    nav_onboarding: "Primeiros passos",
     nav_dashboard: "Painel",
     nav_catalog: "Catalogo",
     nav_reports: "Relatorios",
@@ -140,37 +140,37 @@ export const ptBR: DictShape = {
   // ── Patient analysis flow ──────────────────────────────────────────
   patient: {
     // Contact capture
-    contact_title: "Para personalizar sua analise",
+    contact_title: "Para personalizar sua análise",
     contact_default_message:
-      "{tenant} gostaria de manter contato para acompanhar sua jornada e enviar o resultado completo da analise.",
+      "{tenant} gostaria de manter contato para acompanhar sua jornada e enviar o resultado completo da análise.",
     contact_name_label: "Nome (opcional)",
     contact_name_placeholder: "Como podemos te chamar",
     contact_email_label_optional: "E-mail (opcional)",
-    contact_email_label_required: "E-mail (obrigatorio)",
+    contact_email_label_required: "E-mail (obrigatório)",
     contact_email_placeholder: "seu@email.com",
     contact_phone_label_optional: "WhatsApp (opcional)",
-    contact_phone_label_required: "WhatsApp (obrigatorio)",
+    contact_phone_label_required: "WhatsApp (obrigatório)",
     contact_phone_placeholder: "(11) 99999-9999",
     contact_consent_text:
-      "Concordo em receber contato da {tenant} sobre o resultado da minha analise e recomendacoes de tratamento. Em conformidade com a LGPD (Lei 13.709/2018).",
+      "Concordo em receber contato da {tenant} sobre o resultado da minha análise e recomendações de tratamento. Em conformidade com a LGPD (Lei 13.709/2018).",
     contact_error_both_required:
       "Informe seu e-mail E seu WhatsApp para continuar.",
     contact_error_consent_required:
       "Marque o consentimento LGPD para continuar.",
     contact_error_consent_with_contact:
-      "Voce informou um contato. Confirme o consentimento LGPD para prosseguir, ou limpe os campos.",
+      "Você informou um contato. Confirme o consentimento LGPD para prosseguir, ou limpe os campos.",
     contact_skip: "Pular",
     contact_continue: "Continuar",
 
     // Photo capture
     photo_title: "Fotografe seu rosto",
     photo_instruction:
-      "Para uma analise precisa, posicione seu rosto dentro da guia oval. Sem maquiagem, sem oculos e de frente para a camera.",
+      "Para uma análise precisa, posicione seu rosto dentro da guia oval. Sem maquiagem, sem óculos e de frente para a câmera.",
     photo_error_camera:
-      "Nao foi possivel acessar a camera. Verifique as permissoes do navegador ou tente fazer upload de uma foto.",
-    photo_error_camera_start: "Nao foi possivel iniciar a camera.",
+      "Não foi possível acessar a câmera. Verifique as permissões do navegador ou tente enviar uma foto da galeria.",
+    photo_error_camera_start: "Não foi possível iniciar a câmera.",
     photo_error_file_type: "Por favor, selecione uma imagem.",
-    photo_error_file_size: "Imagem muito grande. Maximo 10MB.",
+    photo_error_file_size: "Imagem muito grande. Máximo 10MB.",
     photo_position_face: "Posicione seu rosto",
     photo_oval_label: "dentro da guia oval",
     photo_top_hint: "↓ Topo da testa aqui ↓",
@@ -178,84 +178,84 @@ export const ptBR: DictShape = {
     photo_forehead_label: "Testa aqui",
     photo_chin_label: "Queixo aqui",
     photo_take: "Tirar foto",
-    photo_upload: "Fazer upload",
-    photo_camera_initializing: "Iniciando camera...",
+    photo_upload: "Enviar foto",
+    photo_camera_initializing: "Iniciando câmera...",
     photo_align_text: "Alinhe o topo da testa e o queixo com a guia oval",
     photo_cancel: "Cancelar",
     photo_capture: "Capturar",
     photo_wait: "Aguarde...",
     photo_retry: "Tirar outra",
     photo_use: "Usar esta foto",
-    photo_tips_title: "Para uma analise precisa",
-    photo_tip_lighting_title: "Iluminacao",
+    photo_tips_title: "Para uma análise precisa",
+    photo_tip_lighting_title: "Iluminação",
     photo_tip_lighting_text:
-      "Luz natural frontal. Evite sombras no rosto e luz forte atras de voce.",
-    photo_tip_position_title: "Posicao",
+      "Luz natural frontal. Evite sombras no rosto e luz forte atrás de você.",
+    photo_tip_position_title: "Posição",
     photo_tip_position_text:
-      "Olhe direto para a camera, rosto reto sem inclinar para os lados.",
-    photo_tip_prep_title: "Preparacao",
+      "Olhe direto para a câmera, rosto reto sem inclinar para os lados.",
+    photo_tip_prep_title: "Preparação",
     photo_tip_prep_text:
-      "Sem maquiagem, sem oculos, cabelo preso mostrando a testa.",
+      "Sem maquiagem, sem óculos, cabelo preso mostrando a testa.",
     photo_tip_frame_title: "Enquadramento",
     photo_tip_frame_text:
-      "Preencha o oval do topo da testa ate o queixo. So o rosto, sem corpo.",
+      "Preencha o oval do topo da testa até o queixo. Só o rosto, sem corpo.",
 
     // Loading screen
     loading_title: "Analisando sua pele",
-    loading_did_you_know: "Voce sabia",
+    loading_did_you_know: "Você sabia",
     loading_msg_1: "Analisando o tipo da sua pele...",
-    loading_msg_2: "Identificando condicoes e preocupacoes...",
-    loading_msg_3: "Avaliando a barreira cutanea...",
-    loading_msg_4: "Cruzando dados com nossa base dermatologica...",
-    loading_msg_5: "Selecionando os melhores produtos para voce...",
-    loading_msg_6: "Montando seu plano de acao personalizado...",
-    loading_msg_7: "Quase pronto. Finalizando seu relatorio...",
+    loading_msg_2: "Identificando condições e preocupações...",
+    loading_msg_3: "Avaliando a barreira cutânea...",
+    loading_msg_4: "Cruzando dados com nossa base dermatológica...",
+    loading_msg_5: "Selecionando os melhores produtos para você...",
+    loading_msg_6: "Montando seu plano de ação personalizado...",
+    loading_msg_7: "Quase pronto. Finalizando seu relatório...",
     loading_tip_1: "A pele leva cerca de 28 dias para se renovar completamente.",
-    loading_tip_2: "Protetor solar e o anti-aging mais eficaz que existe.",
-    loading_tip_3: "Niacinamida e compativel com quase todos os tipos de pele.",
-    loading_tip_4: "Hidratacao adequada melhora ate mesmo peles oleosas.",
+    loading_tip_2: "Protetor solar é o cuidado antienvelhecimento mais eficaz que existe.",
+    loading_tip_3: "Niacinamida é compatível com quase todos os tipos de pele.",
+    loading_tip_4: "Hidratação adequada melhora até mesmo peles oleosas.",
     loading_tip_5: "Ingredientes ativos devem ser introduzidos gradualmente.",
-    loading_preparing: "Preparando analise...",
+    loading_preparing: "Preparando análise...",
 
     // Questionnaire
     quest_progress: "Pergunta {current} de {total}",
-    quest_multi_hint: "Selecione ate {max} opcoes",
+    quest_multi_hint: "Selecione até {max} opções",
     quest_text_placeholder: "Digite aqui (opcional)...",
     quest_back: "Voltar",
-    quest_next: "Proxima",
+    quest_next: "Próxima",
     quest_skip: "Pular",
     quest_see_results: "Ver resultados",
 
     // Welcome screen (inline in analise/[slug] + embed/[slug])
-    welcome_title: "Analise de Pele",
+    welcome_title: "Análise de pele",
     welcome_description:
-      "Descubra o tipo da sua pele e receba recomendacoes personalizadas de tratamento em menos de 3 minutos.",
-    welcome_cta: "Iniciar Analise",
+      "Descubra o tipo da sua pele e receba recomendações personalizadas de tratamento em menos de 3 minutos.",
+    welcome_cta: "Iniciar análise",
     welcome_subtext: "Gratuito e sem cadastro",
 
     // Consent screen
     consent_title: "Consentimento",
     consent_body:
-      "Para realizar a analise, precisaremos de uma foto do seu rosto. Essa foto sera processada por inteligencia artificial para identificar caracteristicas da sua pele.",
-    consent_data_protected: "Seus dados sao protegidos:",
-    consent_li_1: "A foto e processada e descartada imediatamente",
-    consent_li_2: "Nao armazenamos imagens faciais",
-    consent_li_3: "A analise e anonima por padrao",
-    consent_li_4: "Voce pode fornecer e-mail opcionalmente para receber o relatorio",
+      "Para realizar a análise, precisaremos de uma foto do seu rosto. Essa foto será processada por inteligência artificial para identificar características da sua pele.",
+    consent_data_protected: "Seus dados são protegidos:",
+    consent_li_1: "A foto é processada e descartada imediatamente",
+    consent_li_2: "Não armazenamos imagens faciais",
+    consent_li_3: "A análise é anônima por padrão",
+    consent_li_4: "Você pode fornecer e-mail opcionalmente para receber o relatório",
     consent_lgpd: "Em conformidade com a LGPD (Lei 13.709/2018).",
     consent_back: "Voltar",
     consent_cta: "Concordo e continuar",
 
     // Results screen
-    results_header_eyebrow: "Resultado da Analise",
-    results_your_skin_is: "Sua pele e",
-    results_observation_label: "Observacao sobre seu tipo de pele",
+    results_header_eyebrow: "Resultado da análise",
+    results_your_skin_is: "Sua pele é",
+    results_observation_label: "Observação sobre seu tipo de pele",
     results_observation_intro:
-      "Voce informou que sua pele e {self}, porem nossa analise identificou que sua pele e {detected}.",
+      "Você informou que sua pele é {self}, porém nossa análise identificou que sua pele é {detected}.",
     results_face_map: "Mapa Facial",
     results_skin_radar: "Radar da Pele",
-    results_attention: "Atencao",
-    results_healthy: "Saudavel",
+    results_attention: "Atenção",
+    results_healthy: "Saudável",
     results_care: "Cuidado",
     results_zone_tap_hint: "Toque nos marcadores para ver detalhes de cada zona",
     results_zone_forehead: "Testa",
@@ -266,16 +266,16 @@ export const ptBR: DictShape = {
     results_zone_under_eyes: "Olheiras",
     results_zone_jawline: "Maxilar",
     results_phases_title: "Seu cuidado em 3 fases",
-    results_phase_starting: "Comecando",
-    results_phase_progressing: "Avancando",
+    results_phase_starting: "Começando",
+    results_phase_progressing: "Avançando",
     results_phase_maintaining: "Mantendo",
     results_phase_weeks_1_2: "Semanas 1-2",
     results_phase_weeks_3_8: "Semanas 3-8",
-    results_phase_month_3: "Mes 3+",
+    results_phase_month_3: "Mês 3+",
     results_close: "fechar",
     results_section_conditions: "O que observamos na sua pele",
     results_section_products: "Produtos Recomendados",
-    results_section_services: "Servicos Recomendados",
+    results_section_services: "Serviços Recomendados",
     results_section_alert: "Quando consultar um dermatologista",
     results_alert_closing: "Se apresentar qualquer um destes sinais, consulte um dermatologista.",
     results_section_kit: "Kit de tratamento",
@@ -283,41 +283,41 @@ export const ptBR: DictShape = {
     results_kit_description: "Compartilhe seu kit personalizado ou acesse-o a qualquer momento.",
     results_kit_share: "Compartilhar Kit",
     results_kit_view: "Ver Kit Completo",
-    results_email_section: "Receba o relatorio completo",
+    results_email_section: "Receba o relatório completo",
     results_email_placeholder: "seu@email.com",
     results_email_send: "Enviar",
     results_email_sending: "Enviando...",
     results_email_sent: "E-mail enviado.",
-    results_download_pdf: "Baixar relatorio em PDF",
+    results_download_pdf: "Baixar relatório em PDF",
     results_downloading_pdf: "Gerando PDF...",
     results_disclaimer_default:
-      "Esta analise e apenas informativa e nao substitui a consulta com um dermatologista.",
-    results_powered_by: "POWERED BY SKINNER",
+      "Esta análise é apenas informativa e não substitui a consulta com um dermatologista.",
+    results_powered_by: "Desenvolvido por Skinner",
     results_step_label: "Etapa",
     results_recommended_badge: "Recomendado",
     results_alternative_badge: "Alternativa",
-    results_match_score: "Match",
+    results_match_score: "Compatibilidade",
     results_cart_add: "Adicionar",
     results_cart_added: "No carrinho",
     results_buy_default: "Comprar",
     results_buy_whatsapp: "Comprar via WhatsApp",
-    results_buy_mercadopago: "Pagar com MercadoPago",
+    results_buy_mercadopago: "Pagar com Mercado Pago",
     results_buy_external: "Comprar",
     results_book_service: "Agendar",
     results_step_cleanser: "Limpeza",
-    results_step_toner: "Tonico",
-    results_step_serum: "Serum",
+    results_step_toner: "Tônico",
+    results_step_serum: "Sérum",
     results_step_moisturizer: "Hidratante",
     results_step_spf: "Protetor Solar",
     results_step_treatment: "Tratamento",
-    results_step_mask: "Mascara",
+    results_step_mask: "Máscara",
     results_step_exfoliant: "Esfoliante",
-    results_step_eye_cream: "Area dos olhos",
-    results_use_morning: "manha",
+    results_step_eye_cream: "Área dos olhos",
+    results_use_morning: "manhã",
     results_use_night: "noite",
-    results_use_morning_night: "manha e noite",
+    results_use_morning_night: "manhã e noite",
     results_use_apply:
-      "Aplicar conforme instrucao do produto.",
+      "Aplicar conforme instrução do produto.",
     results_use_template: "Usar na etapa de {step}, {time}. {apply}",
     results_indicated_for: "Indicado para pele",
     results_aligned_objective: "Alinhado com seu objetivo:",
@@ -325,6 +325,29 @@ export const ptBR: DictShape = {
     results_severity_moderate: "Moderado",
     results_severity_severe: "Severo",
     results_barrier_section: "Estado da sua pele",
+    error_title: "Erro na análise",
+    error_title_blocking: "Não foi possível realizar a análise",
+    error_generic: "Não conseguimos concluir a sua análise agora. Verifique sua conexão e tente novamente em alguns instantes.",
+    error_retry: "Tentar novamente",
+    loading: "Carregando...",
+    not_found_title: "Link não encontrado",
+    not_found_text: "Este link de análise não é válido.",
+    limit_reached_default: "Limite de análises atingido para este canal.",
+    results_section_procedures: "Procedimentos indicados para você",
+    results_section_homecare: "Cuidados em casa para potencializar o tratamento",
+    results_addons_title: "Complementos opcionais",
+    results_open: "abrir",
+    results_session_one: "sessão",
+    results_session_many: "sessões",
+    results_phase_clinic_1: "Avaliação e primeiras sessões",
+    results_phase_clinic_2: "Sessões complementares",
+    results_phase_clinic_3: "Manutenção",
+    results_cart_replace_confirm: "Você já tem itens de {from} no carrinho. Adicionar este item de {to} vai substituir o carrinho. Confirmar?",
+    results_channel_nuvemshop: "loja Nuvemshop",
+    results_channel_shopify: "loja Shopify",
+    results_channel_whatsapp: "WhatsApp",
+    results_channel_mercadopago: "Mercado Pago",
+    results_channel_external: "loja online",
 
     // Cart floater
     cart_count_one: "{n} item",
@@ -334,7 +357,7 @@ export const ptBR: DictShape = {
     cart_finalize: "Finalizar",
     cart_clear: "Limpar carrinho",
     cart_clear_confirm:
-      "Voce ja tem itens de {current}. Adicionar este item de {target} vai substituir o carrinho. Confirmar?",
+      "Você já tem itens de {current}. Adicionar este item de {target} vai substituir o carrinho. Confirmar?",
   },
 
   // ── Dashboard page bodies ──────────────────────────────────────────
@@ -436,7 +459,7 @@ export const ptBR: DictShape = {
     home_section_discrepancy: "Discrepancia de auto-percepcao",
     home_section_discrepancy_sub:
       "Quantos pacientes tem um tipo de pele diferente do que percebem",
-    home_section_catalog: "Performance do catalogo",
+    home_section_catalog: "Desempenho do catálogo",
     home_section_catalog_sub:
       "O que esta sendo recomendado e onde estao as oportunidades",
     home_section_lift: "Conversao por perfil",
@@ -473,7 +496,7 @@ export const ptBR: DictShape = {
     // Geography section
     home_geo_brazil_title: "Mapa do Brasil — analises por estado",
     home_geo_by_region: "Por estado / regiao",
-    home_geo_top_cities: "Top 10 cidades",
+    home_geo_top_cities: "10 principais cidades",
     home_geo_empty_region:
       "Sem dados geograficos no periodo. Analises feitas em redes locais ou sem deteccao de IP aparecem como \"Desconhecido\".",
     home_geo_empty_city: "Sem dados de cidade.",
@@ -502,7 +525,7 @@ export const ptBR: DictShape = {
       "Em {pct} dos casos, a analise da IA identificou um tipo de pele diferente do que o paciente acreditava ter. Use esse dado em campanhas: \"nossa analise revela em media informacoes que voce nao percebe sobre sua propria pele\".",
 
     // Catalog section
-    home_catalog_top: "Top 8 produtos recomendados",
+    home_catalog_top: "8 produtos mais recomendados",
     home_catalog_top_rec_suffix: "rec.",
     home_catalog_top_empty: "Sem recomendacoes no periodo.",
     home_catalog_gaps: "Lacunas no catalogo",
@@ -513,10 +536,10 @@ export const ptBR: DictShape = {
       "Seu catalogo cobre todas as condicoes detectadas. Excelente.",
 
     // Lift section
-    home_lift_baseline: "Linha de base do tenant:",
+    home_lift_baseline: "Linha de base da clínica:",
     home_lift_baseline_count: "({converted} de {total} pacientes converteram).",
     home_lift_explanation:
-      "Lift = quanto cada segmento converte vs essa media (1.50x = 50% acima).",
+      "Índice de conversão = quanto cada segmento converte em relação a essa média (1,50x = 50% acima).",
     home_lift_by_skin: "Por tipo de pele",
     home_lift_by_age: "Por faixa etaria",
     home_lift_by_objective: "Por objetivo",
@@ -528,9 +551,9 @@ export const ptBR: DictShape = {
     home_benchmark_opt_out_tail:
       "para comparar seus numeros com a media anonima dos demais clientes.",
     home_benchmark_low_sample:
-      "Voce esta participando do benchmark, mas ainda nao temos clientes suficientes opt-in para gerar numeros agregados confiaveis ({count} de {min} minimos). Conforme mais clientes ativarem, os indicadores aparecerao aqui automaticamente.",
+      "Voce esta participando do benchmark, mas ainda nao temos clientes participantes suficientes para gerar numeros agregados confiaveis ({count} de {min} minimos). Conforme mais clientes ativarem, os indicadores aparecerao aqui automaticamente.",
     home_benchmark_basis:
-      "Baseado em {count} clientes opt-in (media agregada — nenhum cliente individual exposto).",
+      "Baseado em {count} clientes participantes (media agregada — nenhum cliente individual exposto).",
     home_benchmark_completion: "Taxa de conclusao",
     home_benchmark_conversion: "Taxa de conversao",
     home_benchmark_avg_ticket: "Ticket medio",
@@ -540,8 +563,8 @@ export const ptBR: DictShape = {
     home_engagement_email: "Envio por e-mail",
     home_engagement_pdf_rate: "Taxa de download de PDF",
     home_engagement_pdf_count: "{count} downloads",
-    home_engagement_email_rate: "Taxa de envio por email",
-    home_engagement_email_count: "{count} emails",
+    home_engagement_email_rate: "Taxa de envio por e-mail",
+    home_engagement_email_count: "{count} e-mails",
     home_engagement_completed: "Analises completas",
     home_engagement_completed_hint: "No periodo selecionado",
     home_analyses_one: "analise",
@@ -554,9 +577,9 @@ export const ptBR: DictShape = {
 
     // Low sample notice
     home_low_sample_one:
-      "Amostra pequena ({sample} analise) — colete mais dados para insights confiaveis.",
+      "Amostra pequena ({sample} analise) — colete mais dados para conclusões confiáveis.",
     home_low_sample_many:
-      "Amostra pequena ({sample} analises) — colete mais dados para insights confiaveis.",
+      "Amostra pequena ({sample} analises) — colete mais dados para conclusões confiáveis.",
 
     // Temp password banner (existing keys kept above are replaced by these
     // more accurate strings — the originals were too generic).
@@ -568,7 +591,7 @@ export const ptBR: DictShape = {
     // ── Leads page ───────────────────────────────────────────────────
     leads_title: "Leads",
     leads_subtitle: "Pacientes que autorizaram contato durante a analise.",
-    leads_empty: "Nenhuma lead capturada neste periodo.",
+    leads_empty: "Nenhum lead capturado neste período.",
     leads_empty_hint:
       "Verifique se a captura de contato esta ativada em \"Analise\" e que pacientes autorizaram o contato durante a analise.",
     leads_th_skin_type: "Tipo de pele",
@@ -687,7 +710,7 @@ export const ptBR: DictShape = {
     chan_default_label: "Padrao",
     chan_tab_link: "Link Direto",
     chan_tab_qr: "QR Code",
-    chan_tab_widget: "Widget Embed",
+    chan_tab_widget: "Incorporar no site",
     chan_tab_branding: "Personalizacao",
     chan_your_channels: "Seus canais",
     chan_new_button: "+ Novo canal",
@@ -719,7 +742,7 @@ export const ptBR: DictShape = {
     chan_embed_skip_contact: "Pular tela de captura de contato",
     chan_embed_compact: "Modo compacto",
     chan_embed_height: "Altura inicial (px):",
-    chan_embed_snippet: "Snippet",
+    chan_embed_snippet: "Código",
     chan_embed_copy_code: "Copiar codigo",
     chan_embed_helper_title: "Auto-resize (opcional)",
     chan_embed_helper_intro:
@@ -745,10 +768,10 @@ export const ptBR: DictShape = {
     int_title: "Integracoes",
     int_subtitle:
       "Conecte sua loja virtual para vendas automaticas e atribuicao de comissao.",
-    int_storefront_title: "Storefront Lite",
+    int_storefront_title: "Vitrine",
     int_storefront_intro:
       "Ative para usar as opcoes de venda abaixo. Quando desativado, os produtos so exibem CTA se tiverem link externo cadastrado.",
-    int_storefront_enable_label: "Habilitar Storefront Lite",
+    int_storefront_enable_label: "Habilitar vitrine",
     int_storefront_enable_hint:
       "Permite vender diretamente via WhatsApp ou MercadoPago sem loja virtual.",
     int_cta_mode_title: "Modo de Venda",
@@ -774,15 +797,15 @@ export const ptBR: DictShape = {
       "Formato recomendado: +55 11 99999-9999. Inclua o codigo do pais e DDD.",
     int_whatsapp_message: "Modelo de mensagem",
     int_whatsapp_variables: "Variaveis disponiveis:",
-    int_whatsapp_preview: "Preview da mensagem",
+    int_whatsapp_preview: "Pré-visualização da mensagem",
     int_whatsapp_preview_to: "Enviado para:",
     int_mp_title: "Configuracao do MercadoPago",
     int_mp_intro: "Configure o recebimento de pagamentos via MercadoPago.",
     int_mp_enable_label: "Habilitar MercadoPago",
     int_mp_enable_hint: "Exibe o botao de pagamento nos produtos recomendados.",
-    int_mp_email_label: "Email do MercadoPago",
+    int_mp_email_label: "E-mail do Mercado Pago",
     int_mp_email_hint:
-      "Email associado a sua conta MercadoPago para receber os pagamentos.",
+      "E-mail associado à sua conta Mercado Pago para receber os pagamentos.",
     int_mp_disclaimer:
       "O sistema gera um link de pagamento MercadoPago por produto no momento do clique. Integracao completa com checkout disponivel em breve.",
     int_save: "Salvar configuracoes",
@@ -866,7 +889,7 @@ export const ptBR: DictShape = {
     // ── Analysis settings page ───────────────────────────────────────
     analise_title: "Configuracao da Analise",
     analise_subtitle:
-      "Personalize o fluxo, copy e comportamento da analise para seus pacientes.",
+      "Personalize o fluxo, os textos e o comportamento da análise para seus pacientes.",
     analise_plan_atual: "Plano atual",
     analise_pre: "Pre-Analise",
     analise_capture: "Captura",
@@ -910,6 +933,7 @@ export const ptBR: DictShape = {
     admin_nav_leads: "Leads",
     admin_nav_analytics: "Analytics",
     admin_nav_dermatology: "Dermatologia",
+    admin_nav_library: "Biblioteca",
     admin_nav_form: "Formulario",
     admin_nav_prompt_ai: "Prompt IA",
 
@@ -1014,7 +1038,7 @@ export const ptBR: DictShape = {
     admin_leads_title: "Leads",
     admin_leads_subtitle:
       "Leads capturados em todos os tenants da plataforma.",
-    admin_leads_empty: "Nenhuma lead capturada ainda.",
+    admin_leads_empty: "Nenhum lead capturado ainda.",
     admin_leads_th_tenant: "Tenant",
     admin_leads_th_origin: "Origem",
 

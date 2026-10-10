@@ -192,7 +192,7 @@ export const analysisChannelRouter = router({
         select: { id: true, tenantId: true, isDefault: true },
       });
       if (!channel || channel.tenantId !== ctx.tenantId) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND", message: "Item não encontrado." });
       }
       const data: {
         label?: string;
@@ -291,7 +291,7 @@ export const analysisChannelRouter = router({
         select: { id: true, tenantId: true, isDefault: true },
       });
       if (!channel || channel.tenantId !== ctx.tenantId) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND", message: "Item não encontrado." });
       }
       if (channel.isDefault) {
         throw new TRPCError({

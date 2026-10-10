@@ -4,16 +4,31 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { trpc } from "@/lib/trpc/client";
 import { ImageUpload } from "@/components/shared/image-upload";
+import { encodeDescription, decodeDescription } from "@/lib/catalog/description";
+import {
+  conditionLabels,
+  skinTypeLabels,
+  objectiveLabels,
+  serviceCategoryLabels,
+} from "@/lib/sae/labels";
+
+type AddOn = { name: string; description: string; price: string };
+
+function capitalize(v: string): string {
+  return v ? v.charAt(0).toUpperCase() + v.slice(1) : v;
+}
 
 // Static fallbacks — used only when tagOptions returns no data from DB
 const fallbackConcernOptions = [
   "acne", "hyperpigmentation", "aging", "dehydration",
   "sensitivity", "rosacea", "dark_circles", "pores", "oiliness", "dullness",
+  "sagging", "acne_scars", "texture",
 ];
 const skinTypeOptions = ["oily", "dry", "combination", "normal", "sensitive"];
 const objectiveOptions = [
   "anti-aging", "anti-acne", "radiance", "hydration",
   "sensitivity", "firmness", "pore-control", "even-tone",
+  "sagging", "texture", "prevention",
 ];
 const stepOptions = [
   { value: "cleanser", label: "Limpeza" },
@@ -33,60 +48,19 @@ const sessionFrequencyOptions = [
   { value: "mensal", label: "Mensal" },
 ];
 
-// Prefix used to encode category/line/brand in the description field
-const META_PREFIX_RE = /^\[Category: (.*?) \| Line: (.*?) \| Brand: (.*?)\] ?/;
-const META_PREFIX_RE_OLD = /^\[Category: (.*?) \| Line: (.*?)\] ?/;
-
-function encodeDescription(
-  category: string,
-  productLine: string,
-  brand: string,
-  description: string
-): string {
-  const base = description.replace(META_PREFIX_RE, "").replace(META_PREFIX_RE_OLD, "");
-  if (!category && !productLine && !brand) return base;
-  return `[Category: ${category} | Line: ${productLine} | Brand: ${brand}] ${base}`;
-}
-
-function decodeDescription(raw: string | null | undefined): {
-  category: string;
-  productLine: string;
-  brand: string;
-  description: string;
-} {
-  if (!raw) return { category: "", productLine: "", brand: "", description: "" };
-  const match = raw.match(META_PREFIX_RE);
-  if (match) {
-    return {
-      category: match[1] ?? "",
-      productLine: match[2] ?? "",
-      brand: match[3] ?? "",
-      description: raw.replace(META_PREFIX_RE, ""),
-    };
-  }
-  // Backwards compat with old format without brand
-  const oldMatch = raw.match(META_PREFIX_RE_OLD);
-  if (oldMatch) {
-    return {
-      category: oldMatch[1] ?? "",
-      productLine: oldMatch[2] ?? "",
-      brand: "",
-      description: raw.replace(META_PREFIX_RE_OLD, ""),
-    };
-  }
-  return { category: "", productLine: "", brand: "", description: raw };
-}
-
 function TagSelector({
   label,
   options,
   selected,
   onChange,
+  labels,
 }: {
   label: string;
   options: string[];
   selected: string[];
   onChange: (tags: string[]) => void;
+  // Display names for the stored IDs (pt-BR). Unknown IDs show as-is.
+  labels?: Record<string, string>;
 }) {
   return (
     <div>
@@ -109,7 +83,7 @@ function TagSelector({
                   : "bg-blanc-casse text-pierre border-sable/40 hover:border-pierre"
               }`}
             >
-              {opt}
+              {capitalize(labels?.[opt] ?? opt)}
             </button>
           );
         })}
@@ -157,8 +131,13 @@ function ProductForm() {
     ecommerceLink: "",
     bookingLink: "",
     sessionCount: "",
-    sessionFrequency: "" as "" | "semanal" | "quinzenal" | "mensal",
+    sessionFrequency: "",
     durationMinutes: "",
+    serviceCategory: "" as "" | "injectables" | "technologies" | "skin",
+    projectionOnsetWeeks: "",
+    projectionPeakWeeks: "",
+    projectionImprovementPct: "",
+    addOns: [] as AddOn[],
     activeIngredients: "",
     concernTags: [] as string[],
     skinTypeTags: [] as string[],
@@ -189,8 +168,13 @@ function ProductForm() {
         ecommerceLink: p.ecommerceLink ?? "",
         bookingLink: ((p as { bookingLink?: string | null }).bookingLink) ?? "",
         sessionCount: ((p as { sessionCount?: number | null }).sessionCount)?.toString() ?? "",
-        sessionFrequency: (((p as { sessionFrequency?: string | null }).sessionFrequency) ?? "") as "" | "semanal" | "quinzenal" | "mensal",
+        sessionFrequency: p.sessionFrequency ?? "",
         durationMinutes: ((p as { durationMinutes?: number | null }).durationMinutes)?.toString() ?? "",
+        serviceCategory: (p.serviceCategory ?? "") as "" | "injectables" | "technologies" | "skin",
+        projectionOnsetWeeks: p.projectionOnsetWeeks?.toString() ?? "",
+        projectionPeakWeeks: p.projectionPeakWeeks?.toString() ?? "",
+        projectionImprovementPct: p.projectionImprovementPct?.toString() ?? "",
+        addOns: parseAddOns(p.addOns),
         activeIngredients: safeParseArray(p.activeIngredients).join(", "),
         concernTags: safeParseArray(p.concernTags),
         skinTypeTags: safeParseArray(p.skinTypeTags),
@@ -215,6 +199,29 @@ function ProductForm() {
     } catch {
       return [];
     }
+  }
+
+  function parseAddOns(json: string | null | undefined): AddOn[] {
+    if (!json) return [];
+    try {
+      const arr = JSON.parse(json);
+      if (!Array.isArray(arr)) return [];
+      return arr
+        .filter((a) => a && typeof a.name === "string")
+        .map((a) => ({
+          name: a.name,
+          description: typeof a.description === "string" ? a.description : "",
+          price: typeof a.price === "number" ? String(a.price) : "",
+        }));
+    } catch {
+      return [];
+    }
+  }
+
+  function intOrNull(v: string): number | null {
+    if (v.trim() === "") return null;
+    const n = parseInt(v, 10);
+    return Number.isFinite(n) ? n : null;
   }
 
   function textToJsonArray(text: string): string {
@@ -246,6 +253,21 @@ function ProductForm() {
       sessionCount: isService && form.sessionCount ? parseInt(form.sessionCount) : undefined,
       sessionFrequency: isService && form.sessionFrequency ? form.sessionFrequency : undefined,
       durationMinutes: isService && form.durationMinutes ? parseInt(form.durationMinutes) : undefined,
+      serviceCategory: isService ? (form.serviceCategory || null) : null,
+      projectionOnsetWeeks: isService ? intOrNull(form.projectionOnsetWeeks) : null,
+      projectionPeakWeeks: isService ? intOrNull(form.projectionPeakWeeks) : null,
+      projectionImprovementPct: isService ? intOrNull(form.projectionImprovementPct) : null,
+      addOns: isService
+        ? JSON.stringify(
+            form.addOns
+              .filter((a) => a.name.trim())
+              .map((a) => ({
+                name: a.name.trim(),
+                ...(a.description.trim() ? { description: a.description.trim() } : {}),
+                ...(a.price.trim() && !isNaN(parseFloat(a.price)) ? { price: parseFloat(a.price) } : {}),
+              }))
+          )
+        : null,
       activeIngredients: textToJsonArray(form.activeIngredients),
       concernTags: JSON.stringify(form.concernTags),
       skinTypeTags: JSON.stringify(form.skinTypeTags),
@@ -482,23 +504,21 @@ function ProductForm() {
               </div>
               <div>
                 <label className={labelClass}>Frequência das sessões</label>
-                <select
+                <input
+                  list="session-frequency-options"
                   value={form.sessionFrequency}
-                  onChange={(e) =>
-                    setForm((f) => ({
-                      ...f,
-                      sessionFrequency: e.target.value as "" | "semanal" | "quinzenal" | "mensal",
-                    }))
-                  }
+                  onChange={(e) => setForm((f) => ({ ...f, sessionFrequency: e.target.value }))}
+                  placeholder="mensal, a cada 4-6 meses..."
+                  maxLength={60}
                   className={inputClass}
-                >
-                  <option value="">Selecione...</option>
+                />
+                <datalist id="session-frequency-options">
                   {sessionFrequencyOptions.map((o) => (
                     <option key={o.value} value={o.value}>
                       {o.label}
                     </option>
                   ))}
-                </select>
+                </datalist>
               </div>
               <div>
                 <label className={labelClass}>Duração por sessão (minutos)</label>
@@ -512,12 +532,143 @@ function ProductForm() {
                 />
               </div>
             </div>
+
+            <div>
+              <label className={labelClass}>Categoria do procedimento</label>
+              <select
+                value={form.serviceCategory}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    serviceCategory: e.target.value as "" | "injectables" | "technologies" | "skin",
+                  }))
+                }
+                className={inputClass}
+              >
+                <option value="">Sem categoria</option>
+                {(["injectables", "technologies", "skin"] as const).map((c) => (
+                  <option key={c} value={c}>
+                    {capitalize(serviceCategoryLabels[c])}
+                  </option>
+                ))}
+              </select>
+              <p className="text-[10px] text-pierre font-light mt-1">
+                Clínicas de procedimentos recebem o melhor procedimento de cada categoria na recomendação.
+              </p>
+            </div>
+
+            <div>
+              <p className={labelClass}>Curva de resultado (usada na projeção da pele)</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-1">
+                <div>
+                  <label className={labelClass}>Início do efeito (semanas)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="104"
+                    value={form.projectionOnsetWeeks}
+                    onChange={(e) => setForm((f) => ({ ...f, projectionOnsetWeeks: e.target.value }))}
+                    placeholder="0"
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Resultado máximo (semanas)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="104"
+                    value={form.projectionPeakWeeks}
+                    onChange={(e) => setForm((f) => ({ ...f, projectionPeakWeeks: e.target.value }))}
+                    placeholder="12"
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Melhora visível esperada (%)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={form.projectionImprovementPct}
+                    onChange={(e) => setForm((f) => ({ ...f, projectionImprovementPct: e.target.value }))}
+                    placeholder="50"
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <p className={labelClass}>Complementos opcionais</p>
+              <p className="text-[10px] text-pierre font-light mb-2">
+                Extras que tornam o procedimento mais confortável, rápido ou potente (anestésico, LED, drug delivery...). Aparecem para o paciente junto ao procedimento.
+              </p>
+              <div className="space-y-2">
+                {form.addOns.map((a, i) => (
+                  <div key={i} className="grid grid-cols-1 md:grid-cols-[1fr_1.5fr_110px_auto] gap-2">
+                    <input
+                      value={a.name}
+                      onChange={(e) =>
+                        setForm((f) => ({
+                          ...f,
+                          addOns: f.addOns.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)),
+                        }))
+                      }
+                      placeholder="Nome"
+                      className={inputClass}
+                    />
+                    <input
+                      value={a.description}
+                      onChange={(e) =>
+                        setForm((f) => ({
+                          ...f,
+                          addOns: f.addOns.map((x, j) => (j === i ? { ...x, description: e.target.value } : x)),
+                        }))
+                      }
+                      placeholder="Benefício (opcional)"
+                      className={inputClass}
+                    />
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={a.price}
+                      onChange={(e) =>
+                        setForm((f) => ({
+                          ...f,
+                          addOns: f.addOns.map((x, j) => (j === i ? { ...x, price: e.target.value } : x)),
+                        }))
+                      }
+                      placeholder="R$"
+                      className={inputClass}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setForm((f) => ({ ...f, addOns: f.addOns.filter((_, j) => j !== i) }))}
+                      className="px-3 py-2 border border-sable/40 text-xs text-pierre font-light hover:bg-ivoire"
+                    >
+                      Remover
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  setForm((f) => ({ ...f, addOns: [...f.addOns, { name: "", description: "", price: "" }] }))
+                }
+                className="mt-2 px-4 py-2 border border-sable/40 text-xs text-terre font-light tracking-wide hover:bg-ivoire"
+              >
+                Adicionar complemento
+              </button>
+            </div>
           </div>
         )}
 
         {/* Tags — from DB or fallback */}
         <TagSelector
           label="Condições que trata *"
+          labels={conditionLabels}
           options={concernOptions}
           selected={form.concernTags}
           onChange={(tags) => setForm((f) => ({ ...f, concernTags: tags }))}
@@ -525,6 +676,7 @@ function ProductForm() {
 
         <TagSelector
           label="Tipos de pele compatíveis *"
+          labels={skinTypeLabels}
           options={resolvedSkinTypes}
           selected={form.skinTypeTags}
           onChange={(tags) => setForm((f) => ({ ...f, skinTypeTags: tags }))}
@@ -532,6 +684,7 @@ function ProductForm() {
 
         <TagSelector
           label="Objetivos *"
+          labels={objectiveLabels}
           options={resolvedObjectives}
           selected={form.objectiveTags}
           onChange={(tags) => setForm((f) => ({ ...f, objectiveTags: tags }))}
@@ -565,9 +718,9 @@ function ProductForm() {
               }
               className={inputClass}
             >
-              <option value={1}>Leve (Tier 1)</option>
-              <option value={2}>Moderado (Tier 2)</option>
-              <option value={3}>Intenso (Tier 3)</option>
+              <option value={1}>Leve (nível 1)</option>
+              <option value={2}>Moderado (nível 2)</option>
+              <option value={3}>Intenso (nível 3)</option>
             </select>
           </div>
           {!isService && (

@@ -1,4 +1,5 @@
 import { initTRPC, TRPCError } from "@trpc/server";
+import { z } from "zod/v4";
 import { getServerSession } from "next-auth";
 import superjson from "superjson";
 import { db } from "@skinner/db";
@@ -37,8 +38,29 @@ export const createContext = async (
   };
 };
 
+// Validation messages in Portuguese (product language). Applies to every
+// zod schema evaluated on the server.
+z.config(z.locales.pt());
+
+// tRPC puts input-validation failures in error.message as a JSON dump of zod
+// issues, which the UI would show verbatim. Replace it with the first issue
+// as a readable pt-BR sentence (field name + message).
+function readableValidationMessage(cause: unknown): string | null {
+  if (!cause || typeof cause !== "object" || !("issues" in cause)) return null;
+  const issues = (cause as { issues?: { path?: PropertyKey[]; message?: string }[] }).issues;
+  if (!Array.isArray(issues) || issues.length === 0) return null;
+  const first = issues[0];
+  const field = first.path && first.path.length > 0 ? String(first.path[first.path.length - 1]) : null;
+  const msg = first.message ?? "valor inválido";
+  return field ? `Verifique o campo "${field}": ${msg}.` : `Dados inválidos: ${msg}.`;
+}
+
 const t = initTRPC.context<Context>().create({
   transformer: superjson,
+  errorFormatter({ shape, error }) {
+    const readable = error.code === "BAD_REQUEST" ? readableValidationMessage(error.cause) : null;
+    return readable ? { ...shape, message: readable } : shape;
+  },
 });
 
 export const router = t.router;
@@ -46,7 +68,7 @@ export const publicProcedure = t.procedure;
 
 const isAuthed = t.middleware(({ ctx, next }) => {
   if (!ctx.userId) {
-    throw new TRPCError({ code: "UNAUTHORIZED" });
+    throw new TRPCError({ code: "UNAUTHORIZED", message: "Sessão expirada. Faça login novamente." });
   }
   return next({
     ctx: { ...ctx, userId: ctx.userId, role: ctx.role },
@@ -67,7 +89,7 @@ const TENANT_CACHE_TTL_MS = 30_000;
 
 const hasTenant = t.middleware(async ({ ctx, next }) => {
   if (!ctx.tenantId) {
-    throw new TRPCError({ code: "FORBIDDEN", message: "No tenant context" });
+    throw new TRPCError({ code: "FORBIDDEN", message: "Organização não identificada." });
   }
 
   const tenantId = ctx.tenantId;
@@ -79,7 +101,7 @@ const hasTenant = t.middleware(async ({ ctx, next }) => {
     if (!cached.ok) {
       throw new TRPCError({
         code: "UNAUTHORIZED",
-        message: "Tenant no longer exists",
+        message: "Esta organização não existe mais.",
       });
     }
     status = cached.status;
@@ -96,7 +118,7 @@ const hasTenant = t.middleware(async ({ ctx, next }) => {
       });
       throw new TRPCError({
         code: "UNAUTHORIZED",
-        message: "Tenant no longer exists",
+        message: "Esta organização não existe mais.",
       });
     }
     status = tenant.status;
@@ -108,12 +130,12 @@ const hasTenant = t.middleware(async ({ ctx, next }) => {
   }
 
   if (status === "deleted") {
-    throw new TRPCError({ code: "UNAUTHORIZED", message: "Tenant deleted" });
+    throw new TRPCError({ code: "UNAUTHORIZED", message: "Esta organização foi excluída." });
   }
   if (status === "paused") {
     throw new TRPCError({
       code: "FORBIDDEN",
-      message: "Sua conta esta pausada. Entre em contato com o suporte para reativa-la.",
+      message: "Sua conta está pausada. Entre em contato com o suporte para reativá-la.",
     });
   }
 
@@ -124,7 +146,7 @@ const hasTenant = t.middleware(async ({ ctx, next }) => {
 
 const isAdmin = t.middleware(({ ctx, next }) => {
   if (ctx.role !== "skinner_admin") {
-    throw new TRPCError({ code: "FORBIDDEN", message: "Admin only" });
+    throw new TRPCError({ code: "FORBIDDEN", message: "Acesso restrito a administradores." });
   }
   return next({ ctx });
 });

@@ -32,13 +32,13 @@ const MATCHER_TEMPLATES: Record<Locale, {
     indicatedFor: "Indicado para pele",
     alignedObjective: "Alinhado com seu objetivo",
     ingredientsHelp: "Ingredientes que ajudam",
-    treatmentSessions: (count) => `${count} sessao${count > 1 ? "es" : ""}`,
-    treatmentFrequency: (freq) => `, frequencia ${freq}`,
-    treatmentDuration: (min) => `, duracao de ${min} minutos cada`,
+    treatmentSessions: (count) => `${count} ${count > 1 ? "sessões" : "sessão"}`,
+    treatmentFrequency: (freq) => `, frequência ${freq}`,
+    treatmentDuration: (min) => `, duração de ${min} minutos cada`,
     treatmentLine: (sessions, freq, duration) =>
       `Tratamento em ${sessions}${freq}${duration}.`,
     useLine: (step, time) =>
-      `Usar na etapa de ${step}, ${time}. Aplicar conforme instrucao do produto.`,
+      `Usar na etapa de ${step}, ${time}. Aplicar conforme instrução do produto.`,
     treatmentStep: "tratamento",
   },
   es: {
@@ -86,8 +86,17 @@ const MATCHER_TEMPLATES: Record<Locale, {
 export async function matchProducts(
   tenantId: string,
   analysis: AnalysisOutput,
-  options?: { pregnantOrNursing?: string; locale?: Locale; maxServices?: number | null }
+  options?: {
+    pregnantOrNursing?: string;
+    locale?: Locale;
+    maxServices?: number | null;
+    // "aesthetic_clinic" switches SERVICE scoring + selection to the
+    // procedure-clinic model (see scoreService / category diversity below).
+    // Products are scored identically in both segments.
+    segment?: string | null;
+  }
 ): Promise<MatchedProduct[]> {
+  const isClinic = options?.segment === "aesthetic_clinic";
   const locale: Locale = options?.locale ?? "pt-BR";
   const tmpl = MATCHER_TEMPLATES[locale] ?? MATCHER_TEMPLATES["pt-BR"];
   const catalogItems = await db.product.findMany({
@@ -127,8 +136,11 @@ export async function matchProducts(
     const contraindications = safeParseArray(product.contraindications);
     const activeIngs = safeParseArray(product.activeIngredients).map((i) => i.toLowerCase());
 
-    // Skip if contraindicated for pregnancy/nursing
-    if (isPregnant && contraindications.some((c) => c === "pregnancy" || c === "breastfeeding" || c === "pregnant" || c === "nursing")) {
+    // Skip if contraindicated for pregnancy/nursing. The catalog form asks
+    // clinics to type contraindications in Portuguese ("gravidez,
+    // amamentação"), so the pt-BR terms are recognized alongside the legacy
+    // English keys.
+    if (isPregnant && contraindications.some((c) => PREGNANCY_CONTRAINDICATIONS.has(normalizeTerm(c)))) {
       return null;
     }
 
@@ -156,7 +168,32 @@ export async function matchProducts(
     const ingredientMatches = activeIngs.filter((ing) => recommendedIngredients.has(ing)).length;
     const ingredientScore = Math.min(ingredientMatches / Math.max(recommendedIngredients.size, 1), 1) * 0.20;
 
-    const matchScore = Math.round((concernScore + skinTypeMatch + objectiveMatch + severityScore + ingredientScore) * 100) / 100;
+    // Procedure-clinic service scoring (segment "aesthetic_clinic"). The
+    // dermocosmetics formula above rewards ingredient overlap with the KB and
+    // breadth of concerns covered, which buries focused high-value procedures
+    // (botulinum toxin, fillers) under "generalist" ones. For clinics:
+    //   concern relevance weighted by detected severity ... 0.45
+    //   covers the most severe detected condition ......... 0.10
+    //   objective match ................................... 0.20
+    //   skin type match ................................... 0.15
+    //   severity fit ...................................... 0.10
+    // No ingredient bonus (procedures are not ingredient-driven).
+    let matchScore: number;
+    if (isClinic && product.type === "service") {
+      const totalSeverity = analysis.conditions.reduce((sum, c) => sum + c.severity, 0) || 1;
+      const coveredSeverity = analysis.conditions
+        .filter((c) => concernTags.includes(c.name))
+        .reduce((sum, c) => sum + c.severity, 0);
+      const relevanceScore = (coveredSeverity / totalSeverity) * 0.45;
+      const topCondition = [...analysis.conditions].sort((a, b) => b.severity - a.severity)[0];
+      const topScore = topCondition && concernTags.includes(topCondition.name) ? 0.10 : 0;
+      const clinicObjective = objectiveTags.includes(analysis.primary_objective) ? 0.20 : 0;
+      const clinicSkinType = skinTypeTags.includes(analysis.skin_type) ? 0.15 : 0;
+      matchScore =
+        Math.round((relevanceScore + topScore + clinicObjective + clinicSkinType + severityScore) * 100) / 100;
+    } else {
+      matchScore = Math.round((concernScore + skinTypeMatch + objectiveMatch + severityScore + ingredientScore) * 100) / 100;
+    }
 
     // Generate reason in patient locale (translates raw IDs via labels.ts).
     const reasons: string[] = [];
@@ -170,7 +207,7 @@ export async function matchProducts(
     if (objectiveMatch > 0) {
       reasons.push(`${tmpl.alignedObjective}: ${tr(objectiveLabelsLocalized, analysis.primary_objective, locale)}`);
     }
-    if (ingredientMatches > 0) {
+    if (ingredientMatches > 0 && !(isClinic && product.type === "service")) {
       const matchedIngs = activeIngs.filter((ing) => recommendedIngredients.has(ing));
       reasons.push(`${tmpl.ingredientsHelp}: ${matchedIngs.join(", ")}`);
     }
@@ -213,6 +250,12 @@ export async function matchProducts(
       durationMinutes: product.durationMinutes,
       recommendationTag: "recomendado", // will be updated below
       activeIngredients: safeParseArray(product.activeIngredients),
+      serviceCategory: product.serviceCategory,
+      concernTags,
+      addOns: safeParseAddOns(product.addOns),
+      projectionOnsetWeeks: product.projectionOnsetWeeks,
+      projectionPeakWeeks: product.projectionPeakWeeks,
+      projectionImprovementPct: product.projectionImprovementPct,
       // Internal fields for sorting (not part of MatchedProduct type, stripped later)
       _popularity: product._count.recommendations,
       _priorityRank: product.priorityRank,
@@ -271,9 +314,43 @@ export async function matchProducts(
   // Tag services. Default 2; tenants can raise it via TenantConfig.maxServiceRecs
   // (e.g. procedure clinics whose catalog is mostly services). Clamped to 1-10.
   const maxServices = Math.min(Math.max(options?.maxServices ?? 2, 1), 10);
-  const selectedServices = services.slice(0, maxServices);
-  for (const svc of selectedServices) {
-    svc.recommendationTag = "recomendado";
+  let selectedServices: typeof services;
+  if (isClinic) {
+    // Category diversity (mirrors the product routine-step pass): best
+    // relevant procedure of each category first, then the highest scores.
+    // A category only gets a slot when its best procedure treats a detected
+    // condition AND scores at least 60% of the overall best procedure, so a
+    // weak match is never pushed above a strong one just for variety.
+    selectedServices = [];
+    const usedServiceIds = new Set<string>();
+    const bestServiceScore = services[0]?.matchScore ?? 0;
+    for (const category of SERVICE_CATEGORIES) {
+      if (selectedServices.length >= maxServices) break;
+      const best = services.find(
+        (svc) =>
+          svc.serviceCategory === category &&
+          !usedServiceIds.has(svc.productId) &&
+          svc.matchScore >= bestServiceScore * 0.6 &&
+          (svc.concernTags ?? []).some((tag) => detectedConcerns.includes(tag))
+      );
+      if (best) {
+        best.recommendationTag = "recomendado";
+        selectedServices.push(best);
+        usedServiceIds.add(best.productId);
+      }
+    }
+    for (const svc of services) {
+      if (selectedServices.length >= maxServices) break;
+      if (usedServiceIds.has(svc.productId)) continue;
+      svc.recommendationTag = "alternativa";
+      selectedServices.push(svc);
+      usedServiceIds.add(svc.productId);
+    }
+  } else {
+    selectedServices = services.slice(0, maxServices);
+    for (const svc of selectedServices) {
+      svc.recommendationTag = "recomendado";
+    }
   }
 
   // Strip internal fields before returning
@@ -284,7 +361,58 @@ export async function matchProducts(
     return stripInternal(selectedProducts.slice(0, 6));
   }
 
+  // Procedure clinics: procedures come first so they get the top ranks
+  // (Recommendation.rank → PDF and kit order). Home care follows.
+  if (isClinic) {
+    return [...stripInternal(selectedServices), ...stripInternal(selectedProducts.slice(0, 5))];
+  }
+
   return [...stripInternal(selectedProducts.slice(0, 5)), ...stripInternal(selectedServices)];
+}
+
+// Category order for the procedure-clinic diversity pass.
+const SERVICE_CATEGORIES = ["injectables", "technologies", "skin"] as const;
+
+// Contraindication terms that mean "not during pregnancy / breastfeeding".
+// Compared after normalizeTerm (lowercase, no accents).
+const PREGNANCY_CONTRAINDICATIONS = new Set([
+  "pregnancy",
+  "pregnant",
+  "breastfeeding",
+  "nursing",
+  "gravidez",
+  "gravida",
+  "gestacao",
+  "gestante",
+  "gestantes",
+  "amamentacao",
+  "amamentando",
+  "lactacao",
+  "lactantes",
+]);
+
+function normalizeTerm(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
+
+function safeParseAddOns(
+  json: string | null | undefined
+): { name: string; description?: string; price?: number }[] {
+  if (!json) return [];
+  try {
+    const parsed = JSON.parse(json);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (a): a is { name: string; description?: string; price?: number } =>
+        !!a && typeof a === "object" && typeof a.name === "string" && a.name.trim() !== ""
+    );
+  } catch {
+    return [];
+  }
 }
 
 function safeParseArray(json: string | null | undefined): string[] {

@@ -13,6 +13,7 @@ import { resolveProductChannel } from "@/lib/cart/resolve-channel";
 import type { CartItem } from "@/lib/cart/types";
 import type { FullAnalysisResult } from "@/lib/sae/types";
 import { I18nProvider } from "@/lib/i18n/client";
+import { friendlyAnalysisError } from "@/lib/analysis/error-message";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { LOCALES, DEFAULT_LOCALE, type Locale } from "@/lib/i18n/types";
 
@@ -55,7 +56,9 @@ export default function AnalysisPage({
       setStep("result");
     },
     onError: (err) => {
-      setErrorMsg(err.message);
+      // localT is declared further down this component; the callback only
+      // runs after render, so the binding is initialized by then.
+      setErrorMsg(friendlyAnalysisError(err, localT.patient.error_generic));
       // FORBIDDEN = channel paused/expired/maxAnalyses, tenant quota exhausted,
       //            identity limit reached.
       // BAD_REQUEST = missing contact when channel requires identity.
@@ -149,6 +152,8 @@ export default function AnalysisPage({
         mercadoPagoEmail: cfg.mercadoPagoEmail ?? null,
         // Skin projection
         projectionEnabled: cfg.projectionEnabled ?? true,
+        // Tenant segment (procedure clinics reorder results + projection).
+        segment: cfg.segment ?? null,
       }
     : undefined;
 
@@ -197,7 +202,7 @@ export default function AnalysisPage({
           phone: data.clientPhone || undefined,
         });
         if (!check.allowed) {
-          setErrorMsg(check.message ?? "Limite atingido para este canal.");
+          setErrorMsg(check.message ?? localT.patient.limit_reached_default);
           setErrorBlocking(true);
           setStep("error");
           return;
@@ -233,7 +238,7 @@ export default function AnalysisPage({
   if (tenant.isLoading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-blanc-casse">
-        <p className="text-pierre font-light">Carregando...</p>
+        <p className="text-pierre font-light">{getDictionary(DEFAULT_LOCALE).patient.loading}</p>
       </main>
     );
   }
@@ -241,8 +246,8 @@ export default function AnalysisPage({
     return (
       <main className="flex min-h-screen items-center justify-center bg-blanc-casse">
         <div className="text-center">
-          <h1 className="font-serif text-2xl text-carbone">Nao encontrado</h1>
-          <p className="text-pierre mt-2 font-light">Este link de analise nao e valido.</p>
+          <h1 className="font-serif text-2xl text-carbone">{localT.patient.not_found_title}</h1>
+          <p className="text-pierre mt-2 font-light">{localT.patient.not_found_text}</p>
         </div>
       </main>
     );
@@ -451,7 +456,7 @@ export default function AnalysisPage({
         {step === "error" && (
           <div className="w-full max-w-lg mx-auto px-4 text-center space-y-4">
             <h2 className="font-serif text-xl text-terre">
-              {errorBlocking ? "Nao foi possivel realizar a analise" : "Erro na analise"}
+              {errorBlocking ? localT.patient.error_title_blocking : localT.patient.error_title}
             </h2>
             <p className="text-sm text-pierre font-light">{errorMsg}</p>
             {!errorBlocking && (
@@ -462,7 +467,7 @@ export default function AnalysisPage({
                 onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = brandPrimary)}
                 className="px-6 py-2 text-blanc-casse text-sm font-light tracking-wide transition-colors"
               >
-                Tentar novamente
+                {localT.patient.error_retry}
               </button>
             )}
           </div>

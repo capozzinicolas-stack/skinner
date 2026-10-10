@@ -1,5 +1,6 @@
 import { z } from "zod/v4";
 import { router, tenantProcedure } from "../trpc";
+import { skinTypeLabels, objectiveLabels } from "@/lib/sae/labels";
 
 /**
  * Leads router — surfaces analyses where the patient supplied at least one
@@ -88,8 +89,8 @@ export const leadsRouter = router({
         email: r.clientEmail ?? "",
         whatsapp: r.clientPhone ?? "",
         idade: r.clientAge ?? "",
-        tipoPele: r.skinType ?? "",
-        objetivoPrincipal: r.primaryObjective ?? "",
+        tipoPele: r.skinType ? skinTypeLabels[r.skinType] ?? r.skinType : "",
+        objetivoPrincipal: r.primaryObjective ? objectiveLabels[r.primaryObjective] ?? r.primaryObjective : "",
         analiseId: r.id,
       }));
     }),

@@ -4,6 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import { trpc } from "@/lib/trpc/client";
 import { useI18n } from "@/lib/i18n/client";
+import { conditionLabels } from "@/lib/sae/labels";
+import { stripDescriptionMeta } from "@/lib/catalog/description";
+
+function conditionName(id: string): string {
+  const v = conditionLabels[id] ?? id;
+  return v.charAt(0).toUpperCase() + v.slice(1);
+}
 
 const stepLabels: Record<string, string> = {
   cleanser: "Limpeza",
@@ -341,6 +348,12 @@ export default function CatalogPage() {
             {t.dashboardPages.cat_import_csv}
           </Link>
           <Link
+            href="/dashboard/catalogo/biblioteca"
+            className="px-4 py-2 border border-sable text-terre text-sm font-light tracking-wide min-h-[44px] md:min-h-0 flex items-center"
+          >
+            Biblioteca de procedimentos
+          </Link>
+          <Link
             href="/dashboard/catalogo/novo"
             className="px-4 py-2 bg-carbone text-blanc-casse text-sm font-light tracking-wide min-h-[44px] md:min-h-0 flex items-center"
           >
@@ -365,7 +378,7 @@ export default function CatalogPage() {
           <option value="">{t.dashboardPages.cat_filter_all_concerns}</option>
           {tags.data?.concerns.map((c) => (
             <option key={c} value={c}>
-              {c}
+              {conditionName(c)}
             </option>
           ))}
         </select>
@@ -516,9 +529,9 @@ export default function CatalogPage() {
                           )}
                           <div>
                             <p className="text-sm text-carbone font-light">{p.name}</p>
-                            {p.description && (
+                            {stripDescriptionMeta(p.description) && (
                               <p className="text-xs text-pierre font-light truncate max-w-xs">
-                                {p.description}
+                                {stripDescriptionMeta(p.description)}
                               </p>
                             )}
                           </div>
@@ -563,7 +576,7 @@ export default function CatalogPage() {
                               key={tag}
                               className="text-[10px] px-2 py-0.5 border border-sable/30 text-pierre uppercase tracking-wider font-light"
                             >
-                              {tag}
+                              {conditionName(tag)}
                             </span>
                           ))}
                         </div>
@@ -649,7 +662,7 @@ export default function CatalogPage() {
                   key={tag}
                   className="text-xs px-3 py-1 border border-sable/30 text-pierre font-light uppercase tracking-wider"
                 >
-                  {tag}: {count}
+                  {conditionName(tag)}: {count}
                 </span>
               ))}
           </div>

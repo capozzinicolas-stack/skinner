@@ -106,6 +106,33 @@ TOM TECNICO/CLINICO:
 - Mantenha o tom profissional mas acolhedor — preciso, nao alarmista.
 `;
 
+  // Procedure clinics (Tenant.segment = "aesthetic_clinic"): the plan is a
+  // protocol of in-clinic procedures, home care is only a complement. The
+  // clinic's own active procedures are listed so Claude references real
+  // offerings by name instead of generic skincare steps.
+  let clinicBlock = "";
+  if (input.segment === "aesthetic_clinic") {
+    const procedures = await db.product.findMany({
+      where: { tenantId: input.tenantId, isActive: true, type: "service" },
+      select: { name: true },
+      orderBy: { priorityRank: "desc" },
+      take: 60,
+    });
+    const procedureList = procedures.map((p) => p.name).join("; ");
+    clinicBlock = `
+CONTEXTO: CLINICA DE PROCEDIMENTOS ESTETICOS (CRITICO):
+- Este paciente esta sendo avaliado por uma clinica de procedimentos esteticos. O plano deve ser orientado a PROCEDIMENTOS realizados na clinica. Cuidados em casa entram apenas como complemento que potencializa e mantem o resultado.
+- "action_plan.phase1": avaliacao presencial e os primeiros procedimentos indicados para a queixa principal.
+- "action_plan.phase2": sessoes seguintes e procedimentos complementares que potencializam o resultado.
+- "action_plan.phase3": manutencao (frequencia de retorno a clinica) e cuidados em casa.
+- "timeline.weeks4/weeks8/weeks12": descreva o que o paciente vai notar de acordo com o tempo de resposta tipico de cada tipo de procedimento (injetaveis mostram resultado em dias ou poucas semanas; bioestimuladores, ultrassom microfocado, radiofrequencia e lasers evoluem ao longo de meses).
+${procedureList ? `- Procedimentos que esta clinica oferece: ${procedureList}. Cite-os pelo nome quando fizer sentido. NUNCA cite procedimentos fora desta lista.` : ""}
+- Nao prometa resultados, nao cite precos e nao recomende marcas de produtos.
+- As condicoes "acne_scars" (cicatrizes de acne) e "texture" (textura irregular) existem na base: use-as quando observar cicatrizes de acne ou textura irregular e poros aparentes.
+- "primary_objective": devolva exatamente o valor informado no questionario.
+`;
+  }
+
   const systemPrompt = `Voce e um dermatologista especialista em analise facial e dermocosmeticos. Voce trabalha para a plataforma Skinner, que fornece analise de pele baseada em IA para clinicas, laboratorios e farmacias no Brasil.
 
 Sua tarefa e analisar a foto facial do paciente junto com as respostas do questionario para fornecer um diagnostico dermatologico preciso e um plano de tratamento personalizado.
@@ -117,7 +144,7 @@ ${conditionsKB}
 
 INGREDIENTES ATIVOS CONHECIDOS:
 ${ingredientsKB}
-${toneBlock}
+${toneBlock}${clinicBlock}
 REGRAS:
 1. Analise a foto com atencao: textura, poros, manchas, vermelhidao, oleosidade, linhas, firmeza, tom de pele
 2. Cruze o que voce ve na foto com as respostas do questionario

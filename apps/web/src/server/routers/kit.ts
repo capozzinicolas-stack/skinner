@@ -58,7 +58,7 @@ export const kitRouter = router({
       });
 
       if (!tenant) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND", message: "Item não encontrado." });
       }
 
       const kit = await ctx.db.kit.findUnique({
@@ -77,7 +77,7 @@ export const kitRouter = router({
       });
 
       if (!kit || !kit.isActive) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND", message: "Item não encontrado." });
       }
 
       return { tenant, kit };
@@ -154,7 +154,7 @@ export const kitRouter = router({
         where: { id: input.id },
       });
       if (existing.tenantId !== ctx.tenantId) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND", message: "Item não encontrado." });
       }
 
       const { id, items, targetConditions, targetSkinTypes, ...kitData } = input;
@@ -208,7 +208,7 @@ export const kitRouter = router({
         where: { id: input.id },
       });
       if (existing.tenantId !== ctx.tenantId) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND", message: "Item não encontrado." });
       }
       return ctx.db.kit.update({
         where: { id: input.id },
@@ -231,7 +231,7 @@ export const kitRouter = router({
         where: { id: input.kitId },
       });
       if (kit.tenantId !== ctx.tenantId) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND", message: "Item não encontrado." });
       }
 
       // Verify product belongs to tenant
@@ -239,7 +239,7 @@ export const kitRouter = router({
         where: { id: input.productId },
       });
       if (product.tenantId !== ctx.tenantId) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND", message: "Item não encontrado." });
       }
 
       return ctx.db.kitItem.create({
@@ -262,7 +262,7 @@ export const kitRouter = router({
         include: { kit: true },
       });
       if (item.kit.tenantId !== ctx.tenantId) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND", message: "Item não encontrado." });
       }
       return ctx.db.kitItem.delete({ where: { id: input.itemId } });
     }),

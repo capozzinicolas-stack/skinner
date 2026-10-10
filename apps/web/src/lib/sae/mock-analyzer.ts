@@ -72,7 +72,7 @@ export async function mockAnalyze(input: AnalysisInput): Promise<AnalysisOutput>
     },
     sagging: {
       severity: ageRange === "45-54" || ageRange === "55+" ? 2 : 1,
-      description: "Perda de firmeza visível na região mandibular e contorno facial. Sinais iniciais de ptose tecidual e flacidez cutânea, com diminuição da definição do jawline e leve descolamento dos tecidos da face média.",
+      description: "Perda de firmeza visível na região mandibular e contorno facial. Sinais iniciais de ptose tecidual e flacidez cutânea, com diminuição da definição do contorno da mandíbula e leve descolamento dos tecidos da face média.",
     },
   };
 
@@ -232,7 +232,7 @@ export async function mockAnalyze(input: AnalysisInput): Promise<AnalysisOutput>
       status: hasSagging ? "concern" : hasAging || hasAcne ? "attention" : "good",
       title: hasSagging ? "Flacidez mandibular" : hasAging ? "Perda de contorno" : hasAcne ? "Lesões no contorno" : "Contorno definido",
       observation: hasSagging
-        ? "Perda significativa de firmeza no contorno mandibular. Ptose tecidual visível com diminuição da definição do jawline e leve descolamento dos tecidos da face média."
+        ? "Perda significativa de firmeza no contorno mandibular. Ptose tecidual visível com diminuição da definição do contorno da mandíbula e leve descolamento dos tecidos da face média."
         : hasAging
         ? "Leve perda de definição mandibular. Diminuição da firmeza ao longo do contorno facial."
         : hasAcne

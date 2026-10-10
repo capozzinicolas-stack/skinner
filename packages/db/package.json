@@ -10,7 +10,8 @@
     "db:push": "prisma db push",
     "db:seed": "tsx src/seed.ts",
     "db:studio": "prisma studio",
-    "db:seed:demo-estetica": "tsx src/seed-demo-estetica.ts"
+    "db:seed:demo-estetica": "tsx src/seed-demo-estetica.ts",
+    "db:seed:clinic-segment": "tsx src/seed-clinic-segment.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.9.0",

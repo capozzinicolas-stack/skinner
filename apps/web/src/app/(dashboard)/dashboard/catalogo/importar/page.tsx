@@ -236,7 +236,7 @@ export default function ImportPage() {
           onClick={downloadTemplate}
           className="mt-4 px-4 py-2 border border-sable text-terre text-sm font-light tracking-wide"
         >
-          Baixar template
+          Baixar modelo
         </button>
       </div>
 

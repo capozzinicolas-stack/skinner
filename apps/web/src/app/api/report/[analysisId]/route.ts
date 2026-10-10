@@ -33,7 +33,7 @@ export async function GET(
 
     if (!analysis || !analysis.results) {
       return NextResponse.json(
-        { error: "Analise nao encontrada" },
+        { error: "Análise não encontrada" },
         { status: 404 }
       );
     }
@@ -60,6 +60,7 @@ export async function GET(
       clientName: analysis.clientName ?? undefined,
       date: new Date(analysis.createdAt).toLocaleDateString("pt-BR"),
       disclaimer: analysis.tenant.disclaimer ?? undefined,
+      segment: analysis.tenant.segment,
       analysis: {
         skin_type: analysis.skinType ?? "normal",
         conditions,
@@ -116,13 +117,13 @@ export async function GET(
     return new NextResponse(new Uint8Array(buffer), {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `inline; filename="skinners-report-${analysis.id.slice(0, 8)}.pdf"`,
+        "Content-Disposition": `inline; filename="relatorio-skinner-${analysis.id.slice(0, 8)}.pdf"`,
       },
     });
   } catch (error) {
     console.error("PDF generation error:", error);
     return NextResponse.json(
-      { error: "Erro ao gerar relatorio" },
+      { error: "Erro ao gerar relatório" },
       { status: 500 }
     );
   }

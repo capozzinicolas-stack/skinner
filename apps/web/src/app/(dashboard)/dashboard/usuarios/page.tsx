@@ -6,7 +6,7 @@ import { OrganizationTabs } from "@/components/shared/organization-tabs";
 import { useI18n } from "@/lib/i18n/client";
 
 const roleLabels: Record<string, string> = {
-  b2b_admin: "Admin",
+  b2b_admin: "Administrador",
   b2b_analyst: "Analista",
   b2b_viewer: "Visualizador",
 };
@@ -105,7 +105,7 @@ export default function UsersPage() {
               >
                 <option value="b2b_viewer">Visualizador</option>
                 <option value="b2b_analyst">Analista</option>
-                <option value="b2b_admin">Admin</option>
+                <option value="b2b_admin">Administrador</option>
               </select>
             </div>
           </div>

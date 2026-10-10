@@ -162,6 +162,37 @@ const DIRECT: Record<string, { es: string; en: string }> = {
   "sim, estou gravida": { es: "Si, estoy embarazada", en: "Yes, pregnant" },
   "sim, estou grávida": { es: "Si, estoy embarazada", en: "Yes, pregnant" },
   "sim, estou amamentando": { es: "Si, estoy amamantando", en: "Yes, nursing" },
+
+  // Procedure-clinic questionnaire (CLINIC_DEFAULT_QUESTIONS, Oct-2026)
+  "como você percebe hoje a aparência da sua pele?": {
+    es: "¿Cómo percibes hoy la apariencia de tu piel?",
+    en: "How do you perceive your skin's appearance today?",
+  },
+  "com linhas e sinais de envelhecimento": { es: "Con líneas y signos de envejecimiento", en: "With lines and signs of aging" },
+  "com manchas ou tom irregular": { es: "Con manchas o tono irregular", en: "With spots or uneven tone" },
+  "com perda de firmeza ou flacidez": { es: "Con pérdida de firmeza o flacidez", en: "With loss of firmness or sagging" },
+  "com textura irregular ou marcas": { es: "Con textura irregular o marcas", en: "With uneven texture or marks" },
+  "com aparência cansada, opaca ou sem viço": { es: "Con aspecto cansado, opaco o sin brillo", en: "Tired, dull or lacking glow" },
+  "com acne ou marcas de acne": { es: "Con acné o marcas de acné", en: "With acne or acne marks" },
+  "gosto da minha pele, mas quero prevenir o envelhecimento": {
+    es: "Me gusta mi piel, pero quiero prevenir el envejecimiento",
+    en: "I like my skin, but I want to prevent aging",
+  },
+  "quais são hoje as 3 características da sua pele que mais incomodam você?": {
+    es: "¿Cuáles son hoy las 3 características de tu piel que más te molestan?",
+    en: "Which 3 characteristics of your skin bother you the most today?",
+  },
+  "rugas e linhas de expressão": { es: "Arrugas y líneas de expresión", en: "Wrinkles and expression lines" },
+  "manchas e tom irregular": { es: "Manchas y tono irregular", en: "Spots and uneven tone" },
+  "flacidez e perda de firmeza": { es: "Flacidez y pérdida de firmeza", en: "Sagging and loss of firmness" },
+  "textura irregular e poros aparentes": { es: "Textura irregular y poros visibles", en: "Uneven texture and visible pores" },
+  "cicatrizes ou marcas de acne": { es: "Cicatrices o marcas de acné", en: "Acne scars or marks" },
+  "acne ou imperfeições recorrentes": { es: "Acné o imperfecciones recurrentes", en: "Recurring acne or blemishes" },
+  "olheiras e aparência cansada": { es: "Ojeras y aspecto cansado", en: "Dark circles and tired look" },
+  "pele opaca ou sem viço": { es: "Piel opaca o sin brillo", en: "Dull skin lacking glow" },
+  "vermelhidão ou sensibilidade aparente": { es: "Enrojecimiento o sensibilidad visible", en: "Visible redness or sensitivity" },
+  "quero prevenir os sinais de envelhecimento": { es: "Quiero prevenir los signos de envejecimiento", en: "I want to prevent signs of aging" },
+  "e quanto ao comportamento da sua pele?": { es: "¿Y cómo se comporta tu piel?", en: "And how does your skin behave?" },
 };
 
 /**

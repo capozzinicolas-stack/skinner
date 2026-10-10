@@ -81,8 +81,8 @@ const EMAIL_STRINGS: Record<Locale, EmailStrings> = {
         `Este email foi enviado pela ${t} com base no seu consentimento durante a analise. Se voce nao reconhece esta solicitacao, ignore este email.`,
     },
     newLead: {
-      subject: (n) => `Nova lead capturada — ${n}`,
-      headline: "Nova lead capturada",
+      subject: (n) => `Novo lead capturado — ${n}`,
+      headline: "Novo lead capturado",
       body: (t) =>
         `Uma nova analise foi concluida na <strong style="color: #1C1917;">${t}</strong> e o paciente autorizou contato.`,
       nameLabel: "Nome",
@@ -116,7 +116,7 @@ const EMAIL_STRINGS: Record<Locale, EmailStrings> = {
       body: (p) =>
         `Sua conta no plano <strong style="color: #1C1917;">${p}</strong> foi criada com sucesso. Use as credenciais abaixo para acessar o painel.`,
       credentialsTitle: "Credenciais de acesso",
-      emailLabel: "Email",
+      emailLabel: "E-mail",
       tempPasswordLabel: "Senha temporaria",
       companyLabel: "Empresa",
       cta: "Acessar o painel →",
@@ -325,7 +325,7 @@ export function buildNewLeadNotificationEmail(params: {
 }): { subject: string; html: string } {
   const L = s(params.locale);
   const contactLine = [
-    params.patientEmail ? `Email: ${params.patientEmail}` : null,
+    params.patientEmail ? `E-mail: ${params.patientEmail}` : null,
     params.patientPhone ? `WhatsApp: ${params.patientPhone}` : null,
   ]
     .filter(Boolean)

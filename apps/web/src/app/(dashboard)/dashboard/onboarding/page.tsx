@@ -9,14 +9,14 @@ export default function OnboardingPage() {
   return (
     <div className="h-screen flex flex-col bg-blanc-casse">
       <div className="px-8 py-5 border-b border-sable/20 bg-white">
-        <h1 className="font-serif text-2xl text-carbone">Onboarding</h1>
+        <h1 className="font-serif text-2xl text-carbone">Primeiros passos</h1>
         <p className="text-sm text-pierre font-light mt-1">
           Tour guiado para configurar e tirar o maximo do seu painel Skinner.
         </p>
       </div>
       <iframe
         src="/onboarding/index.html"
-        title="Skinner Onboarding Tour"
+        title="Tour de primeiros passos Skinner"
         className="flex-1 w-full border-0"
       />
     </div>

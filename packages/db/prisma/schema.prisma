@@ -59,6 +59,16 @@ model Tenant {
   timezone        String?
   defaultLocale   String  @default("pt-BR") // "pt-BR" | "es" | "en"
 
+  // Business segment (Oct-2026). Drives which questionnaire the patient sees,
+  // how the matcher ranks services, the order of the results screen, the
+  // Claude action-plan framing and the projection model.
+  //   "dermocosmetics"   (default) → original skincare/product-first flow.
+  //   "aesthetic_clinic" → procedure clinics: clinic questionnaire, procedures
+  //                        first, category-diverse service matching, per-
+  //                        procedure projection timing.
+  // Set by Skinner admins only (/admin/tenants/[id]).
+  segment         String  @default("dermocosmetics")
+
   // Limits
   analysisLimit    Int @default(200)
   analysisUsed     Int @default(0)
@@ -392,6 +402,22 @@ model Product {
   sessionCount      Int?     // recommended number of sessions
   sessionFrequency  String?  // "semanal", "quinzenal", "mensal"
   durationMinutes   Int?     // duration of each session in minutes
+
+  // Procedure-clinic fields (Oct-2026, segment "aesthetic_clinic"). All
+  // optional so existing products/services are untouched.
+  // serviceCategory: "injectables" | "technologies" | "skin" — the matcher
+  //   picks the best service per category first (diversity, like routine steps).
+  // projection*: per-procedure result curve used by the skin projection
+  //   (onset → peak weeks, expected visible improvement %).
+  // addOns: JSON array [{ name, description?, price? }] of optional extras the
+  //   clinic offers with the procedure (anesthesia, LED, drug delivery...).
+  // libraryItemId: ProcedureLibraryItem it was imported from (null = manual).
+  serviceCategory          String?
+  projectionOnsetWeeks     Int?
+  projectionPeakWeeks      Int?
+  projectionImprovementPct Int?
+  addOns                   String?
+  libraryItemId            String?
 
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -760,9 +786,46 @@ model PlatformConfig {
   analysisRestrictedConditions String? // Global conditions Claude should never mention
   projectionPromptTemplate    String?  // Custom Gemini projection prompt (overrides default)
   questionnaireConfig         String?  // JSON: StoredQuestion[] — dynamic questionnaire definition
+  questionnaireConfigClinic   String?  // JSON: StoredQuestion[] for segment "aesthetic_clinic" (null = code default)
   updatedAt                   DateTime @updatedAt
 
   @@map("platform_config")
+}
+
+// ============================================
+// PROCEDURE LIBRARY (Oct-2026 — global, admin-managed)
+// ============================================
+// Catalog of aesthetic procedures maintained by Skinner. Procedure clinics
+// import items into their own catalog (/dashboard/catalogo/biblioteca), which
+// creates a regular Product (type "service") they can rename/reprice. Tag and
+// projection fields mirror Product so the import is a straight copy.
+
+model ProcedureLibraryItem {
+  id                       String   @id @default(cuid())
+  slug                     String   @unique
+  name                     String
+  description              String
+  category                 String   // injectables | technologies | skin
+  concernTags              String   // JSON array
+  skinTypeTags             String   // JSON array
+  objectiveTags            String   // JSON array
+  severityLevel            Int      @default(2)
+  activeIngredients        String?  // JSON array (technology / active keywords)
+  contraindications        String?  // JSON array (pt-BR)
+  sessionCount             Int?
+  sessionFrequency         String?
+  durationMinutes          Int?
+  suggestedPrice           Float?
+  projectionOnsetWeeks     Int?
+  projectionPeakWeeks      Int?
+  projectionImprovementPct Int?
+  addOns                   String?  // JSON array [{ name, description?, price? }]
+  displayOrder             Int      @default(0)
+  isActive                 Boolean  @default(true)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  @@map("procedure_library")
 }
 
 // ============================================

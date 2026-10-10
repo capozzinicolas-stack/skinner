@@ -151,54 +151,73 @@ type ExportSnapshot = {
  * and triggers a browser download. No external lib — pure string + Blob.
  */
 function downloadCsv(snapshot: ExportSnapshot, days: number) {
+  // Portuguese headers and translated values (labels.ts); IDs never reach
+  // the clinic's spreadsheet.
+  const label = (map: Record<string, string>, v: string | null | undefined) => (v ? map[v] ?? v : "");
+  const conditionsPt = (raw: string) =>
+    raw
+      .split("|")
+      .filter(Boolean)
+      .map((entry) => {
+        const m = entry.match(/^(.*)\((\d+)\)$/);
+        const id = m ? m[1] : entry;
+        const sev = m ? ` (intensidade ${m[2]})` : "";
+        return `${conditionLabels[id] ?? id}${sev}`;
+      })
+      .join(" | ");
+  const typePt = (v: string | null) => (v === "service" ? "serviço" : v === "product" || !v ? "produto" : v);
+  const stepPt: Record<string, string> = {
+    cleanser: "limpeza", toner: "tônico", serum: "sérum", moisturizer: "hidratante", SPF: "protetor solar",
+    treatment: "tratamento", mask: "máscara", exfoliant: "esfoliante", "eye-cream": "área dos olhos",
+  };
   const lines: string[] = [];
-  lines.push(`# Skinner Dashboard Export`);
-  lines.push(`# Generated at,${snapshot.generatedAt}`);
-  lines.push(`# Period (days),${days}`);
+  lines.push(`# Exportação do painel Skinner`);
+  lines.push(`# Gerado em,${new Date(snapshot.generatedAt).toLocaleString("pt-BR")}`);
+  lines.push(`# Período (dias),${days}`);
   lines.push("");
-  lines.push("## Summary");
-  lines.push(csvRow(["Metric", "Value"]));
-  lines.push(csvRow(["Analyses started", snapshot.summary.analysesStarted]));
-  lines.push(csvRow(["Analyses completed", snapshot.summary.analysesCompleted]));
-  lines.push(csvRow(["Conversions (purchases)", snapshot.summary.conversions]));
-  lines.push(csvRow(["Revenue (BRL)", snapshot.summary.revenue.toFixed(2)]));
-  lines.push(csvRow(["Completion rate", (snapshot.summary.completionRate * 100).toFixed(2) + "%"]));
-  lines.push(csvRow(["Conversion rate", (snapshot.summary.conversionRate * 100).toFixed(2) + "%"]));
+  lines.push("## Resumo");
+  lines.push(csvRow(["Métrica", "Valor"]));
+  lines.push(csvRow(["Análises iniciadas", snapshot.summary.analysesStarted]));
+  lines.push(csvRow(["Análises concluídas", snapshot.summary.analysesCompleted]));
+  lines.push(csvRow(["Conversões (compras)", snapshot.summary.conversions]));
+  lines.push(csvRow(["Receita (R$)", snapshot.summary.revenue.toFixed(2)]));
+  lines.push(csvRow(["Taxa de conclusão", (snapshot.summary.completionRate * 100).toFixed(2) + "%"]));
+  lines.push(csvRow(["Taxa de conversão", (snapshot.summary.conversionRate * 100).toFixed(2) + "%"]));
   lines.push("");
-  lines.push("## Analyses (per row)");
+  lines.push("## Análises");
   lines.push(
     csvRow([
-      "date",
-      "skinType",
-      "ageRange",
-      "primaryObjective",
-      "country",
-      "region",
-      "city",
-      "barrierStatus",
-      "conditions",
+      "data",
+      "tipo de pele",
+      "faixa etária",
+      "objetivo principal",
+      "país",
+      "estado",
+      "cidade",
+      "estado da pele",
+      "condições",
     ])
   );
   for (const a of snapshot.analyses) {
     lines.push(
       csvRow([
         a.date,
-        a.skinType,
+        label(skinTypeLabels, a.skinType),
         a.ageRange,
-        a.primaryObjective,
+        label(objectiveLabels, a.primaryObjective),
         a.country,
         a.region,
         a.city,
-        a.barrierStatus,
-        a.conditions,
+        barrierLabel(a.barrierStatus)?.short ?? a.barrierStatus,
+        conditionsPt(a.conditions),
       ])
     );
   }
   lines.push("");
-  lines.push("## Catalog snapshot");
-  lines.push(csvRow(["name", "sku", "type", "stepRoutine", "price"]));
+  lines.push("## Catálogo");
+  lines.push(csvRow(["nome", "sku", "tipo", "etapa", "preço"]));
   for (const p of snapshot.catalog) {
-    lines.push(csvRow([p.name, p.sku, p.type ?? "", p.stepRoutine ?? "", p.price ?? ""]));
+    lines.push(csvRow([p.name, p.sku, typePt(p.type), p.stepRoutine ? stepPt[p.stepRoutine] ?? p.stepRoutine : "", p.price ?? ""]));
   }
 
   const csv = "﻿" + lines.join("\n"); // BOM so Excel reads UTF-8 correctly
@@ -207,7 +226,7 @@ function downloadCsv(snapshot: ExportSnapshot, days: number) {
   const a = document.createElement("a");
   a.href = url;
   const stamp = new Date().toISOString().slice(0, 10);
-  a.download = `skinner-dashboard-${stamp}-${days}d.csv`;
+  a.download = `painel-skinner-${stamp}-${days}d.csv`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -359,7 +378,8 @@ function PersonaCard({
   const { t } = useI18n();
   const concernRaw = tr(conditionLabels, persona.topConcern) || persona.topConcern;
   const concernLabel = concernRaw.charAt(0).toUpperCase() + concernRaw.slice(1);
-  const skinLabel = tr(skinTypeLabels, persona.skinType) || "—";
+  // "indef" = skin type not reported (dashboardRouter.personas bucket key).
+  const skinLabel = persona.skinType === "indef" ? "não informado" : tr(skinTypeLabels, persona.skinType) || "—";
   return (
     <div className="p-5 bg-white border border-sable/20">
       <div className="flex items-baseline justify-between mb-3">

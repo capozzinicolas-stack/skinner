@@ -379,7 +379,7 @@ function PreviewQuestionario({ form }: { form: AnalysisFormState }) {
           <span className="text-[10px] text-pierre">foto</span>
         </div>
         <p className="text-[9px] text-terre font-light text-center leading-relaxed px-2">
-          Modo foto-only: questionario sera ignorado
+          Modo somente foto: o questionário será ignorado
         </p>
       </div>
     );
@@ -661,7 +661,7 @@ function LivePreview({ form }: { form: AnalysisFormState }) {
   return (
     <div className="flex flex-col gap-3">
       <p className="text-[10px] text-pierre uppercase tracking-wider font-light">
-        Preview
+        Pré-visualização
       </p>
 
       {/* Phone frame */}
@@ -874,7 +874,7 @@ export default function AnaliseConfigPage() {
         <div className="flex items-center gap-6">
           <div>
             <p className="text-[10px] text-pierre uppercase tracking-wider font-light">
-              Score de Precisao
+              Índice de precisão
             </p>
             <div className="flex items-baseline gap-2 mt-0.5">
               <span className={`font-serif text-3xl ${scoreColor(score)}`}>
@@ -1091,7 +1091,7 @@ export default function AnaliseConfigPage() {
                 onChange={(v) => set("questionAllergiesEnabled", v)}
                 locked={isLocked("questionAllergiesEnabled")}
                 lockReason={getLockReason("questionAllergiesEnabled")}
-                warning="Sem esta informacao, a IA nao pode filtrar ingredientes alergenos. Risco de recomendacoes inadequadas. Score -8."
+                warning="Sem esta informacao, a IA nao pode filtrar ingredientes alergenos. Risco de recomendacoes inadequadas. Precisão -8."
               />
               <ToggleRow
                 label="Frequencia de protetor solar"
@@ -1100,7 +1100,7 @@ export default function AnaliseConfigPage() {
                 onChange={(v) => set("questionSunscreenEnabled", v)}
                 locked={isLocked("questionSunscreenEnabled")}
                 lockReason={getLockReason("questionSunscreenEnabled")}
-                warning="Sem esta informacao, a analise de fotodano sera menos precisa. Score -5."
+                warning="Sem esta informacao, a analise de fotodano sera menos precisa. Precisão -5."
               />
               <ToggleRow
                 label="Gravidez ou amamentacao"
@@ -1109,7 +1109,7 @@ export default function AnaliseConfigPage() {
                 onChange={(v) => set("questionPregnantEnabled", v)}
                 locked={isLocked("questionPregnantEnabled")}
                 lockReason={getLockReason("questionPregnantEnabled")}
-                warning="Sem esta informacao, a IA pode recomendar ativos contraindicados para gestantes. Score -12."
+                warning="Sem esta informacao, a IA pode recomendar ativos contraindicados para gestantes. Precisão -12."
               />
             </Section>
 
@@ -1141,7 +1141,7 @@ export default function AnaliseConfigPage() {
                           Atencao: o modo somente foto reduz significativamente a
                           qualidade das recomendacoes. A IA nao tera informacoes sobre
                           alergias, objetivos ou condicoes medicas do cliente.
-                          Score -40.
+                          Precisão -40.
                         </p>
                       </div>
                     )}
@@ -1232,10 +1232,10 @@ export default function AnaliseConfigPage() {
 
                 <div className="flex items-start justify-between gap-4 border-t border-sable/15 pt-4">
                   <div className="flex-1">
-                    <p className="text-sm text-carbone">Avisar minha equipe sobre novas leads</p>
+                    <p className="text-sm text-carbone">Avisar minha equipe sobre novos leads</p>
                     <p className="text-xs text-pierre font-light mt-1">
-                      Envia e-mail para todos os administradores do tenant sempre que uma
-                      nova lead for capturada com consentimento.
+                      Envia e-mail para todos os administradores da clínica sempre que um
+                      novo lead for capturado com consentimento.
                     </p>
                   </div>
                   <Toggle
@@ -1330,14 +1330,14 @@ export default function AnaliseConfigPage() {
                     </p>
                     <p className="text-xs text-pierre font-light leading-relaxed">
                       Ao ativar, sua taxa de conversao, taxa de conclusao e ticket medio
-                      sao agregados anonimamente com os de outros tenants opt-in. Voce
-                      passa a ver a media da plataforma no seu dashboard. Nenhum
+                      são agregados anonimamente com os de outras clínicas participantes. Você
+                      passa a ver a média da plataforma no seu painel. Nenhum
                       cliente jamais ve os dados individuais de outro — apenas a media
-                      agregada. Minimo de 3 tenants opt-in para que qualquer numero
+                      agregada. Mínimo de 3 clínicas participantes para que qualquer número
                       seja exibido.
                     </p>
                     <p className="text-[11px] text-pierre font-light mt-2 italic">
-                      Voce pode desativar a qualquer momento. Off por padrao.
+                      Você pode desativar a qualquer momento. Desativado por padrão.
                     </p>
                   </div>
                   <Toggle
@@ -1405,7 +1405,7 @@ export default function AnaliseConfigPage() {
                 onChange={(v) => set("resultsShowConditions", v)}
                 locked={isLocked("resultsShowConditions")}
                 lockReason={getLockReason("resultsShowConditions")}
-                warning="Ocultar condicoes reduz a transparencia da analise. Score -10."
+                warning="Ocultar condicoes reduz a transparencia da analise. Precisão -10."
               />
               <ToggleRow
                 label="Descricao das condicoes"
@@ -1430,7 +1430,7 @@ export default function AnaliseConfigPage() {
                 onChange={(v) => set("resultsShowActionPlan", v)}
                 locked={isLocked("resultsShowActionPlan")}
                 lockReason={getLockReason("resultsShowActionPlan")}
-                warning="Sem o plano de acao, o cliente nao tera orientacao sobre como aplicar os produtos. Score -7."
+                warning="Sem o plano de acao, o cliente nao tera orientacao sobre como aplicar os produtos. Precisão -7."
               />
               <ToggleRow
                 label="Linha do tempo"
@@ -1447,7 +1447,7 @@ export default function AnaliseConfigPage() {
                 onChange={(v) => set("resultsShowAlertSigns", v)}
                 locked={isLocked("resultsShowAlertSigns")}
                 lockReason={getLockReason("resultsShowAlertSigns")}
-                warning="Ocultar sinais de alerta pode comprometer a seguranca do cliente. Score -15."
+                warning="Ocultar sinais de alerta pode comprometer a seguranca do cliente. Precisão -15."
               />
               <ToggleRow
                 label="Produtos recomendados"
@@ -1466,7 +1466,7 @@ export default function AnaliseConfigPage() {
                 lockReason={getLockReason("resultsShowServices")}
               />
               <ToggleRow
-                label="Score de compatibilidade"
+                label="Índice de compatibilidade"
                 description="Exibe a porcentagem de compatibilidade de cada produto."
                 checked={form.resultsShowMatchScore}
                 onChange={(v) => set("resultsShowMatchScore", v)}

@@ -1,4 +1,5 @@
 import { z } from "zod/v4";
+import { TRPCError } from "@trpc/server";
 import { router, tenantProcedure, adminProcedure, publicProcedure } from "../trpc";
 import { getPlan, getAllPlans, type PlanId } from "@/lib/billing/plans";
 import { calculateMonthlyBill, createCheckoutUrl, createPortalUrl, isStripeConfigured } from "@/lib/billing/stripe-mock";
@@ -134,7 +135,7 @@ export const billingRouter = router({
     .mutation(async ({ ctx, input }) => {
       const planConfig = await getPlan(input.planId);
       if (!planConfig) {
-        throw new Error("Plan not found");
+        throw new TRPCError({ code: "NOT_FOUND", message: "Plano não encontrado." });
       }
 
       await ctx.db.tenant.update({

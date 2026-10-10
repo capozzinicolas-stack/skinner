@@ -112,6 +112,11 @@ export default function TenantDetailPage() {
       utils.tenant.list.invalidate();
     },
   });
+  const changeSegment = trpc.admin.changeTenantSegment.useMutation({
+    onSuccess: () => {
+      utils.admin.tenantDetail.invalidate({ id });
+    },
+  });
   const resetUsage = trpc.admin.resetTenantUsage.useMutation({
     onSuccess: () => {
       utils.admin.tenantDetail.invalidate({ id });
@@ -378,6 +383,28 @@ export default function TenantDetailPage() {
                 >
                   Alterar plano
                 </button>
+
+                {/* Business segment — drives questionnaire, matcher mode,
+                    results order and projection model of the patient flow. */}
+                <div className="border border-sable/30 px-4 py-3">
+                  <p className="text-[10px] text-pierre uppercase tracking-wider font-light mb-2">
+                    Segmento
+                  </p>
+                  <select
+                    value={(d.tenant as { segment?: string }).segment ?? "dermocosmetics"}
+                    onChange={(e) => {
+                      const segment = e.target.value as "dermocosmetics" | "aesthetic_clinic";
+                      if (confirm(`Alterar o segmento de "${d.tenant.name}"? O questionário e as recomendações do paciente mudam imediatamente.`)) {
+                        changeSegment.mutate({ tenantId: id, segment });
+                      }
+                    }}
+                    disabled={changeSegment.isPending}
+                    className="w-full px-2 py-1.5 border border-sable/40 bg-white text-sm text-carbone font-light focus:outline-none focus:border-carbone disabled:opacity-50"
+                  >
+                    <option value="dermocosmetics">Dermocosméticos</option>
+                    <option value="aesthetic_clinic">Clínica de procedimentos estéticos</option>
+                  </select>
+                </div>
 
                 {d.tenant.status === "active" && (
                   <button
