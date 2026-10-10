@@ -86,7 +86,7 @@ const MATCHER_TEMPLATES: Record<Locale, {
 export async function matchProducts(
   tenantId: string,
   analysis: AnalysisOutput,
-  options?: { pregnantOrNursing?: string; locale?: Locale }
+  options?: { pregnantOrNursing?: string; locale?: Locale; maxServices?: number | null }
 ): Promise<MatchedProduct[]> {
   const locale: Locale = options?.locale ?? "pt-BR";
   const tmpl = MATCHER_TEMPLATES[locale] ?? MATCHER_TEMPLATES["pt-BR"];
@@ -268,8 +268,10 @@ export async function matchProducts(
     usedIds.add(p.productId);
   }
 
-  // Tag services
-  const selectedServices = services.slice(0, 2);
+  // Tag services. Default 2; tenants can raise it via TenantConfig.maxServiceRecs
+  // (e.g. procedure clinics whose catalog is mostly services). Clamped to 1-10.
+  const maxServices = Math.min(Math.max(options?.maxServices ?? 2, 1), 10);
+  const selectedServices = services.slice(0, maxServices);
   for (const svc of selectedServices) {
     svc.recommendationTag = "recomendado";
   }

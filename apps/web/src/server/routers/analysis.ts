@@ -345,6 +345,7 @@ export const analysisRouter = router({
       const recommendations = await matchProducts(tenant.id, analysisOutput, {
         pregnantOrNursing,
         locale: resolvedLocale,
+        maxServices: tenant.tenantConfig?.maxServiceRecs ?? null,
       });
 
       const latencyMs = Date.now() - startTime;
