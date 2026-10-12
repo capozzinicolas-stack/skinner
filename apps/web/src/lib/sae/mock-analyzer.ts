@@ -1,5 +1,6 @@
 import type { AnalysisInput, AnalysisOutput, ZoneAnnotation } from "./types";
 import { db } from "@skinner/db";
+import { conditionLabels } from "./labels";
 
 /**
  * Mock analyzer that simulates Claude API responses.
@@ -127,15 +128,22 @@ export async function mockAnalyze(input: AnalysisInput): Promise<AnalysisOutput>
       normal: "normal",
       sensitive: "sensível",
     }[skinType] ?? skinType
-  }. Foram identificadas ${conditions.length} condição(ões): ${conditions
-    .map((c) => c.name)
-    .join(", ")}. ${
+  }. ${
+    conditions.length === 0
+      ? "Não identificamos pontos que precisem de atenção especial."
+      : conditions.length === 1
+      ? `O principal ponto de atenção é ${conditionLabels[conditions[0].name] ?? conditions[0].name}.`
+      : `Os principais pontos de atenção são ${conditions
+          .map((c) => conditionLabels[c.name] ?? c.name)
+          .join(", ")
+          .replace(/, ([^,]*)$/, " e $1")}.`
+  } ${
     barrierStatus === "healthy"
-      ? "Sua barreira cutânea está saudável."
+      ? "Sua pele está com boa proteção natural."
       : barrierStatus === "compromised"
-      ? "Sua barreira cutânea está comprometida e precisa de atenção."
-      : "Sua barreira cutânea precisa de atenção."
-  }${isPregnant ? " Recomendações ajustadas para gestação/amamentação." : ""}`;
+      ? "Sua pele está enfraquecida e precisa de cuidado para se recuperar."
+      : "Sua pele está mais sensível que o normal e merece atenção."
+  }${isPregnant ? " As recomendações foram ajustadas para gestação e amamentação." : ""}`;
 
   const alertSigns = [
     "Lesões que mudam de cor, formato ou sangram",

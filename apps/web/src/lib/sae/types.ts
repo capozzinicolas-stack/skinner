@@ -53,6 +53,9 @@ export type AnalysisOutput = {
     weeks12: string;
   };
   zone_annotations: ZoneAnnotation[];
+  // Procedure clinics: procedure names Claude chose (clinic catalog only), in
+  // priority order. The matcher recommends these first.
+  recommended_procedures?: string[];
 };
 
 export type MatchedProduct = {

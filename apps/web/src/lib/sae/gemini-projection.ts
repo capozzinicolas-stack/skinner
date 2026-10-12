@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { db } from "@skinner/db";
+import { concernEquivalents } from "./condition-aliases";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
@@ -303,7 +304,8 @@ export function computeClinicStages(
   const perCondition = points.map((weeks) => {
     const map = new Map<string, number>();
     for (const c of conditions) {
-      const treating = procedures.filter((p) => p.concernTags.includes(c.name));
+      const ids = concernEquivalents(c.name);
+      const treating = procedures.filter((p) => ids.some((id) => p.concernTags.includes(id)));
       const pct = combine(treating.map((p) => procedureCurve(p, weeks)));
       map.set(c.name, roundTo5(pct));
     }

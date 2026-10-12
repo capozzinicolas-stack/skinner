@@ -24,7 +24,7 @@
 - Backend: tRPC routers in apps/web/src/server/routers/
 - Database: PostgreSQL (Supabase), ORM: Prisma, schema at packages/db/prisma/schema.prisma
 - Auth: NextAuth.js with JWT (role + tenantId)
-- IA: Claude API (claude-sonnet-4) with mock fallback
+- IA: Claude API (`ANTHROPIC_MODEL`, default `claude-sonnet-5`) with mock fallback
 - Styling: Tailwind CSS with brand color classes
 
 ## Database
@@ -96,6 +96,17 @@ unset so local dev works without Redis.
 - Webhooks: 429 JSON, source retries.
 
 ## Analysis Pipeline
+
+### Claude call (Oct-2026 incident + hardening)
+- **Incident**: `claude-sonnet-4-20250514` was retired by Anthropic (404 `not_found_error`). Every analysis silently fell back to `mockAnalyze` — patients got generic simulated results with raw English IDs ("aging, sagging") in the summary. Found during an end-to-end test on 2026-10-12.
+- **Model** comes from `ANTHROPIC_MODEL` (default `claude-sonnet-5`). Set it in Vercel to switch without a deploy. Never hardcode a dated snapshot again.
+- **Structured outputs**: `anthropic.messages.parse` + `zodOutputFormat(buildAnalysisSchema(...))`. Condition names (and zone `related_conditions`) are a `z.enum` of the KB names, so Claude cannot invent IDs (it once returned the zone "under_eyes" as a condition). Free-text JSON parsing failed on real responses (unescaped characters) — do not go back to it.
+- **Latency**: thinking disabled + effort `low`, `max_tokens` 16000, SDK `timeout` 50s, `maxRetries` 1. Measured ~27s Claude time (~30k input tokens, ~2.5k output); adaptive thinking pushed totals to 50-57s (too close to the 60s `api/trpc` maxDuration).
+- `stop_reason` `refusal` / `max_tokens` throw → mock fallback.
+- **Clinic segment**: the schema adds `recommended_procedures` (enum of the clinic's active procedure names); Claude picks them in priority order and must cite the same ones in the plan. The matcher selects those first (contraindication filter still applies), then category diversity, then scores — plan and cards always agree.
+- **Condition vocabularies**: Claude is told to prefer simple IDs (aging, sagging, hyperpigmentation...). `lib/sae/condition-aliases.ts` maps clinical KB IDs (envelhecimento_cronologico, melasma, ...) to simple ones for the matcher and projection, so catalog tags still match.
+- The mock fallback summary is Portuguese and uses `labels.ts` (no raw IDs).
+- Server-side caps: `analysis.run` applies `maxProductRecs` (and the treatments/products scope) before saving, so screen, PDF and kit list the same items.
 
 ### "Unable to transform response from server" — patient-facing analysis failure (fixed 2026-06-03)
 A patient reported the results screen showing "Erro na analise / Unable to transform response from server" on mobile (production). That string is the tRPC client failing to deserialize the server response with superjson — it means Vercel returned an **infrastructure error page (504/413/500), not a tRPC envelope**. The `try/catch → mock` fallback in `analysis.run` does NOT protect against this because the failure happens at the Vercel layer, outside the handler. Two independent root causes, both producing the identical symptom:

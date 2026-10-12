@@ -365,9 +365,16 @@ export const analysisRouter = router({
       // kit link and cart never show it either.
       const showServices = tenant.tenantConfig?.resultsShowServices ?? true;
       const showProducts = tenant.tenantConfig?.resultsShowProducts ?? true;
-      const recommendations = matched.filter((r) =>
-        r.type === "service" ? showServices : showProducts
-      );
+      // Product cap (TenantConfig.maxProductRecs) applied here too, so the
+      // PDF and kit list exactly what the results screen shows.
+      const maxProducts = tenant.tenantConfig?.maxProductRecs ?? null;
+      let productCount = 0;
+      const recommendations = matched.filter((r) => {
+        if (r.type === "service") return showServices;
+        if (!showProducts) return false;
+        productCount++;
+        return maxProducts == null || productCount <= maxProducts;
+      });
 
       const latencyMs = Date.now() - startTime;
 
