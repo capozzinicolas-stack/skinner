@@ -307,7 +307,7 @@ export default function AdminLibraryPage() {
           <table className="w-full min-w-[760px]">
             <thead>
               <tr className="border-b border-sable/20 bg-ivoire">
-                {["Procedimento", "Categoria", "Preço", "Resultado", "Status", ""].map((h) => (
+                {["Procedimento", "Categoria", "Preço", "Resultado", "Situação", ""].map((h) => (
                   <th key={h} className="text-left px-4 py-3 text-[10px] text-pierre uppercase tracking-wider font-light">
                     {h}
                   </th>

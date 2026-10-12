@@ -18,7 +18,7 @@ const lora = Lora({
 
 export const metadata: Metadata = {
   title: {
-    default: "Skinner — Skin Tech",
+    default: "Skinner — Tecnologia para a pele",
     template: "%s | Skinner",
   },
   description:
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     type: "website",
     locale: "pt_BR",
     siteName: "Skinner",
-    title: "Skinner — Skin Tech",
+    title: "Skinner — Tecnologia para a pele",
     description:
       "Inteligencia dermatologica com IA. Analise facial instantanea e recomendacao personalizada para clinicas, laboratorios e farmacias.",
   },

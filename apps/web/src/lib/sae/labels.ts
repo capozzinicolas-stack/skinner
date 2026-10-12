@@ -75,7 +75,7 @@ const objectivePtBR: Record<string, string> = {
   firming: "firmeza",
   firmness: "firmeza",
   "pore-control": "controle de poros",
-  sagging: "firmeza e lifting",
+  sagging: "firmeza e sustentação",
   texture: "textura e marcas",
   prevention: "prevenção do envelhecimento",
 };
@@ -172,7 +172,7 @@ const objectiveEs: Record<string, string> = {
   firming: "firmeza",
   firmness: "firmeza",
   "pore-control": "control de poros",
-  sagging: "firmeza y lifting",
+  sagging: "firmeza y sustentación",
   texture: "textura y marcas",
   prevention: "prevención del envejecimiento",
 };

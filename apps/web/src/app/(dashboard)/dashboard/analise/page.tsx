@@ -579,14 +579,36 @@ function PreviewResultado({ form }: { form: AnalysisFormState }) {
         </div>
       )}
 
+      {/* Services */}
+      {form.resultsShowServices && (
+        <div>
+          <p className="text-[8px] text-pierre uppercase tracking-wider font-light mb-1">
+            Tratamentos recomendados
+          </p>
+          <div className="border border-sable/20 px-2 py-1 flex items-center justify-between gap-1">
+            <div>
+              <p className="text-[9px] text-carbone font-light">Limpeza de Pele</p>
+              {form.resultsShowPrices && (
+                <p className="text-[8px] text-pierre font-light mt-0.5">
+                  R$ 120,00
+                </p>
+              )}
+            </div>
+            <button className="text-[7px] bg-carbone text-blanc-casse px-1.5 py-0.5 shrink-0">
+              {serviceCta}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Products */}
       {form.resultsShowProducts && (
         <div>
           <p className="text-[8px] text-pierre uppercase tracking-wider font-light mb-1">
-            Produtos Recomendados
+            Cuidados em casa
           </p>
           <div className="flex flex-col gap-1">
-            {["Gel de Limpeza", "Hidratante Oil-Free"].map((prod) => (
+            {["Gel de Limpeza", "Hidratante Toque Seco"].map((prod) => (
               <div
                 key={prod}
                 className="border border-sable/20 px-2 py-1 flex items-center justify-between gap-1"
@@ -616,32 +638,10 @@ function PreviewResultado({ form }: { form: AnalysisFormState }) {
         </div>
       )}
 
-      {/* Services */}
-      {form.resultsShowServices && (
-        <div>
-          <p className="text-[8px] text-pierre uppercase tracking-wider font-light mb-1">
-            Tratamentos Recomendados
-          </p>
-          <div className="border border-sable/20 px-2 py-1 flex items-center justify-between gap-1">
-            <div>
-              <p className="text-[9px] text-carbone font-light">Limpeza de Pele</p>
-              {form.resultsShowPrices && (
-                <p className="text-[8px] text-pierre font-light mt-0.5">
-                  R$ 120,00
-                </p>
-              )}
-            </div>
-            <button className="text-[7px] bg-carbone text-blanc-casse px-1.5 py-0.5 shrink-0">
-              {serviceCta}
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* PDF button */}
       {form.resultsShowPdfButton && (
         <button className="w-full py-1.5 border border-sable/40 text-[8px] text-pierre font-light tracking-wide text-center">
-          Baixar relatorio em PDF
+          Baixar relatório em PDF
         </button>
       )}
 
@@ -1232,7 +1232,7 @@ export default function AnaliseConfigPage() {
 
                 <div className="flex items-start justify-between gap-4 border-t border-sable/15 pt-4">
                   <div className="flex-1">
-                    <p className="text-sm text-carbone">Avisar minha equipe sobre novos leads</p>
+                    <p className="text-sm text-carbone">Avisar minha equipe sobre novos contatos</p>
                     <p className="text-xs text-pierre font-light mt-1">
                       Envia e-mail para todos os administradores da clínica sempre que um
                       novo lead for capturado com consentimento.
@@ -1392,7 +1392,7 @@ export default function AnaliseConfigPage() {
             >
               <ToggleRow
                 label="Barreira cutanea"
-                description="Exibe o status da barreira cutanea do cliente."
+                description="Exibe o estado da pele do cliente."
                 checked={form.resultsShowBarrier}
                 onChange={(v) => set("resultsShowBarrier", v)}
                 locked={isLocked("resultsShowBarrier")}
@@ -1449,22 +1449,56 @@ export default function AnaliseConfigPage() {
                 lockReason={getLockReason("resultsShowAlertSigns")}
                 warning="Ocultar sinais de alerta pode comprometer a seguranca do cliente. Precisão -15."
               />
-              <ToggleRow
-                label="Produtos recomendados"
-                description="Exibe os produtos do catalogo recomendados pela IA."
-                checked={form.resultsShowProducts}
-                onChange={(v) => set("resultsShowProducts", v)}
-                locked={isLocked("resultsShowProducts")}
-                lockReason={getLockReason("resultsShowProducts")}
-              />
-              <ToggleRow
-                label="Servicos recomendados"
-                description="Exibe os servicos e tratamentos recomendados pela IA."
-                checked={form.resultsShowServices}
-                onChange={(v) => set("resultsShowServices", v)}
-                locked={isLocked("resultsShowServices")}
-                lockReason={getLockReason("resultsShowServices")}
-              />
+              {/* What the patient receives as recommendations. One choice
+                  instead of two independent toggles so a clinic can never
+                  end up with neither. Maps to resultsShowServices /
+                  resultsShowProducts; analysis.run also drops the hidden
+                  type so the PDF, kit and cart stay consistent. */}
+              <div className="p-5 bg-white border border-sable/20">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm text-carbone">O que recomendar ao paciente</p>
+                  {(isLocked("resultsShowProducts") || isLocked("resultsShowServices")) && (
+                    <span className="text-[10px] text-pierre uppercase tracking-wider font-light px-2 py-0.5 bg-ivoire border border-sable/20">
+                      bloqueado
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-pierre font-light mt-1">
+                  Os tratamentos aparecem sempre antes dos produtos.
+                </p>
+                <div className="flex flex-col md:flex-row gap-0 border border-sable/40 w-full md:w-fit mt-3">
+                  {([
+                    { value: "both", label: "Tratamentos e produtos", services: true, products: true },
+                    { value: "services", label: "Somente tratamentos", services: true, products: false },
+                    { value: "products", label: "Somente produtos", services: false, products: true },
+                  ] as const).map((opt, i) => {
+                    const active =
+                      form.resultsShowServices === opt.services && form.resultsShowProducts === opt.products;
+                    const disabled = isLocked("resultsShowProducts") || isLocked("resultsShowServices");
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        disabled={disabled}
+                        onClick={() => {
+                          set("resultsShowServices", opt.services);
+                          set("resultsShowProducts", opt.products);
+                        }}
+                        className={`px-5 py-2 text-sm font-light tracking-wide transition-colors disabled:opacity-50 ${
+                          i > 0 ? "md:border-l border-t md:border-t-0 border-sable/40" : ""
+                        } ${active ? "bg-carbone text-blanc-casse" : "bg-blanc-casse text-pierre hover:bg-ivoire"}`}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                {(getLockReason("resultsShowProducts") || getLockReason("resultsShowServices")) && (
+                  <p className="text-xs text-pierre font-light mt-2 border-l-2 border-sable/40 pl-2">
+                    {getLockReason("resultsShowProducts") || getLockReason("resultsShowServices")}
+                  </p>
+                )}
+              </div>
               <ToggleRow
                 label="Índice de compatibilidade"
                 description="Exibe a porcentagem de compatibilidade de cada produto."

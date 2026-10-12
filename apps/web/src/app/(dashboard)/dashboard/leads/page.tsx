@@ -38,7 +38,7 @@ function downloadCsv(rows: Array<Record<string, string>>, days: number) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `skinner-leads-${new Date().toISOString().slice(0, 10)}-${days}d.csv`;
+  a.download = `skinner-contatos-${new Date().toISOString().slice(0, 10)}-${days}d.csv`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

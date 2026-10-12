@@ -110,8 +110,22 @@ TOM TECNICO/CLINICO:
   // protocol of in-clinic procedures, home care is only a complement. The
   // clinic's own active procedures are listed so Claude references real
   // offerings by name instead of generic skincare steps.
+  // What the clinic recommends (/dashboard/analise). The written plan must
+  // not promise what the patient will not receive.
+  const recommendsServices = tenantConfig?.resultsShowServices ?? true;
+  const recommendsProducts = tenantConfig?.resultsShowProducts ?? true;
+  const scopeBlock = !recommendsProducts
+    ? `
+ESCOPO DA RECOMENDACAO: esta clinica recomenda APENAS tratamentos e procedimentos. No plano de acao e na timeline, nao indique produtos para comprar; cuidados em casa so como orientacoes gerais (por exemplo protetor solar diario e hidratacao).
+`
+    : !recommendsServices
+      ? `
+ESCOPO DA RECOMENDACAO: esta clinica recomenda APENAS produtos de uso em casa. No plano de acao e na timeline, nao indique procedimentos ou tratamentos de clinica.
+`
+      : "";
+
   let clinicBlock = "";
-  if (input.segment === "aesthetic_clinic") {
+  if (input.segment === "aesthetic_clinic" && recommendsServices) {
     const procedures = await db.product.findMany({
       where: { tenantId: input.tenantId, isActive: true, type: "service" },
       select: { name: true },
@@ -144,7 +158,7 @@ ${conditionsKB}
 
 INGREDIENTES ATIVOS CONHECIDOS:
 ${ingredientsKB}
-${toneBlock}${clinicBlock}
+${toneBlock}${clinicBlock}${scopeBlock}
 REGRAS:
 1. Analise a foto com atencao: textura, poros, manchas, vermelhidao, oleosidade, linhas, firmeza, tom de pele
 2. Cruze o que voce ve na foto com as respostas do questionario
@@ -169,7 +183,8 @@ IDIOMA DA RESPOSTA (CRITICO):
 - Campos a traduzir: "summary", "conditions[].description", "skin_type_discrepancy", "action_plan.phase1/phase2/phase3", "timeline.weeks4/weeks8/weeks12", "alert_signs[]", "zone_annotations[].observation", "zone_annotations[].title".
 - NAO traduza NUNCA os identificadores tecnicos: "conditions[].name" (usado pelo motor de recomendacao para casar produtos — deve manter o ID exato da base de conhecimento, ex: "acne", "hyperpigmentation", "envelhecimento_cronologico"), "skin_type" (ex: "oily", "combination"), "barrier_status" (ex: "healthy", "compromised"), "fitzpatrick", "primary_objective", "zone_annotations[].zone" e "zone_annotations[].status".
 - Mantenha exatamente a mesma estrutura JSON. Apenas o conteudo textual dos campos visiveis muda de idioma.
-- Esta diretiva tem prioridade sobre quaisquer instrucoes de tom ou marca anteriores.`;
+- Esta diretiva tem prioridade sobre quaisquer instrucoes de tom ou marca anteriores.${locale === "pt-BR" ? `
+- PORTUGUES SEM ESTRANGEIRISMOS: nos campos visiveis ao paciente NAO use palavras em ingles. Use sempre o equivalente em portugues: "skincare" → "cuidados com a pele"; "glow" → "vico" ou "luminosidade"; "lifting" → "efeito tensor" ou "elevacao"; "anti-aging" → "antienvelhecimento"; "drug delivery" → "entrega de ativos"; "skinbooster" → "hidratacao injetavel"; "home care" → "cuidados em casa"; "oil-free" → "livre de oleos"; "self-care" → "autocuidado"; "peeling" pode ser mantido (termo consagrado no Brasil). Nomes comerciais de procedimentos e marcas (Ultraformer, Morpheus8, Radiesse, Sculptra, Profhilo) podem ser citados.` : ""}`;
 
   const userPrompt = `QUESTIONARIO DO PACIENTE:
 - Tipo de pele auto-relatado: ${q.skin_type ?? "nao informado"}

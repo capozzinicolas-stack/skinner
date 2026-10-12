@@ -86,8 +86,8 @@ export const PROCEDURE_LIBRARY: ProcedureSeed[] = [
     addOns: [ANESTESICO],
   },
   {
-    slug: "baby-botox",
-    name: "Baby Botox (Preventivo)",
+    slug: "toxina-preventiva",
+    name: "Toxina Botulínica Preventiva (Microdoses)",
     description:
       "Doses menores de toxina botulínica para prevenir rugas e preservar a naturalidade das expressões. Indicado a partir dos 25 anos.",
     category: "injectables",
@@ -107,8 +107,8 @@ export const PROCEDURE_LIBRARY: ProcedureSeed[] = [
     addOns: [ANESTESICO],
   },
   {
-    slug: "lifting-nefertiti",
-    name: "Lifting Nefertiti (Toxina no Pescoço)",
+    slug: "toxina-pescoco-nefertiti",
+    name: "Toxina Botulínica no Pescoço (Contorno Nefertiti)",
     description:
       "Aplicação de toxina botulínica nas bandas do pescoço que eleva sutilmente o contorno da mandíbula e suaviza as linhas cervicais.",
     category: "injectables",
@@ -275,8 +275,8 @@ export const PROCEDURE_LIBRARY: ProcedureSeed[] = [
     addOns: [ANESTESICO],
   },
   {
-    slug: "skinbooster",
-    name: "Skinbooster",
+    slug: "hidratacao-injetavel",
+    name: "Hidratação Injetável com Ácido Hialurônico",
     description:
       "Microinjeções de ácido hialurônico que hidratam a pele em profundidade e devolvem viço, elasticidade e luminosidade.",
     category: "injectables",
@@ -404,9 +404,9 @@ export const PROCEDURE_LIBRARY: ProcedureSeed[] = [
   // ── Tecnologias ────────────────────────────────────────────────────
   {
     slug: "ultrassom-microfocado",
-    name: "Ultrassom Microfocado (Ultraformer / HIFU)",
+    name: "Ultrassom Microfocado (Ultraformer)",
     description:
-      "Energia focada nas camadas profundas que contrai e estimula colágeno, com efeito lifting em rosto, papada e pescoço, sem cortes.",
+      "Energia focada nas camadas profundas que contrai e estimula colágeno, com efeito tensor em rosto, papada e pescoço, sem cortes.",
     category: "technologies",
     concernTags: ["sagging", "aging"],
     skinTypeTags: ALL,
@@ -526,11 +526,11 @@ export const PROCEDURE_LIBRARY: ProcedureSeed[] = [
     projectionOnsetWeeks: 2,
     projectionPeakWeeks: 16,
     projectionImprovementPct: 55,
-    addOns: [ANESTESICO, { name: "Drug delivery clareador", description: "Ativos clareadores aplicados logo após o laser.", price: 200 }],
+    addOns: [ANESTESICO, { name: "Aplicação de ativos clareadores", description: "Ativos clareadores aplicados logo após o laser.", price: 200 }],
   },
   {
-    slug: "laser-toning",
-    name: "Laser Toning Nd:YAG (Manchas e Melasma)",
+    slug: "laser-ndyag-baixa-energia",
+    name: "Laser Nd:YAG de Baixa Energia (Manchas e Melasma)",
     description:
       "Laser suave em sessões seriadas que reduz manchas e melasma sem descamação, ideal para peles que mancham com facilidade.",
     category: "technologies",
@@ -637,7 +637,7 @@ export const PROCEDURE_LIBRARY: ProcedureSeed[] = [
   // ── Pele ───────────────────────────────────────────────────────────
   {
     slug: "microagulhamento",
-    name: "Microagulhamento com Drug Delivery",
+    name: "Microagulhamento com Entrega de Ativos",
     description:
       "Microperfurações controladas que estimulam colágeno e potencializam ativos, melhorando cicatrizes de acne, poros, textura e manchas.",
     category: "skin",
@@ -762,8 +762,8 @@ export const PROCEDURE_LIBRARY: ProcedureSeed[] = [
     addOns: [],
   },
   {
-    slug: "led-terapia",
-    name: "LED Terapia",
+    slug: "terapia-com-led",
+    name: "Terapia com LED",
     description:
       "Luz de LED que reduz a inflamação da acne, acalma a vermelhidão e acelera a recuperação da pele, sem desconforto.",
     category: "skin",

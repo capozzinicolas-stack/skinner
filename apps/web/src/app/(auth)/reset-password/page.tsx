@@ -27,7 +27,7 @@ const COPY: Record<Locale, Copy> = {
     title: "Redefina sua senha",
     invalidLink: "Link inválido. Solicite um novo em \"Esqueci minha senha\".",
     successText: "Senha redefinida com sucesso.",
-    redirecting: "Redirecionando para o login...",
+    redirecting: "Redirecionando para a página de entrada...",
     newPasswordLabel: "Nova senha",
     confirmLabel: "Confirmar nova senha",
     minLengthHint: "Mínimo 8 caracteres.",
@@ -181,7 +181,7 @@ function ResetPasswordForm() {
             )}
           </div>
           <p className="text-center text-[10px] text-sable/60 font-mono tracking-[0.1em] uppercase mt-6">
-            Skinner · Skin Tech · 2026
+            Skinner · 2026
           </p>
         </div>
       </div>

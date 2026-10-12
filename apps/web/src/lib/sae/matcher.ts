@@ -361,13 +361,9 @@ export async function matchProducts(
     return stripInternal(selectedProducts.slice(0, 6));
   }
 
-  // Procedure clinics: procedures come first so they get the top ranks
-  // (Recommendation.rank → PDF and kit order). Home care follows.
-  if (isClinic) {
-    return [...stripInternal(selectedServices), ...stripInternal(selectedProducts.slice(0, 5))];
-  }
-
-  return [...stripInternal(selectedProducts.slice(0, 5)), ...stripInternal(selectedServices)];
+  // Treatments always come first so they get the top ranks
+  // (Recommendation.rank → PDF and kit order). Products follow.
+  return [...stripInternal(selectedServices), ...stripInternal(selectedProducts.slice(0, 5))];
 }
 
 // Category order for the procedure-clinic diversity pass.

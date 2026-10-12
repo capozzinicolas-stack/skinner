@@ -78,17 +78,17 @@ const EMAIL_STRINGS: Record<Locale, EmailStrings> = {
         `Sua analise de pele realizada na <strong style="color: #1C1917;">${t}</strong> esta pronta. Clique abaixo para baixar o relatorio completo em PDF.`,
       cta: "Baixar relatorio em PDF",
       consent: (t) =>
-        `Este email foi enviado pela ${t} com base no seu consentimento durante a analise. Se voce nao reconhece esta solicitacao, ignore este email.`,
+        `Este e-mail foi enviado pela ${t} com base no seu consentimento durante a analise. Se voce nao reconhece esta solicitacao, ignore este e-mail.`,
     },
     newLead: {
-      subject: (n) => `Novo lead capturado — ${n}`,
-      headline: "Novo lead capturado",
+      subject: (n) => `Novo contato capturado — ${n}`,
+      headline: "Novo contato capturado",
       body: (t) =>
         `Uma nova analise foi concluida na <strong style="color: #1C1917;">${t}</strong> e o paciente autorizou contato.`,
       nameLabel: "Nome",
       skinTypeLabel: "Tipo de pele",
       objectiveLabel: "Objetivo principal",
-      cta: "Ver leads no painel",
+      cta: "Ver contatos no painel",
     },
     passwordReset: {
       subject: "Skinner — Redefina sua senha",
@@ -96,7 +96,7 @@ const EMAIL_STRINGS: Record<Locale, EmailStrings> = {
       body: "Recebemos um pedido para redefinir a senha da sua conta Skinner. Use o botao abaixo para escolher uma nova senha.",
       cta: "Redefinir senha",
       expiry: (m) =>
-        `Este link expira em ${m} minutos e so pode ser usado uma vez. Se voce nao pediu esta redefinicao, ignore este email — sua senha continua a mesma.`,
+        `Este link expira em ${m} minutos e so pode ser usado uma vez. Se voce nao pediu esta redefinicao, ignore este e-mail — sua senha continua a mesma.`,
     },
     usageAlert: {
       subjectFull: "Skinner — Limite de analises atingido",
@@ -104,10 +104,10 @@ const EMAIL_STRINGS: Record<Locale, EmailStrings> = {
       headlineFull: "Limite de analises atingido",
       headlineNear: "Voce esta proximo do limite",
       bodyFull: (l) =>
-        `Sua clinica usou todas as ${l} analises do periodo atual. Novas analises pelo link publico ficam temporariamente bloqueadas ate a renovacao do ciclo. Para continuar agora, faca upgrade do plano.`,
+        `Sua clinica usou todas as ${l} analises do periodo atual. Novas analises pelo link publico ficam temporariamente bloqueadas ate a renovacao do ciclo. Para continuar agora, mude de plano.`,
       bodyNear: (u, l, p) =>
-        `Sua clinica ja usou ${u} de ${l} analises (${p}%) do periodo atual. Recomendamos avaliar um upgrade para evitar interrupcoes.`,
-      ctaFull: "Fazer upgrade agora",
+        `Sua clinica ja usou ${u} de ${l} analises (${p}%) do periodo atual. Recomendamos avaliar uma mudança de plano para evitar interrupcoes.`,
+      ctaFull: "Mudar de plano agora",
       ctaNear: "Ver planos disponiveis",
     },
     welcome: {
@@ -121,7 +121,7 @@ const EMAIL_STRINGS: Record<Locale, EmailStrings> = {
       companyLabel: "Empresa",
       cta: "Acessar o painel →",
       footer:
-        "Recomendamos alterar sua senha apos o primeiro acesso. Se voce nao solicitou esta conta, ignore este email.",
+        "Recomendamos alterar sua senha apos o primeiro acesso. Se voce nao solicitou esta conta, ignore este e-mail.",
     },
   },
   es: {
@@ -305,7 +305,7 @@ export function buildAnalysisDeliveryEmail(params: {
         </p>
         <div style="border-top: 1px solid #EDE6DB; margin-top: 32px; padding-top: 16px;">
           <p style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.14em; color: #C8BAA9; margin: 0;">
-            Skinner · Skin Tech · 2026
+            Skinner · 2026
           </p>
         </div>
       </div>
@@ -390,7 +390,7 @@ export function buildPasswordResetEmail(params: {
 
         <div style="border-top: 1px solid #EDE6DB; margin-top: 32px; padding-top: 16px;">
           <p style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.14em; color: #C8BAA9; margin: 0;">
-            Skinner · Skin Tech · 2026
+            Skinner · 2026
           </p>
         </div>
       </div>
@@ -481,7 +481,7 @@ export function buildWelcomeEmail(params: {
 
         <div style="border-top: 1px solid #EDE6DB; margin-top: 32px; padding-top: 16px;">
           <p style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.14em; color: #C8BAA9; margin: 0;">
-            Skinner · Skin Tech · 2026
+            Skinner · 2026
           </p>
         </div>
       </div>

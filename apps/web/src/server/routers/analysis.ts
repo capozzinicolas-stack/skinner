@@ -353,12 +353,21 @@ export const analysisRouter = router({
       const pregnantOrNursing = typeof input.questionnaire.pregnant_or_nursing === "string"
         ? input.questionnaire.pregnant_or_nursing
         : "no";
-      const recommendations = await matchProducts(tenant.id, analysisOutput, {
+      const matched = await matchProducts(tenant.id, analysisOutput, {
         pregnantOrNursing,
         locale: resolvedLocale,
         maxServices: tenant.tenantConfig?.maxServiceRecs ?? null,
         segment,
       });
+      // The clinic chooses what the patient receives (/dashboard/analise →
+      // "O que recomendar ao paciente"): treatments, products or both. The
+      // hidden type is dropped here (not only hidden in the UI) so the PDF,
+      // kit link and cart never show it either.
+      const showServices = tenant.tenantConfig?.resultsShowServices ?? true;
+      const showProducts = tenant.tenantConfig?.resultsShowProducts ?? true;
+      const recommendations = matched.filter((r) =>
+        r.type === "service" ? showServices : showProducts
+      );
 
       const latencyMs = Date.now() - startTime;
 

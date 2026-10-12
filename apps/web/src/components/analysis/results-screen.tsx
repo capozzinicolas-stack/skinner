@@ -620,7 +620,7 @@ export function ResultsScreen({
     Array.isArray(analysis.zone_annotations) &&
     analysis.zone_annotations.length > 0;
 
-  // Recommendation sections. Rendered in segment-dependent order below.
+  // Recommendation sections. Treatments are always rendered before products.
   const productsBlock = (
     <>
       {/* Recommended products */}
@@ -907,18 +907,9 @@ export function ResultsScreen({
         </div>
       )}
 
-      {/* Procedure clinics: procedures first, home care as complement. */}
-      {isClinic ? (
-        <>
-          {servicesBlock}
-          {productsBlock}
-        </>
-      ) : (
-        <>
-          {productsBlock}
-          {servicesBlock}
-        </>
-      )}
+      {/* Treatments always come first, products after (all segments). */}
+      {servicesBlock}
+      {productsBlock}
 
       {/* Kit CTA */}
       {result.kitLink && (

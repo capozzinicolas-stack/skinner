@@ -32,7 +32,7 @@ export const ptBR: DictShape = {
     results: "Resultados",
     plans: "Planos",
     login: "Entrar",
-    cta: "Solicitar demo",
+    cta: "Solicitar demonstração",
   },
   footer: {
     tagline_line1: "A pele e dados.",
@@ -46,7 +46,7 @@ export const ptBR: DictShape = {
     link_how_it_works: "Como funciona",
     link_results: "Resultados",
     link_plans: "Planos",
-    link_demo: "Demo",
+    link_demo: "Demonstração",
     link_labs: "Laboratorios",
     link_clinics: "Clinicas",
     link_pharmacies: "Farmácias",
@@ -64,11 +64,11 @@ export const ptBR: DictShape = {
 
   // ── Home (/) ────────────────────────────────────────────────────────
   home: {
-    hero_eyebrow: "PLATAFORMA SAAS B2B · TECNOLOGIA DE PELE",
+    hero_eyebrow: "PLATAFORMA PARA EMPRESAS · TECNOLOGIA DE PELE",
     hero_title_line1: "Diagnostico de pele",
     hero_title_line2: "que vende.",
     hero_subtitle:
-      "A primeira plataforma SAAS B2B que combina IA dermatologica com economia de plataforma. Sua clinica, laboratorio ou farmacia executa analises, recomenda produtos e gera receita recorrente.",
+      "A primeira plataforma para empresas que combina IA dermatologica com economia de plataforma. Sua clinica, laboratorio ou farmacia executa analises, recomenda produtos e gera receita recorrente.",
     hero_cta_primary: "Ver planos",
     hero_cta_secondary: "Como funciona",
     pillar_eyebrow: "TRES PILARES, UMA PLATAFORMA",
@@ -100,7 +100,7 @@ export const ptBR: DictShape = {
       "Digite seu e-mail e enviaremos um link para criar uma nova senha.",
     forgot_email: "E-mail",
     forgot_submit: "Enviar link",
-    forgot_back: "Voltar para login",
+    forgot_back: "Voltar para a entrada",
     forgot_success_title: "Verifique seu e-mail",
     forgot_success_text:
       "Se a conta existir, enviamos um link para criar nova senha. Pode levar alguns minutos.",
@@ -112,7 +112,7 @@ export const ptBR: DictShape = {
     reset_error_mismatch: "As senhas nao coincidem.",
     reset_error_short: "A senha deve ter ao menos 8 caracteres.",
     reset_error_token: "Link invalido ou expirado.",
-    reset_success: "Senha alterada. Redirecionando para login...",
+    reset_success: "Senha alterada. Redirecionando para a página de entrada...",
   },
 
   // ── Dashboard B2B ───────────────────────────────────────────────────
@@ -124,7 +124,7 @@ export const ptBR: DictShape = {
     nav_dashboard: "Painel",
     nav_catalog: "Catalogo",
     nav_reports: "Relatorios",
-    nav_leads: "Leads",
+    nav_leads: "Contatos",
     nav_kits: "Kits",
     nav_analysis: "Analise",
     nav_brand: "Marca",
@@ -274,8 +274,8 @@ export const ptBR: DictShape = {
     results_phase_month_3: "Mês 3+",
     results_close: "fechar",
     results_section_conditions: "O que observamos na sua pele",
-    results_section_products: "Produtos Recomendados",
-    results_section_services: "Serviços Recomendados",
+    results_section_products: "Produtos recomendados",
+    results_section_services: "Tratamentos recomendados",
     results_section_alert: "Quando consultar um dermatologista",
     results_alert_closing: "Se apresentar qualquer um destes sinais, consulte um dermatologista.",
     results_section_kit: "Kit de tratamento",
@@ -347,7 +347,7 @@ export const ptBR: DictShape = {
     results_channel_shopify: "loja Shopify",
     results_channel_whatsapp: "WhatsApp",
     results_channel_mercadopago: "Mercado Pago",
-    results_channel_external: "loja online",
+    results_channel_external: "loja virtual",
 
     // Cart floater
     cart_count_one: "{n} item",
@@ -368,10 +368,10 @@ export const ptBR: DictShape = {
       "Informacoes gerais da sua clinica e preferencias regionais.",
     org_identifiers: "Identificadores",
     org_id_label: "ID da organizacao",
-    org_slug_label: "Slug publico",
-    org_slug_hint: "Usado em URLs como app.skinner.lat/analise/{slug}",
+    org_slug_label: "Identificador público",
+    org_slug_hint: "Usado em endereços como app.skinner.lat/analise/{slug}",
     org_plan_label: "Plano atual",
-    org_status_label: "Status",
+    org_status_label: "Situação",
     org_data_section: "Dados da organizacao",
     org_read_only_notice:
       "Apenas administradores podem alterar estes campos. Voce esta em modo de leitura.",
@@ -410,7 +410,7 @@ export const ptBR: DictShape = {
     common_no_data: "Nenhum dado para exibir.",
     common_close: "Fechar",
     common_actions: "Acoes",
-    common_status: "Status",
+    common_status: "Situação",
     common_date: "Data",
     common_name: "Nome",
     common_contact: "Contato",
@@ -435,9 +435,9 @@ export const ptBR: DictShape = {
     home_barrier: "Estado da barreira cutanea",
     home_top_products: "Produtos recomendados",
     home_engagement: "Engajamento",
-    home_personas: "Personas",
+    home_personas: "Perfis",
     home_seasonality: "Sazonalidade",
-    home_benchmark: "Benchmark vs plataforma",
+    home_benchmark: "Comparativo com a plataforma",
 
     // Section titles (full bodies)
     home_section_overview: "Visao geral",
@@ -450,7 +450,7 @@ export const ptBR: DictShape = {
     home_section_geo_sub: "De onde vem seus pacientes (capturado automaticamente)",
     home_section_profile: "Perfil de paciente",
     home_section_profile_sub: "Quem sao seus pacientes e o que precisam",
-    home_section_personas: "Personas dominantes",
+    home_section_personas: "Perfis predominantes",
     home_section_personas_sub:
       "Perfis dominantes do seu publico — use para campanhas, estoque e comunicacao",
     home_section_conditions: "Condicoes mais frequentes",
@@ -468,7 +468,7 @@ export const ptBR: DictShape = {
     home_section_seasonality: "Sazonalidade das condicoes",
     home_section_seasonality_sub:
       "Como cada condicao varia ao longo do ano — antecipe campanhas e estoque",
-    home_section_benchmark: "Benchmark da plataforma",
+    home_section_benchmark: "Comparativo da plataforma",
     home_section_benchmark_sub:
       "Compare seus indicadores com a media de outros clientes Skinner (anonimo, agregado)",
     home_section_engagement: "Engajamento",
@@ -481,15 +481,15 @@ export const ptBR: DictShape = {
     home_kpi_conversions: "Conversoes em vendas",
     home_kpi_conversions_hint: "{pct} do total completas",
     home_kpi_revenue: "Receita atribuida",
-    home_kpi_revenue_hint: "Ticket medio {avg}",
-    home_kpi_pdf: "Downloads de PDF",
+    home_kpi_revenue_hint: "Valor médio por compra {avg}",
+    home_kpi_pdf: "PDFs baixados",
     home_kpi_pdf_hint: "{pct} de engajamento",
 
     // Plan usage card
     home_plan_label: "Plano {plan}",
     home_plan_count: "{used} / {limit} analises",
     home_plan_consumed: "{pct} consumido.",
-    home_plan_near_limit: "Limite proximo — considere fazer upgrade.",
+    home_plan_near_limit: "Limite próximo — considere mudar de plano.",
     home_plan_above_70: "Atencao: voce esta acima de 70% do limite.",
     home_plan_healthy: "Uso saudavel.",
 
@@ -546,22 +546,22 @@ export const ptBR: DictShape = {
     home_lift_by_region: "Por regiao",
 
     // Benchmark section
-    home_benchmark_opt_out_intro: "Voce ainda nao esta participando do benchmark. Ative em",
-    home_benchmark_opt_out_link: "Configuracao da analise → Benchmark da plataforma",
+    home_benchmark_opt_out_intro: "Voce ainda nao esta participando do comparativo. Ative em",
+    home_benchmark_opt_out_link: "Configuração da análise → Comparativo da plataforma",
     home_benchmark_opt_out_tail:
       "para comparar seus numeros com a media anonima dos demais clientes.",
     home_benchmark_low_sample:
-      "Voce esta participando do benchmark, mas ainda nao temos clientes participantes suficientes para gerar numeros agregados confiaveis ({count} de {min} minimos). Conforme mais clientes ativarem, os indicadores aparecerao aqui automaticamente.",
+      "Voce esta participando do comparativo, mas ainda nao temos clientes participantes suficientes para gerar numeros agregados confiaveis ({count} de {min} minimos). Conforme mais clientes ativarem, os indicadores aparecerao aqui automaticamente.",
     home_benchmark_basis:
       "Baseado em {count} clientes participantes (media agregada — nenhum cliente individual exposto).",
     home_benchmark_completion: "Taxa de conclusao",
     home_benchmark_conversion: "Taxa de conversao",
-    home_benchmark_avg_ticket: "Ticket medio",
+    home_benchmark_avg_ticket: "Valor médio por compra",
 
     // Engagement section
-    home_engagement_pdf: "Downloads de PDF",
+    home_engagement_pdf: "PDFs baixados",
     home_engagement_email: "Envio por e-mail",
-    home_engagement_pdf_rate: "Taxa de download de PDF",
+    home_engagement_pdf_rate: "Taxa de PDFs baixados",
     home_engagement_pdf_count: "{count} downloads",
     home_engagement_email_rate: "Taxa de envio por e-mail",
     home_engagement_email_count: "{count} e-mails",
@@ -589,9 +589,9 @@ export const ptBR: DictShape = {
     home_temp_password_change: "Alterar senha",
 
     // ── Leads page ───────────────────────────────────────────────────
-    leads_title: "Leads",
+    leads_title: "Contatos",
     leads_subtitle: "Pacientes que autorizaram contato durante a analise.",
-    leads_empty: "Nenhum lead capturado neste período.",
+    leads_empty: "Nenhum contato capturado neste período.",
     leads_empty_hint:
       "Verifique se a captura de contato esta ativada em \"Analise\" e que pacientes autorizaram o contato durante a analise.",
     leads_th_skin_type: "Tipo de pele",
@@ -715,7 +715,7 @@ export const ptBR: DictShape = {
     chan_your_channels: "Seus canais",
     chan_new_button: "+ Novo canal",
     chan_limit_intro:
-      "Voce atingiu o limite de canais do plano {plan}. Faca upgrade em",
+      "Voce atingiu o limite de canais do plano {plan}. Mude de plano em",
     chan_limit_tail: "para criar mais.",
     chan_status_active: "ativo",
     chan_status_paused: "pausado",
@@ -737,7 +737,7 @@ export const ptBR: DictShape = {
       "Imprima e coloque no balcao, vitrine ou material promocional.",
     chan_qr_download: "Baixar QR Code",
     chan_embed_intro:
-      "Cole o snippet abaixo onde quiser que a analise apareca no seu site. Funciona em qualquer plataforma.",
+      "Cole o código abaixo onde quiser que a análise apareça no seu site. Funciona em qualquer plataforma.",
     chan_embed_personalize: "Personalizacao",
     chan_embed_skip_contact: "Pular tela de captura de contato",
     chan_embed_compact: "Modo compacto",
@@ -746,12 +746,12 @@ export const ptBR: DictShape = {
     chan_embed_copy_code: "Copiar codigo",
     chan_embed_helper_title: "Auto-resize (opcional)",
     chan_embed_helper_intro:
-      "Cole UMA vez no seu site para que o iframe redimensione automaticamente.",
+      "Cole UMA vez no seu site para que a janela da análise se ajuste automaticamente.",
     chan_modal_title: "Novo canal",
     chan_modal_label: "Nome interno",
     chan_modal_label_placeholder: "Ex.: Unidade Centro, Black Friday, Loja Shopify",
-    chan_modal_slug: "Slug (URL)",
-    chan_modal_url_preview: "URL:",
+    chan_modal_slug: "Identificador (endereço)",
+    chan_modal_url_preview: "Endereço:",
     chan_modal_expires: "Expira em (opcional)",
     chan_modal_max: "Limite de analises",
     chan_modal_max_placeholder: "ilimitado",
@@ -770,7 +770,7 @@ export const ptBR: DictShape = {
       "Conecte sua loja virtual para vendas automaticas e atribuicao de comissao.",
     int_storefront_title: "Vitrine",
     int_storefront_intro:
-      "Ative para usar as opcoes de venda abaixo. Quando desativado, os produtos so exibem CTA se tiverem link externo cadastrado.",
+      "Ative para usar as opcoes de venda abaixo. Quando desativado, os produtos só exibem o botão de compra se tiverem link externo cadastrado.",
     int_storefront_enable_label: "Habilitar vitrine",
     int_storefront_enable_hint:
       "Permite vender diretamente via WhatsApp ou MercadoPago sem loja virtual.",
@@ -779,7 +779,7 @@ export const ptBR: DictShape = {
       "Escolha como o botao de compra aparece para os consumidores nas telas de resultado e kit.",
     int_cta_mode_external: "Link externo",
     int_cta_mode_external_desc:
-      "Usa o link de ecommerce cadastrado em cada produto. Comportamento atual.",
+      "Usa o link da loja virtual cadastrado em cada produto. Comportamento atual.",
     int_cta_mode_whatsapp: "WhatsApp",
     int_cta_mode_whatsapp_desc:
       "Cada produto exibe um botao que abre o WhatsApp com uma mensagem pre-preenchida.",
@@ -807,11 +807,11 @@ export const ptBR: DictShape = {
     int_mp_email_hint:
       "E-mail associado à sua conta Mercado Pago para receber os pagamentos.",
     int_mp_disclaimer:
-      "O sistema gera um link de pagamento MercadoPago por produto no momento do clique. Integracao completa com checkout disponivel em breve.",
+      "O sistema gera um link de pagamento MercadoPago por produto no momento do clique. Integração completa com o pagamento disponível em breve.",
     int_save: "Salvar configuracoes",
     int_saved: "Salvo.",
     int_section_integrations: "Integracoes",
-    int_section_integrations_sub: "Conexoes diretas com plataformas de ecommerce e ERP.",
+    int_section_integrations_sub: "Conexões diretas com lojas virtuais e sistemas de gestão.",
 
     // ── Users page ───────────────────────────────────────────────────
     usr_title: "Usuarios",
@@ -916,7 +916,7 @@ export const ptBR: DictShape = {
     analise_sec_tone: "Tom da analise",
     analise_sec_tone_desc:
       "Define como a IA escreve o resultado para o paciente. Tecnico ou humanizado.",
-    analise_sec_benchmark: "Benchmark da plataforma",
+    analise_sec_benchmark: "Comparativo da plataforma",
     analise_sec_benchmark_desc:
       "Compartilhe dados agregados (anonimizados) e veja como sua clinica se compara.",
     analise_sec_results_texts: "Textos dos Resultados",
@@ -925,69 +925,69 @@ export const ptBR: DictShape = {
     analise_sec_limits: "Limites de Recomendacao",
 
     // ── Admin panel (skinner_admin role) ─────────────────────────────
-    admin_portal_subtitle: "Admin",
+    admin_portal_subtitle: "Administração",
     admin_nav_dashboard: "Painel",
-    admin_nav_tenants: "Tenants",
+    admin_nav_tenants: "Clientes",
     admin_nav_plans: "Planos",
     admin_nav_users: "Usuarios",
-    admin_nav_leads: "Leads",
-    admin_nav_analytics: "Analytics",
+    admin_nav_leads: "Contatos",
+    admin_nav_analytics: "Indicadores",
     admin_nav_dermatology: "Dermatologia",
     admin_nav_library: "Biblioteca",
     admin_nav_form: "Formulario",
-    admin_nav_prompt_ai: "Prompt IA",
+    admin_nav_prompt_ai: "Instruções da IA",
 
     // Admin dashboard
     admin_dash_title: "Painel Administrativo",
     admin_dash_subtitle: "Visao geral da plataforma Skinner.",
-    admin_dash_active_tenants: "Tenants ativos",
+    admin_dash_active_tenants: "Clientes ativos",
     admin_dash_active_tenants_hint: "{count} no total",
     admin_dash_mrr: "MRR",
     admin_dash_mrr_hint: "Receita recorrente mensal",
     admin_dash_analyses_month: "Analises (mes)",
-    admin_dash_analyses_month_hint: "Em todos os tenants",
+    admin_dash_analyses_month_hint: "Em todos os clientes",
     admin_dash_active_users: "Usuarios ativos (30d)",
     admin_dash_signups: "Novos signups (30d)",
-    admin_dash_section_recent: "Tenants recentes",
+    admin_dash_section_recent: "Clientes recentes",
     admin_dash_section_recent_sub: "Ultimos 5 signups na plataforma.",
-    admin_dash_section_top: "Top tenants por volume",
+    admin_dash_section_top: "Clientes com maior volume",
     admin_dash_section_top_sub: "Maiores consumidores de analises este mes.",
     admin_dash_mrr_sub: "planos ativos",
     admin_dash_analyses_month_label: "Analises este mes",
     admin_dash_tenants_active_sub: "de {total} total",
     admin_dash_users_label: "Usuarios B2B",
     admin_dash_risk_label: "Risco de uso",
-    admin_dash_risk_sub: "tenants acima de 80%",
+    admin_dash_risk_sub: "clientes acima de 80%",
     admin_dash_recent_analyses: "Ultimas analises",
     admin_dash_empty_analyses: "Nenhuma analise realizada ainda.",
-    admin_dash_at_risk: "Tenants em risco",
-    admin_dash_at_risk_empty: "Nenhum tenant acima de 80% do limite.",
+    admin_dash_at_risk: "Clientes em risco",
+    admin_dash_at_risk_empty: "Nenhum cliente acima de 80% do limite.",
     admin_dash_critical_title: "Configuracoes criticas",
-    admin_dash_critical_sub: "Tenants com configuracoes de seguranca desativadas.",
+    admin_dash_critical_sub: "Clientes com configurações de segurança desativadas.",
     admin_dash_critical_empty:
-      "Nenhum tenant com configuracoes criticas desativadas.",
+      "Nenhum cliente com configurações críticas desativadas.",
 
     // Admin tenants list
-    admin_tenants_title: "Tenants",
+    admin_tenants_title: "Clientes",
     admin_tenants_subtitle: "Gerencie organizacoes ativas na plataforma.",
-    admin_tenants_new: "Novo Tenant",
+    admin_tenants_new: "Novo cliente",
     admin_tenants_new_custom: "Novo Plano Custom",
-    admin_tenants_search: "Buscar por nome, slug ou e-mail...",
+    admin_tenants_search: "Buscar por nome, identificador ou e-mail...",
     admin_tenants_th_name: "Nome",
-    admin_tenants_th_slug: "Slug",
+    admin_tenants_th_slug: "Identificador",
     admin_tenants_th_plan: "Plano",
-    admin_tenants_th_status: "Status",
+    admin_tenants_th_status: "Situação",
     admin_tenants_th_usage: "Uso",
     admin_tenants_th_signup: "Cadastro",
     admin_tenants_status_active: "Ativo",
     admin_tenants_status_paused: "Pausado",
     admin_tenants_status_deleted: "Removido",
-    admin_tenants_empty: "Nenhum tenant cadastrado ainda.",
+    admin_tenants_empty: "Nenhum cliente cadastrado ainda.",
     admin_tenants_open: "Abrir",
-    admin_tenants_create_title: "Criar Tenant",
+    admin_tenants_create_title: "Criar cliente",
     admin_tenants_field_name: "Nome",
     admin_tenants_field_name_ph: "Clinica Exemplo",
-    admin_tenants_field_slug: "Slug",
+    admin_tenants_field_slug: "Identificador",
     admin_tenants_field_slug_ph: "clinica-exemplo",
     admin_tenants_field_plan: "Plano",
     admin_tenants_creating: "Criando...",
@@ -1002,7 +1002,7 @@ export const ptBR: DictShape = {
     admin_tenants_status_active_label: "Ativo",
     admin_tenants_status_paused_label: "Pausado",
     admin_tenants_status_deleted_label: "Deletado",
-    admin_tenants_no_register: "Nenhum tenant cadastrado.",
+    admin_tenants_no_register: "Nenhum cliente cadastrado.",
 
     // Admin plans
     admin_plans_title: "Planos",
@@ -1014,7 +1014,7 @@ export const ptBR: DictShape = {
     admin_plans_th_price: "Preco",
     admin_plans_th_limit: "Limite",
     admin_plans_th_visible: "Visivel",
-    admin_plans_th_tenants: "Tenants",
+    admin_plans_th_tenants: "Clientes",
     admin_plans_archive: "Arquivar",
     admin_plans_unarchive: "Reativar",
     admin_plans_deprecated: "Descontinuado",
@@ -1027,28 +1027,28 @@ export const ptBR: DictShape = {
     admin_users_th_email: "E-mail",
     admin_users_th_name: "Nome",
     admin_users_th_role: "Papel",
-    admin_users_th_tenant: "Tenant",
+    admin_users_th_tenant: "Cliente",
     admin_users_th_last_login: "Ultimo acesso",
-    admin_users_role_skinner_admin: "Skinner Admin",
-    admin_users_role_b2b_admin: "Admin B2B",
+    admin_users_role_skinner_admin: "Administração Skinner",
+    admin_users_role_b2b_admin: "Administrador da clínica",
     admin_users_role_b2b_analyst: "Analista",
     admin_users_role_b2b_viewer: "Visualizador",
 
     // Admin leads
-    admin_leads_title: "Leads",
+    admin_leads_title: "Contatos",
     admin_leads_subtitle:
-      "Leads capturados em todos os tenants da plataforma.",
-    admin_leads_empty: "Nenhum lead capturado ainda.",
-    admin_leads_th_tenant: "Tenant",
+      "Contatos capturados em todos os clientes da plataforma.",
+    admin_leads_empty: "Nenhum contato capturado ainda.",
+    admin_leads_th_tenant: "Cliente",
     admin_leads_th_origin: "Origem",
 
     // Admin analytics
-    admin_analytics_title: "Analytics",
+    admin_analytics_title: "Indicadores",
     admin_analytics_subtitle:
-      "Metricas agregadas da plataforma (todos os tenants).",
+      "Métricas agregadas da plataforma (todos os clientes).",
     admin_analytics_section_growth: "Crescimento",
     admin_analytics_section_health: "Saude da plataforma",
-    admin_analytics_section_top_brands: "Top marcas",
+    admin_analytics_section_top_brands: "Principais marcas",
 
     // Admin dermatology
     admin_derm_title: "Dermatologia",
@@ -1059,7 +1059,7 @@ export const ptBR: DictShape = {
     admin_form_title: "Formulario",
     admin_form_subtitle:
       "Configure as perguntas do questionario que o paciente responde antes da analise.",
-    admin_prompt_title: "Prompt IA",
+    admin_prompt_title: "Instruções da IA",
     admin_prompt_subtitle:
       "Regras e instrucoes globais que a IA segue ao gerar relatorios.",
   },

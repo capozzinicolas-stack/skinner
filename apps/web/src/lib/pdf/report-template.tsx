@@ -299,7 +299,7 @@ const PDF_STRINGS: Record<
     },
     barrier: { healthy: "Saudável", compromised: "Enfraquecida", needs_attention: "Precisa de atenção" },
     coverTitle: "Análise de Pele",
-    coverSubtitle: "Skinner — Skin Tech",
+    coverSubtitle: "Skinner — Tecnologia para a pele",
     sectionDiagnosis: "Diagnóstico",
     sectionDiagnosisTitle: (s) => `Sua pele é ${s}`,
     barrierLabel: "Estado da sua pele",
@@ -330,7 +330,7 @@ const PDF_STRINGS: Record<
     },
     barrier: { healthy: "Saludable", compromised: "Comprometida", needs_attention: "Necesita atencion" },
     coverTitle: "Analisis de Piel",
-    coverSubtitle: "Skinner — Skin Tech",
+    coverSubtitle: "Skinner — Tecnología para la piel",
     sectionDiagnosis: "Diagnostico",
     sectionDiagnosisTitle: (s) => `Tu piel es ${s}`,
     barrierLabel: "Barrera cutanea",
@@ -502,7 +502,7 @@ export function SkinReport({
         ))}
 
         <View style={s.footer}>
-          <Text style={s.footerText}>Skinner — Skin Tech</Text>
+          <Text style={s.footerText}>Skinner</Text>
           <Text style={s.footerText}>{L.confidential}</Text>
         </View>
       </Page>
@@ -550,7 +550,7 @@ export function SkinReport({
         )}
 
         <View style={s.footer}>
-          <Text style={s.footerText}>Skinner — Skin Tech</Text>
+          <Text style={s.footerText}>Skinner</Text>
           <Text style={s.footerText}>{L.confidential}</Text>
         </View>
       </Page>
@@ -610,7 +610,7 @@ export function SkinReport({
           )}
 
           <View style={s.footer}>
-            <Text style={s.footerText}>Skinner — Skin Tech</Text>
+            <Text style={s.footerText}>Skinner</Text>
             <Text style={s.footerText}>{L.confidential}</Text>
           </View>
         </Page>

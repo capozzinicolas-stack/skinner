@@ -406,7 +406,7 @@ function PersonaCard({
           </p>
         </div>
         <div>
-          <p className="text-[10px] text-pierre uppercase tracking-wider font-light">Ticket médio</p>
+          <p className="text-[10px] text-pierre uppercase tracking-wider font-light">Valor médio por compra</p>
           <p className="text-sm text-carbone font-light mt-1">
             {persona.avgTicket > 0 ? fmtCurrency(persona.avgTicket) : "—"}
           </p>

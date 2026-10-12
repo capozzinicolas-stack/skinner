@@ -10,7 +10,7 @@ const COPY: Record<Locale, Copy> = {
     title: "Termos de Uso",
     sections: [
       { h: "1. Aceitação", body: "Ao utilizar a plataforma Skinner, você concorda com estes termos de uso. Se você é um cliente B2B, um Contrato de Prestação de Serviços (SLA) separado pode ser aplicável." },
-      { h: "2. Descrição do serviço", body: "Skinner é uma plataforma SaaS B2B de inteligência dermatológica que oferece análise facial por IA e recomendação personalizada de produtos. O serviço é contratado por empresas (tenants) e disponibilizado aos seus clientes finais." },
+      { h: "2. Descrição do serviço", body: "Skinner é uma plataforma de software por assinatura para empresas de inteligência dermatológica que oferece análise facial por IA e recomendação personalizada de produtos. O serviço é contratado por empresas (clientes) e disponibilizado aos seus clientes finais." },
       { h: "3. Disclaimer médico", body: "A análise de pele fornecida pela Skinner é exclusivamente informativa e educacional. Não constitui diagnóstico médico, prescrição ou aconselhamento profissional de saúde. Sempre consulte um dermatologista para condições de pele que necessitem tratamento médico." },
       { h: "4. Uso aceitável", body: "O cliente B2B se compromete a: utilizar a plataforma apenas para fins legítimos, não tentar reverter a engenharia do motor de análise, não compartilhar credenciais de acesso e manter seu catálogo de produtos atualizado e verídico." },
       { h: "5. Propriedade intelectual", body: "A base dermatológica, algoritmos de matching, modelos de análise e marca Skinner são propriedade exclusiva da Skinner. O conteúdo do catálogo de produtos e os dados de clientes finais pertencem ao respectivo cliente B2B." },

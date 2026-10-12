@@ -441,7 +441,7 @@ function ProductForm() {
                 onClick={() => setShowUrlInput((v) => !v)}
                 className="text-[10px] text-pierre uppercase tracking-wider font-light hover:text-carbone transition-colors"
               >
-                {showUrlInput ? "Usar upload" : "Ou inserir URL"}
+                {showUrlInput ? "Enviar arquivo" : "Ou inserir URL"}
               </button>
             </div>
 
@@ -465,7 +465,7 @@ function ProductForm() {
         {/* Product-only fields */}
         {!isService && (
           <div>
-            <label className={labelClass}>Link e-commerce</label>
+            <label className={labelClass}>Link da loja virtual</label>
             <input
               value={form.ecommerceLink}
               onChange={(e) => setForm((f) => ({ ...f, ecommerceLink: e.target.value }))}

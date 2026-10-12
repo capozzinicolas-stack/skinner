@@ -15,7 +15,7 @@ const ctaModeOptions: { value: CtaMode; label: string; description: string }[] =
   {
     value: "external",
     label: "Link externo",
-    description: "Usa o link de ecommerce cadastrado em cada produto. Comportamento atual.",
+    description: "Usa o link da loja virtual cadastrado em cada produto. Comportamento atual.",
   },
   {
     value: "whatsapp",
@@ -37,7 +37,7 @@ const ctaModeOptions: { value: CtaMode; label: string; description: string }[] =
 const otherIntegrations = [
   {
     name: "VTEX",
-    description: "Integracao enterprise com plataforma VTEX.",
+    description: "Integração corporativa com a plataforma VTEX.",
     badge: "Em breve",
   },
   {

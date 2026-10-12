@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
 
     if (!tokenPlain || newPassword.length < 8) {
       return NextResponse.json(
-        { error: "Token invalido ou senha curta (minimo 8 caracteres)." },
+        { error: "Link inválido ou senha curta (mínimo 8 caracteres)." },
         { status: 400 }
       );
     }

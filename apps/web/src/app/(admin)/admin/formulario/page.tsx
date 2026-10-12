@@ -212,8 +212,8 @@ export default function FormularioPage() {
         </div>
         <p className="text-xs text-pierre font-light mt-2">
           {variant === "clinic"
-            ? "Usado pelos tenants do segmento Clínica de procedimentos estéticos."
-            : "Usado pelos tenants do segmento Dermocosméticos (padrão)."}
+            ? "Usado pelos clientes do segmento Clínica de procedimentos estéticos."
+            : "Usado pelos clientes do segmento Dermocosméticos (padrão)."}
         </p>
       </div>
 

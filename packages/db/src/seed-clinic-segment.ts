@@ -57,9 +57,22 @@ async function main() {
   console.log(`Conditions: ${NEW_CONDITIONS.map((c) => c.name).join(", ")}`);
 
   let created = 0;
+  let synced = 0;
   for (const [i, p] of PROCEDURE_LIBRARY.entries()) {
     const existing = await prisma.procedureLibraryItem.findUnique({ where: { slug: p.slug } });
-    if (existing) continue;
+    if (existing) {
+      // SYNC_LIBRARY_TEXT=1 refreshes only the patient-facing texts (name,
+      // description, add-ons) from the data file — used for wording fixes.
+      // Prices, tags and curves edited by admins are never touched.
+      if (process.env.SYNC_LIBRARY_TEXT === "1") {
+        await prisma.procedureLibraryItem.update({
+          where: { slug: p.slug },
+          data: { name: p.name, description: p.description, addOns: JSON.stringify(p.addOns) },
+        });
+        synced++;
+      }
+      continue;
+    }
     await prisma.procedureLibraryItem.create({
       data: {
         slug: p.slug,
@@ -85,7 +98,7 @@ async function main() {
     });
     created++;
   }
-  console.log(`Procedure library: ${created} created, ${PROCEDURE_LIBRARY.length - created} already present`);
+  console.log(`Procedure library: ${created} created, ${PROCEDURE_LIBRARY.length - created} already present, ${synced} texts synced`);
 }
 
 main()

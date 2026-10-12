@@ -55,11 +55,11 @@ export async function POST(req: NextRequest) {
     select: { id: true, status: true, name: true, slug: true },
   });
   if (!tenant) {
-    return NextResponse.json({ error: "Tenant nao encontrado" }, { status: 404 });
+    return NextResponse.json({ error: "Clínica não encontrada" }, { status: 404 });
   }
   if (tenant.status === "deleted") {
     return NextResponse.json(
-      { error: "Tenant excluido — impersonation bloqueada por LGPD" },
+      { error: "Clínica excluída — acesso bloqueado pela LGPD" },
       { status: 403 }
     );
   }
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error:
-          "Este tenant nao tem nenhum usuario b2b_admin. Crie um antes de impersonar.",
+          "Esta clínica não tem nenhum usuário administrador. Crie um antes de acessar como clínica.",
       },
       { status: 422 }
     );

@@ -91,7 +91,7 @@ export default function LeadsPage() {
       )}
 
       {!leads.isLoading && filtered.length === 0 && (
-        <p className="text-sm text-pierre font-light">Nenhum lead encontrado.</p>
+        <p className="text-sm text-pierre font-light">Nenhum contato encontrado.</p>
       )}
 
       {filtered.length > 0 && (
@@ -163,7 +163,7 @@ export default function LeadsPage() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (confirm(`Remover lead de "${lead.name}"?`)) {
+                          if (confirm(`Remover contato de "${lead.name}"?`)) {
                             deleteLead.mutate({ id: lead.id });
                           }
                         }}

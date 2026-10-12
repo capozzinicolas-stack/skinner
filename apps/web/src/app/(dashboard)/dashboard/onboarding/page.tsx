@@ -16,7 +16,7 @@ export default function OnboardingPage() {
       </div>
       <iframe
         src="/onboarding/index.html"
-        title="Tour de primeiros passos Skinner"
+        title="Apresentação de primeiros passos Skinner"
         className="flex-1 w-full border-0"
       />
     </div>

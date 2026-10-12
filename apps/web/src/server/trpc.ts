@@ -68,7 +68,7 @@ export const publicProcedure = t.procedure;
 
 const isAuthed = t.middleware(({ ctx, next }) => {
   if (!ctx.userId) {
-    throw new TRPCError({ code: "UNAUTHORIZED", message: "Sessão expirada. Faça login novamente." });
+    throw new TRPCError({ code: "UNAUTHORIZED", message: "Sessão expirada. Entre novamente." });
   }
   return next({
     ctx: { ...ctx, userId: ctx.userId, role: ctx.role },
