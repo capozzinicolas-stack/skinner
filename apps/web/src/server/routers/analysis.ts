@@ -4,6 +4,7 @@ import { router, publicProcedure } from "../trpc";
 import { mockAnalyze } from "@/lib/sae/mock-analyzer";
 import { claudeAnalyze } from "@/lib/sae/claude-analyzer";
 import { matchProducts } from "@/lib/sae/matcher";
+import { skinTypeLabelsLocalized, objectiveLabelsLocalized, tr } from "@/lib/sae/labels";
 import type { AnalysisInput, FullAnalysisResult } from "@/lib/sae/types";
 import { analysisLimiter, getClientIp, getClientGeo } from "@/lib/rate-limit";
 import {
@@ -187,7 +188,7 @@ export const analysisRouter = router({
         include: { tenantConfig: true },
       });
       if (!tenant || tenant.status !== "active") {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Tenant não encontrado." });
+        throw new TRPCError({ code: "NOT_FOUND", message: "Clínica não encontrada." });
       }
 
       if (channel) {
@@ -318,11 +319,13 @@ export const analysisRouter = router({
         }
       }
 
+      const segment = tenant.segment ?? "dermocosmetics";
       const analysisInput: AnalysisInput = {
         tenantId: tenant.id,
         photoBase64: input.photoBase64,
         questionnaire: input.questionnaire,
         locale: resolvedLocale,
+        segment,
       };
 
       // Use Claude API if key is available, otherwise fall back to mock
@@ -338,13 +341,39 @@ export const analysisRouter = router({
         analysisOutput = await mockAnalyze(analysisInput);
       }
 
+      // Procedure clinics: the clinic questionnaire's first question IS the
+      // primary objective (its option values are objective IDs). Claude is
+      // asked to echo it, but we pin it to the patient's answer so the
+      // matcher's objective score always uses the exact ID.
+      if (segment === "aesthetic_clinic" && typeof input.questionnaire.primary_objective === "string" && input.questionnaire.primary_objective) {
+        analysisOutput.primary_objective = input.questionnaire.primary_objective;
+      }
+
       // 4. Match products (pass pregnancy status for contraindication filtering)
       const pregnantOrNursing = typeof input.questionnaire.pregnant_or_nursing === "string"
         ? input.questionnaire.pregnant_or_nursing
         : "no";
-      const recommendations = await matchProducts(tenant.id, analysisOutput, {
+      const matched = await matchProducts(tenant.id, analysisOutput, {
         pregnantOrNursing,
         locale: resolvedLocale,
+        maxServices: tenant.tenantConfig?.maxServiceRecs ?? null,
+        segment,
+      });
+      // The clinic chooses what the patient receives (/dashboard/analise →
+      // "O que recomendar ao paciente"): treatments, products or both. The
+      // hidden type is dropped here (not only hidden in the UI) so the PDF,
+      // kit link and cart never show it either.
+      const showServices = tenant.tenantConfig?.resultsShowServices ?? true;
+      const showProducts = tenant.tenantConfig?.resultsShowProducts ?? true;
+      // Product cap (TenantConfig.maxProductRecs) applied here too, so the
+      // PDF and kit list exactly what the results screen shows.
+      const maxProducts = tenant.tenantConfig?.maxProductRecs ?? null;
+      let productCount = 0;
+      const recommendations = matched.filter((r) => {
+        if (r.type === "service") return showServices;
+        if (!showProducts) return false;
+        productCount++;
+        return maxProducts == null || productCount <= maxProducts;
       });
 
       const latencyMs = Date.now() - startTime;
@@ -466,11 +495,12 @@ export const analysisRouter = router({
           if (admins.length > 0) {
             const { subject, html } = buildNewLeadNotificationEmail({
               tenantName: tenant.name,
-              patientName: input.clientName ?? "Anonimo",
+              patientName: input.clientName ?? "Anônimo",
               patientEmail: input.clientEmail ?? null,
               patientPhone: input.clientPhone ?? null,
-              skinType: analysisOutput.skin_type,
-              primaryObjective: analysisOutput.primary_objective,
+              // Translated labels (the clinic reads this email, not IDs).
+              skinType: tr(skinTypeLabelsLocalized, analysisOutput.skin_type, resolvedLocale),
+              primaryObjective: tr(objectiveLabelsLocalized, analysisOutput.primary_objective, resolvedLocale),
               dashboardUrl: "https://app.skinner.lat/dashboard/leads",
             });
             await Promise.all(

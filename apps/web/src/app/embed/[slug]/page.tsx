@@ -14,6 +14,7 @@ import { resolveProductChannel } from "@/lib/cart/resolve-channel";
 import { postToParent, isInsideIframe } from "@/lib/embed/post-message";
 import type { CartItem } from "@/lib/cart/types";
 import { I18nProvider } from "@/lib/i18n/client";
+import { friendlyAnalysisError } from "@/lib/analysis/error-message";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { LOCALES, DEFAULT_LOCALE, type Locale } from "@/lib/i18n/types";
 import type { FullAnalysisResult } from "@/lib/sae/types";
@@ -69,7 +70,9 @@ function EmbedAnalysisFlow({ params }: { params: { slug: string } }) {
       postToParent("skinner:analysis_completed", { analysisId: data.analysisId });
     },
     onError: (err) => {
-      setErrorMsg(err.message);
+      // localT is declared further down this component; the callback only
+      // runs after render, so the binding is initialized by then.
+      setErrorMsg(friendlyAnalysisError(err, localT.patient.error_generic));
       const code = err.data?.code;
       setErrorBlocking(code === "FORBIDDEN" || code === "BAD_REQUEST");
       setStep("error");
@@ -192,6 +195,8 @@ function EmbedAnalysisFlow({ params }: { params: { slug: string } }) {
         mercadoPagoEmail: cfg.mercadoPagoEmail ?? null,
         // Skin projection
         projectionEnabled: cfg.projectionEnabled ?? true,
+        // Tenant segment (procedure clinics reorder results + projection).
+        segment: cfg.segment ?? null,
       }
     : undefined;
 
@@ -239,7 +244,7 @@ function EmbedAnalysisFlow({ params }: { params: { slug: string } }) {
           phone: data.clientPhone || undefined,
         });
         if (!check.allowed) {
-          setErrorMsg(check.message ?? "Limite atingido para este canal.");
+          setErrorMsg(check.message ?? localT.patient.limit_reached_default);
           setErrorBlocking(true);
           setStep("error");
           return;
@@ -276,7 +281,7 @@ function EmbedAnalysisFlow({ params }: { params: { slug: string } }) {
   if (tenant.isLoading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-blanc-casse">
-        <p className="text-pierre font-light">Carregando...</p>
+        <p className="text-pierre font-light">{getDictionary(DEFAULT_LOCALE).patient.loading}</p>
       </main>
     );
   }
@@ -284,8 +289,8 @@ function EmbedAnalysisFlow({ params }: { params: { slug: string } }) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-blanc-casse">
         <div className="text-center">
-          <h1 className="font-serif text-2xl text-carbone">Nao encontrado</h1>
-          <p className="text-pierre mt-2 font-light">Este link de analise nao e valido.</p>
+          <h1 className="font-serif text-2xl text-carbone">{localT.patient.not_found_title}</h1>
+          <p className="text-pierre mt-2 font-light">{localT.patient.not_found_text}</p>
         </div>
       </main>
     );
@@ -490,7 +495,7 @@ function EmbedAnalysisFlow({ params }: { params: { slug: string } }) {
         {step === "error" && (
           <div className="w-full max-w-lg mx-auto px-4 text-center space-y-4">
             <h2 className="font-serif text-xl text-terre">
-              {errorBlocking ? "Nao foi possivel realizar a analise" : "Erro na analise"}
+              {errorBlocking ? localT.patient.error_title_blocking : localT.patient.error_title}
             </h2>
             <p className="text-sm text-pierre font-light">{errorMsg}</p>
             {!errorBlocking && (
@@ -501,7 +506,7 @@ function EmbedAnalysisFlow({ params }: { params: { slug: string } }) {
                 onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = brandPrimary)}
                 className="px-6 py-2 text-blanc-casse text-sm font-light tracking-wide transition-colors"
               >
-                Tentar novamente
+                {localT.patient.error_retry}
               </button>
             )}
           </div>
@@ -521,7 +526,7 @@ export default function EmbedPage({ params }: { params: { slug: string } }) {
     <Suspense
       fallback={
         <main className="min-h-screen flex items-center justify-center bg-blanc-casse">
-          <p className="text-pierre font-light">Carregando...</p>
+          <p className="text-pierre font-light">{getDictionary(DEFAULT_LOCALE).patient.loading}</p>
         </main>
       }
     >

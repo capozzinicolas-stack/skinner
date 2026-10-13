@@ -13,6 +13,9 @@ const validConcernTags = [
   "pores",
   "oiliness",
   "dullness",
+  "sagging",
+  "acne_scars",
+  "texture",
 ] as const;
 
 const validSkinTypes = [
@@ -32,6 +35,9 @@ const validObjectives = [
   "firmness",
   "pore-control",
   "even-tone",
+  "sagging",
+  "texture",
+  "prevention",
 ] as const;
 
 const validSteps = [
@@ -68,8 +74,17 @@ const productInput = z.object({
   type: z.enum(["product", "service"]).default("product"),
   bookingLink: z.string().optional(),
   sessionCount: z.number().int().min(1).optional(),
-  sessionFrequency: z.enum(["semanal", "quinzenal", "mensal"]).optional(),
+  // Free text since Oct-2026 ("a cada 4-6 meses", "manutenção anual"...).
+  // The form still suggests semanal / quinzenal / mensal.
+  sessionFrequency: z.string().max(60).optional(),
   durationMinutes: z.number().int().min(1).optional(),
+  // Procedure-clinic fields (see Product in schema.prisma). Nullable so the
+  // form can clear them.
+  serviceCategory: z.enum(["injectables", "technologies", "skin"]).nullable().optional(),
+  projectionOnsetWeeks: z.number().int().min(0).max(104).nullable().optional(),
+  projectionPeakWeeks: z.number().int().min(0).max(104).nullable().optional(),
+  projectionImprovementPct: z.number().int().min(0).max(100).nullable().optional(),
+  addOns: z.string().max(4000).nullable().optional(), // JSON [{ name, description?, price? }]
 });
 
 export const productRouter = router({
@@ -143,7 +158,7 @@ export const productRouter = router({
         where: { id: input.id },
       });
       if (product.tenantId !== ctx.tenantId) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND", message: "Item não encontrado." });
       }
       return product;
     }),
@@ -161,7 +176,7 @@ export const productRouter = router({
         where: { id: input.id },
       });
       if (existing.tenantId !== ctx.tenantId) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND", message: "Item não encontrado." });
       }
       const { id, ...data } = input;
       return ctx.db.product.update({ where: { id }, data });
@@ -174,7 +189,7 @@ export const productRouter = router({
         where: { id: input.id },
       });
       if (existing.tenantId !== ctx.tenantId) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND", message: "Item não encontrado." });
       }
       return ctx.db.product.update({
         where: { id: input.id },
@@ -189,7 +204,7 @@ export const productRouter = router({
         where: { id: input.id },
       });
       if (existing.tenantId !== ctx.tenantId) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND", message: "Item não encontrado." });
       }
       return ctx.db.product.update({
         where: { id: input.id },
@@ -207,7 +222,7 @@ export const productRouter = router({
       });
       const validIds = existing.map((p) => p.id);
       if (validIds.length === 0) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND", message: "Item não encontrado." });
       }
       const result = await ctx.db.product.updateMany({
         where: { id: { in: validIds }, tenantId: ctx.tenantId },
@@ -225,7 +240,7 @@ export const productRouter = router({
       });
       const validIds = existing.map((p) => p.id);
       if (validIds.length === 0) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND", message: "Item não encontrado." });
       }
       const result = await ctx.db.product.updateMany({
         where: { id: { in: validIds }, tenantId: ctx.tenantId },
@@ -312,6 +327,84 @@ export const productRouter = router({
       steps: [...validSteps],
     };
   }),
+
+  // ─── Procedure library (Oct-2026) ─────────────────────────────────────────
+  // Global Skinner-maintained procedures the clinic can import into its own
+  // catalog. `imported` flags items already present (by libraryItemId) so the
+  // UI can disable them.
+  libraryList: tenantProcedure.query(async ({ ctx }) => {
+    const [items, existing] = await Promise.all([
+      ctx.db.procedureLibraryItem.findMany({
+        where: { isActive: true },
+        orderBy: [{ category: "asc" }, { displayOrder: "asc" }, { name: "asc" }],
+      }),
+      ctx.db.product.findMany({
+        where: { tenantId: ctx.tenantId, libraryItemId: { not: null } },
+        select: { libraryItemId: true },
+      }),
+    ]);
+    const importedIds = new Set(existing.map((p) => p.libraryItemId));
+    return items.map((item) => ({ ...item, imported: importedIds.has(item.id) }));
+  }),
+
+  // Copies library items into the tenant catalog as services. SKU is
+  // "PROC-<slug>"; items already imported (or whose SKU exists) are skipped,
+  // never overwritten — the clinic may have renamed/repriced its copy.
+  importFromLibrary: tenantProcedure
+    .input(
+      z.object({
+        ids: z.array(z.string()).min(1).max(100),
+        bookingLink: z.string().max(500).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const items = await ctx.db.procedureLibraryItem.findMany({
+        where: { id: { in: input.ids }, isActive: true },
+      });
+      const result = { created: 0, skipped: 0 };
+      for (const item of items) {
+        const sku = `PROC-${item.slug}`;
+        const already = await ctx.db.product.findFirst({
+          where: {
+            tenantId: ctx.tenantId,
+            OR: [{ libraryItemId: item.id }, { sku }],
+          },
+          select: { id: true },
+        });
+        if (already) {
+          result.skipped++;
+          continue;
+        }
+        await ctx.db.product.create({
+          data: {
+            tenantId: ctx.tenantId,
+            sku,
+            name: item.name,
+            description: item.description,
+            price: item.suggestedPrice,
+            type: "service",
+            concernTags: item.concernTags,
+            skinTypeTags: item.skinTypeTags,
+            objectiveTags: item.objectiveTags,
+            severityLevel: item.severityLevel,
+            activeIngredients: item.activeIngredients,
+            contraindications: item.contraindications,
+            sessionCount: item.sessionCount,
+            sessionFrequency: item.sessionFrequency,
+            durationMinutes: item.durationMinutes,
+            bookingLink: input.bookingLink || null,
+            serviceCategory: item.category,
+            projectionOnsetWeeks: item.projectionOnsetWeeks,
+            projectionPeakWeeks: item.projectionPeakWeeks,
+            projectionImprovementPct: item.projectionImprovementPct,
+            addOns: item.addOns,
+            libraryItemId: item.id,
+          },
+        });
+        result.created++;
+      }
+      return result;
+    }),
 
   // Returns all active products for CSV export (no pagination)
   exportList: tenantProcedure

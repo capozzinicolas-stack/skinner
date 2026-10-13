@@ -24,7 +24,7 @@ const COPY: Record<Locale, Copy> = {
         ],
       },
       { h: "3. Base legal", body: "Consentimento explícito coletado antes da captura de foto, com linguagem clara sobre finalidade e tratamento dos dados." },
-      { h: "4. Retenção de dados", body: "Fotos faciais: processadas e descartadas imediatamente. Resultados de análise: armazenados conforme plano do cliente B2B (30 a 365 dias). Leads de contato: mantidos até solicitação de exclusão." },
+      { h: "4. Retenção de dados", body: "Fotos faciais: processadas e descartadas imediatamente. Resultados de análise: armazenados conforme plano do cliente B2B (30 a 365 dias). Contatos de contato: mantidos até solicitação de exclusão." },
       { h: "5. Direitos do titular", body: "Você tem direito a: confirmação de tratamento, acesso, correção, anonimização, portabilidade, eliminação e revogação do consentimento. Para exercer seus direitos, entre em contato pelo e-mail privacidade@skinner.com.br." },
       { h: "6. Segurança", body: "Criptografia em trânsito (TLS 1.3) e em repouso (AES-256). Rate limiting por IP. Audit log de todas as ações. Revisão de segurança trimestral." },
       { h: "7. Contato do DPO", body: "Encarregado de Proteção de Dados: privacidade@skinner.com.br" },

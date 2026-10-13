@@ -37,7 +37,7 @@ const COPY: Record<Locale, DemoCopy> = {
     heroBody: "47 clientes ativos · 218.000 análises geradas · R$ 14.6M em GMV atribuído acumulado nos últimos 12 meses.",
     bigStats: [
       { v: "+38%", l: "conversão recomendação → venda\nvs. baseline humano" },
-      { v: "2.4x", l: "ticket médio skincare\nanálise vs. sem análise" },
+      { v: "2.4x", l: "valor médio de compra em dermocosméticos\nanálise vs. sem análise" },
       { v: "91%", l: "NPS do consumidor final\npós-análise (n=42k)" },
       { v: "R$ 14.6M", l: "GMV atribuído acumulado\núltimos 12 meses" },
     ],
@@ -62,8 +62,8 @@ const COPY: Record<Locale, DemoCopy> = {
       },
       {
         eyebrow: "Rede de farmácias · Nordeste · 62 unidades",
-        title: "Ticket de skincare 2.7x maior em clientes que fizeram análise.",
-        stats: [["2.7x", "ticket médio skincare"], ["62%", "taxa de cross-sell"], ["9.2/10", "NPS do atendente"]],
+        title: "Valor de compra em dermocosméticos 2.7x maior em clientes que fizeram análise.",
+        stats: [["2.7x", "valor médio de compra em dermocosméticos"], ["62%", "taxa de cross-sell"], ["9.2/10", "NPS do atendente"]],
         quote: "O tablet vira o gatilho da conversa. A análise fecha a venda.",
         author: "Diretora de Operações",
       },
@@ -71,7 +71,7 @@ const COPY: Record<Locale, DemoCopy> = {
     ctaTitleStart: "Quer resultados ",
     ctaTitleHighlight: "assim",
     ctaTitleEnd: "?",
-    ctaButton: "Solicitar demo →",
+    ctaButton: "Solicitar demonstraçãonstração →",
   },
   es: {
     heroEyebrow: "Resultados · base activa Q1/2026",

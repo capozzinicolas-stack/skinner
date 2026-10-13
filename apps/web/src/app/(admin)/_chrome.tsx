@@ -16,6 +16,7 @@ export function AdminChrome({ children }: { children: React.ReactNode }) {
     { label: t.dashboardPages.admin_nav_leads, href: "/admin/leads", icon: "◈" },
     { label: t.dashboardPages.admin_nav_analytics, href: "/admin/analytics", icon: "▦" },
     { label: t.dashboardPages.admin_nav_dermatology, href: "/admin/dermatologia", icon: "⚕" },
+    { label: t.dashboardPages.admin_nav_library, href: "/admin/biblioteca", icon: "▤" },
     { label: t.dashboardPages.admin_nav_form, href: "/admin/formulario", icon: "✏" },
     { label: t.dashboardPages.admin_nav_prompt_ai, href: "/admin/prompt", icon: "✎" },
   ];

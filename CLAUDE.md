@@ -24,7 +24,7 @@
 - Backend: tRPC routers in apps/web/src/server/routers/
 - Database: PostgreSQL (Supabase), ORM: Prisma, schema at packages/db/prisma/schema.prisma
 - Auth: NextAuth.js with JWT (role + tenantId)
-- IA: Claude API (claude-sonnet-4) with mock fallback
+- IA: Claude API (`ANTHROPIC_MODEL`, default `claude-sonnet-5`) with mock fallback
 - Styling: Tailwind CSS with brand color classes
 
 ## Database
@@ -97,11 +97,22 @@ unset so local dev works without Redis.
 
 ## Analysis Pipeline
 
+### Claude call (Oct-2026 incident + hardening)
+- **Incident**: `claude-sonnet-4-20250514` was retired by Anthropic (404 `not_found_error`). Every analysis silently fell back to `mockAnalyze` — patients got generic simulated results with raw English IDs ("aging, sagging") in the summary. Found during an end-to-end test on 2026-10-12.
+- **Model** comes from `ANTHROPIC_MODEL` (default `claude-sonnet-5`). Set it in Vercel to switch without a deploy. Never hardcode a dated snapshot again.
+- **Structured outputs**: `anthropic.messages.parse` + `zodOutputFormat(buildAnalysisSchema(...))`. Condition names (and zone `related_conditions`) are a `z.enum` of the KB names, so Claude cannot invent IDs (it once returned the zone "under_eyes" as a condition). Free-text JSON parsing failed on real responses (unescaped characters) — do not go back to it.
+- **Latency**: thinking disabled + effort `low`, `max_tokens` 16000, SDK `timeout` 50s, `maxRetries` 1. Measured ~27s Claude time (~30k input tokens, ~2.5k output); adaptive thinking pushed totals to 50-57s (too close to the 60s `api/trpc` maxDuration).
+- `stop_reason` `refusal` / `max_tokens` throw → mock fallback.
+- **Clinic segment**: the schema adds `recommended_procedures` (enum of the clinic's active procedure names); Claude picks them in priority order and must cite the same ones in the plan. The matcher selects those first (contraindication filter still applies), then category diversity, then scores — plan and cards always agree.
+- **Condition vocabularies**: Claude is told to prefer simple IDs (aging, sagging, hyperpigmentation...). `lib/sae/condition-aliases.ts` maps clinical KB IDs (envelhecimento_cronologico, melasma, ...) to simple ones for the matcher and projection, so catalog tags still match.
+- The mock fallback summary is Portuguese and uses `labels.ts` (no raw IDs).
+- Server-side caps: `analysis.run` applies `maxProductRecs` (and the treatments/products scope) before saving, so screen, PDF and kit list the same items.
+
 ### "Unable to transform response from server" — patient-facing analysis failure (fixed 2026-06-03)
 A patient reported the results screen showing "Erro na analise / Unable to transform response from server" on mobile (production). That string is the tRPC client failing to deserialize the server response with superjson — it means Vercel returned an **infrastructure error page (504/413/500), not a tRPC envelope**. The `try/catch → mock` fallback in `analysis.run` does NOT protect against this because the failure happens at the Vercel layer, outside the handler. Two independent root causes, both producing the identical symptom:
 - **Serverless timeout (504)**: `apps/web/src/app/api/trpc/[trpc]/route.ts` had no `maxDuration`, so it ran on Vercel's ~10-15s default. The Claude vision call (big injected KB + 4096 tokens) routinely takes 20-40s → 504. **Fix**: `export const maxDuration = 60` on that route. Raises the ceiling only; fast calls are unaffected.
 - **Payload too large (413)**: `photo-capture.tsx` gallery-upload path (`handleFileUpload`) accepted files up to 10 MB and sent them as raw base64 (~33% inflation), exceeding Vercel's 4.5 MB request-body limit → 413. **Fix**: a `compressImage()` helper downscales to max 1280px longest side at JPEG 0.85 in `confirm()` — the single chokepoint both the camera and upload paths funnel through, so the optimized image is what reaches Claude, `annotated-photo.tsx`, AND the Gemini projection. Aspect ratio is preserved with a single scale factor (REQUIRED by the annotated-photo marker-alignment invariant). Compression failure falls back to the original (no worse than before). Reuses existing i18n `photo_wait`/`photo_use`; adds a `processing` state to disable the confirm button mid-compress.
-- Not done (optional follow-up): map the cryptic transform error in the patient page `onError` (`analise/[slug]/page.tsx:57`) to a localized friendly message — today it shows `err.message` raw with a "Tentar novamente" button (`errorBlocking` stays false because a parse error carries no `data.code`).
+- Done (Oct-2026): the patient pages (`analise` + `embed`) now pass errors through `friendlyAnalysisError()` (`lib/analysis/error-message.ts`). Business errors with a tRPC code (FORBIDDEN / BAD_REQUEST / TOO_MANY_REQUESTS / NOT_FOUND) show the server's Portuguese message; anything else (transform errors, network, 5xx) shows the localized `t.patient.error_generic`.
 
 ### Scoring Formula (matcher.ts)
 - Concern match: 35% — overlap between detected conditions and product concernTags
@@ -118,11 +129,12 @@ A patient reported the results screen showing "Erro na analise / Unable to trans
 ### Routine Diversity
 - Matcher picks one product per stepRoutine (cleanser → toner → serum → moisturizer → SPF → treatment)
 - First pick per step is tagged `recomendado`, additional products are tagged `alternativa`
-- Returns up to 8 products + 2 services
+- Returns up to 8 products + N services. N = `TenantConfig.maxServiceRecs` (default 2, clamped 1-10; set in `/dashboard/analise` → "Max. servicos"). Tenants with NULL keep 2.
+- Segment `aesthetic_clinic` uses a different SERVICE scoring + category diversity — see "Procedure clinic segment" below.
 
 ### Contraindication Filtering
 - Products with activeIngredients matching avoidIngredients from detected conditions are excluded
-- Products with pregnancy/nursing contraindications are excluded when user reports pregnant/nursing
+- Products with pregnancy/nursing contraindications are excluded when user reports pregnant/nursing. Recognized terms (accent/case-insensitive, `PREGNANCY_CONTRAINDICATIONS` in matcher.ts): pregnancy, pregnant, breastfeeding, nursing, gravidez, grávida, gestação, gestante(s), amamentação, amamentando, lactação, lactantes. (Before Oct-2026 only the English keys worked, although the catalog form tells clinics to type "gravidez, amamentação".)
 - Sex question controls visibility of pregnancy question (only shown for female)
 
 ### Skin Type Discrepancy
@@ -234,7 +246,41 @@ A patient reported the results screen showing "Erro na analise / Unable to trans
 - Seed is idempotent (`upsert` by name in both `seed.ts` and `seed-dermatology.ts`). Safe to re-run any time.
 - After editing schema → run `pnpm --filter @skinner/db db:push` (applies to Supabase) followed by `pnpm --filter @skinner/db db:seed` (re-seeds idempotently).
 - After editing only seed values (e.g. visualEditPrompt for an existing condition) → run `pnpm --filter @skinner/db db:seed` only.
+- Procedure-clinic data: `pnpm --filter @skinner/db db:seed:clinic-segment` (conditions acne_scars/texture + missing library items; never overwrites library rows) and `DEMO_ESTETICA_PASSWORD=... pnpm --filter @skinner/db db:seed:demo-estetica` (demo tenant). Neither creates admin users.
 - `seed.ts` uses `update: condition` in upsert (NOT `update: {}`) so re-seeding actually updates existing rows. Don't change this.
+
+## Procedure clinic segment (Oct-2026)
+
+`Tenant.segment` = `"dermocosmetics"` (default, original flow) | `"aesthetic_clinic"` (procedure clinics). Set ONLY by Skinner admins at `/admin/tenants/[id]` → "Segmento" (`admin.changeTenantSegment`). Every behavior below is gated on the segment; dermocosmetics tenants are unchanged.
+
+- **Questionnaire**: `tenant.getAnalysisConfig` returns `PlatformConfig.questionnaireConfigClinic` (fallback `CLINIC_DEFAULT_QUESTIONS` in `lib/questionnaire/defaults.ts`) for clinics. Order from the clinic review: (1) `primary_objective` "Como você percebe hoje a aparência da sua pele?" (values are objective IDs, incl. new `texture` and `prevention`), (2) `concerns` top-3 (incl. new `acne_scars`, `texture`, `prevention`), (3) `skin_type` "E quanto ao comportamento da sua pele?", then sex / age / allergies / pregnancy. Admin edits both versions in `/admin/formulario` (toggle Dermocosméticos / Clínicas). Question defaults live in `lib/questionnaire/defaults.ts` (plain module — constants exported from a "use client" file become client references on the server).
+- **New conditions**: `acne_scars` (cicatrizes de acne) and `texture` (textura irregular) — SkinCondition rows with visualEditPrompt (seed `seed-clinic-segment.ts`) + labels in `labels.ts`. New objective IDs `texture`, `prevention` (+ `firmness`, `pore-control` labels that the catalog form already offered).
+- **analysis.run**: passes `segment` to Claude + matcher. For clinics, `primary_objective` is pinned to the questionnaire answer (Claude's free-text value broke the objective score).
+- **Claude prompt**: `clinicBlock` in `claude-analyzer.ts` frames action_plan/timeline as a procedure protocol and lists the clinic's active procedures by name (never invent others, no prices/brands).
+- **Matcher (services only)**: score = severity-weighted concern relevance 0.45 + covers most severe condition 0.10 + objective 0.20 + skin type 0.15 + severity fit 0.10. NO ingredient bonus (it buried injectables). Selection: best procedure per `Product.serviceCategory` (`injectables` → `technologies` → `skin`) first — only if it treats a detected condition AND scores ≥ 60% of the best procedure — then fill by score up to maxServices (`alternativa`). Return order is services first (ranks → PDF/kit order). Products scoring is identical in both segments.
+- **Results screen**: procedures section ("Procedimentos indicados para você"), products after as "Cuidados em casa para potencializar o tratamento". Service cards show category, description (meta prefix stripped) and `addOns` ("Complementos opcionais"). Action-plan periods read "Avaliação e primeiras sessões / Sessões complementares / Manutenção" (also in the PDF via `ReportData.segment`).
+- **Projection**: `mode: "clinic"` + recommended procedures with `projectionOnsetWeeks/PeakWeeks/ImprovementPct`. `computeClinicStages` → image 1 at 4 weeks ("Após as primeiras sessões"), image 2 at the latest peak clamped 8–26 weeks ("Fim do protocolo"). Per condition: linear onset→peak curve per procedure; strongest counts 100%, each additional 40%, cap 85%. Clinic prompt template (code constant `CLINIC_PROMPT_TEMPLATE`, not the admin-editable dermo template) allows subtle soft-tissue changes typical of the listed procedures (lift, volume) but forbids identity/bone changes. Procedures without curve data → falls back to the dermo projection. The API never returns the raw Gemini error (Portuguese generic message).
+- **Product fields** (all nullable): `serviceCategory`, `projectionOnsetWeeks`, `projectionPeakWeeks`, `projectionImprovementPct`, `addOns` (JSON `[{name, description?, price?}]`), `libraryItemId`. Editable in `/dashboard/catalogo/novo` (service section). `sessionFrequency` is free text (max 60) since Oct-2026; the form suggests semanal/quinzenal/mensal.
+- **Procedure library**: `model ProcedureLibraryItem` (`procedure_library`), admin CRUD at `/admin/biblioteca` (`admin.libraryList/libraryUpsert`). Clinics import at `/dashboard/catalogo/biblioteca` (`product.libraryList/importFromLibrary`) → creates services with SKU `PROC-<slug>` and `libraryItemId`; never overwrites an existing copy. Seed data: `packages/db/src/data/procedure-library.ts` (34 facial procedures from "Guia Avançado de Medicina Estética 2025": timing + improvement ranges, SP price suggestions). Library edits do not touch clinics' imported copies.
+- **Demo account**: `demo-estetica` ("Skinner Demo Estética", segment aesthetic_clinic, maxServiceRecs 4, all library procedures + 10 home-care products, booking → www.skinner.lat/contato). Script `packages/db/src/seed-demo-estetica.ts` (password from `DEMO_ESTETICA_PASSWORD`, never overwritten). Legacy `EST-*` services are deactivated, not deleted.
+
+## Recommendation order and scope (Oct-2026, all segments)
+
+- Treatments ALWAYS come before products: results screen, matcher return order (→ Recommendation.rank → PDF and kit order) and the `/dashboard/analise` preview.
+- Each clinic chooses what the patient receives in `/dashboard/analise` → "O que recomendar ao paciente": Tratamentos e produtos / Somente tratamentos / Somente produtos (one selector over `resultsShowServices` + `resultsShowProducts`, so both can never be off). `analysis.run` drops the hidden type before saving, so PDF, kit link and cart never show it; Claude gets an "ESCOPO DA RECOMENDACAO" block so the written plan does not promise the hidden type.
+
+## Portuguese-only UI rules (Oct-2026)
+
+- Rule from the founder: NO English word anywhere a patient or clinic can see, in any circumstance. Allowed: brand/product proper names (Skinner, WhatsApp, Mercado Pago, Nuvemshop, Shopify, Radiesse, Sculptra, Ultraformer, Morpheus8, Hydrafacial, plan names Growth/Pro/Enterprise), acronyms (API, CRM, ERP, PDF, SKU, LED, QR, LGPD), and words established in Brazilian Portuguese (site, link, kit, e-mail, laser, peeling, pixel, marketing). Use "contatos" (not leads), "comparativo" (not benchmark), "clientes/clínicas" (not tenants), "mudar de plano" (not upgrade), "índice de compatibilidade" (not match score), "valor médio de compra" (not ticket médio), "demonstração" (not demo).
+- Claude output in pt-BR carries an explicit "sem estrangeirismos" directive (skincare, glow, lifting, anti-aging, drug delivery, skinbooster → Portuguese equivalents).
+- The tagline "Skin Tech" is no longer shown (PDF, e-mails, auth pages, browser title use "Tecnologia para a pele" or just "Skinner").
+
+- Never render raw IDs to patients or clinics: conditions/skin types/objectives/categories go through `lib/sae/labels.ts` (PDF, kit pages, annotated photo chips, catalog, reports, CSV exports, lead emails/CSV included).
+- `Product.description` may carry a `[Category: … | Line: … | Brand: …]` prefix written by the catalog form — patient surfaces must use `stripDescriptionMeta()` (`lib/catalog/description.ts`).
+- Server errors: zod runs with `z.config(z.locales.pt())` and the tRPC `errorFormatter` turns validation failures into one readable pt-BR sentence; middleware/router errors have Portuguese messages (no bare `TRPCError({ code })`).
+- `app/not-found.tsx`, `app/error.tsx`, `app/global-error.tsx` replace Next's English defaults.
+- Patient copy in `pt-BR.ts` (`patient` section) uses proper accents.
+- Procedure library slugs/SKUs are Portuguese too (e.g. `PROC-toxina-preventiva`, `PROC-hidratacao-injetavel`) because clinics see SKUs in the catalog. `SYNC_LIBRARY_TEXT=1 pnpm db:seed:clinic-segment` re-syncs library names/descriptions/add-ons from the data file without touching prices, tags or curves.
 
 ## Questionnaire System
 

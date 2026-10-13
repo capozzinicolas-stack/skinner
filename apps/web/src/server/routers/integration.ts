@@ -327,8 +327,10 @@ export const integrationRouter = router({
         });
         synced++;
       } catch (err) {
-        const msg = err instanceof Error ? err.message : "unknown";
-        errors.push(`Produto ${p.id}: ${msg}`);
+        // Technical (often English) error goes to the logs; the clinic sees
+        // a Portuguese line in the sync summary.
+        console.error(`[integration] product ${p.id} sync failed:`, err);
+        errors.push(`Produto ${p.id}: não foi possível salvar este produto.`);
       }
     }
 
@@ -464,8 +466,9 @@ export const integrationRouter = router({
           },
         });
         synced++;
-      } catch (err: any) {
-        errors.push(`Produto ${p.id}: ${err.message}`);
+      } catch (err) {
+        console.error(`[integration] product ${p.id} sync failed:`, err);
+        errors.push(`Produto ${p.id}: não foi possível salvar este produto.`);
       }
     }
 

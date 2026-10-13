@@ -1,36 +1,34 @@
 import { notFound } from "next/navigation";
 import { db } from "@skinner/db";
+import {
+  skinTypeLabels as baseSkinTypeLabels,
+  conditionLabels as baseConditionLabels,
+} from "@/lib/sae/labels";
+import { stripDescriptionMeta } from "@/lib/catalog/description";
 
 // ─── Label maps ────────────────────────────────────────────────────────────────
 
-const skinTypeLabels: Record<string, string> = {
-  oily: "Oleosa",
-  dry: "Seca",
-  combination: "Mista",
-  normal: "Normal",
-  sensitive: "Sensivel",
-};
-
-const conditionLabels: Record<string, string> = {
-  acne: "Acne",
-  hyperpigmentation: "Hiperpigmentacao",
-  aging: "Envelhecimento",
-  dehydration: "Desidratacao",
-  sensitivity: "Sensibilidade",
-  rosacea: "Rosacea",
-  pores: "Poros dilatados",
-  dullness: "Opacidade",
-  dark_circles: "Olheiras",
-  oiliness: "Oleosidade",
-};
-
+// Labels come from the central map (lib/sae/labels.ts) so every condition,
+// including clinic ones (flacidez, cicatrizes de acne...), shows in Portuguese.
+function cap(v: string): string {
+  return v ? v.charAt(0).toUpperCase() + v.slice(1) : v;
+}
+const skinTypeLabels: Record<string, string> = Object.fromEntries(
+  Object.entries(baseSkinTypeLabels).map(([k, v]) => [k, cap(v)])
+);
+const conditionLabels: Record<string, string> = Object.fromEntries(
+  Object.entries(baseConditionLabels).map(([k, v]) => [k, cap(v)])
+);
 const stepLabels: Record<string, string> = {
   cleanser: "Limpeza",
-  toner: "Tonico",
-  serum: "Serum",
+  toner: "Tônico",
+  serum: "Sérum",
   moisturizer: "Hidratante",
-  SPF: "Protetor Solar",
+  SPF: "Protetor solar",
   treatment: "Tratamento",
+  mask: "Máscara",
+  exfoliant: "Esfoliante",
+  "eye-cream": "Área dos olhos",
 };
 
 const sessionFrequencyLabels: Record<string, string> = {
@@ -466,7 +464,7 @@ export default async function KitPage({
         )}
 
         <p className="text-[10px] text-sable text-center uppercase tracking-wider font-light">
-          Powered by Skinner
+          Desenvolvido por Skinner
         </p>
       </div>
     </main>

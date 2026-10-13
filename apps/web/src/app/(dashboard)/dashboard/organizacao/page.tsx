@@ -6,6 +6,13 @@ import { trpc } from "@/lib/trpc/client";
 import { OrganizationTabs } from "@/components/shared/organization-tabs";
 import { useI18n } from "@/lib/i18n/client";
 
+const TENANT_STATUS_PT: Record<string, string> = {
+  active: "Ativa",
+  pending_payment: "Aguardando pagamento",
+  paused: "Pausada",
+  deleted: "Excluída",
+};
+
 // Static lists kept inline so we don't fetch them on every page hit.
 // Country list focused on LATAM + key Skinner-targeted markets.
 const COUNTRIES: Array<{ code: string; name: string }> = [
@@ -143,7 +150,7 @@ export default function MinhaOrganizacaoPage() {
               {t.dashboardPages.org_status_label}
             </p>
             <p className="text-sm text-carbone font-light capitalize">
-              {tenant.data?.status}
+              {TENANT_STATUS_PT[tenant.data?.status ?? ""] ?? tenant.data?.status}
             </p>
           </div>
         </div>

@@ -3,6 +3,12 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc/client";
 import { useI18n } from "@/lib/i18n/client";
+import { conditionLabels as conditionLabelsPt } from "@/lib/sae/labels";
+
+function conditionName(id: string): string {
+  const v = conditionLabelsPt[id] ?? id;
+  return v.charAt(0).toUpperCase() + v.slice(1);
+}
 
 const skinTypeLabels: Record<string, string> = {
   oily: "Oleosa", dry: "Seca", combination: "Mista", normal: "Normal", sensitive: "Sensivel",
@@ -89,7 +95,7 @@ export default function ReportsPage() {
                   {conditions.length > 0 && (
                     <div className="flex flex-wrap gap-1">
                       {conditions.slice(0, 3).map((c) => (
-                        <span key={c} className="text-xs px-2 py-0.5 bg-ivoire text-terre font-light">{c}</span>
+                        <span key={c} className="text-xs px-2 py-0.5 bg-ivoire text-terre font-light">{conditionName(c)}</span>
                       ))}
                     </div>
                   )}
@@ -164,7 +170,7 @@ export default function ReportsPage() {
                         <div className="flex flex-wrap gap-1">
                           {conditions.slice(0, 3).map((c) => (
                             <span key={c} className="text-xs px-2 py-0.5 bg-ivoire text-terre font-light">
-                              {c}
+                              {conditionName(c)}
                             </span>
                           ))}
                         </div>

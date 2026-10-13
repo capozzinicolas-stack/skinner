@@ -98,7 +98,7 @@ export function MarketingChrome({ children }: { children: React.ReactNode }) {
             {t.footer.copyright}
           </span>
           <span className="font-mono text-[10px] tracking-[0.1em] uppercase text-sable">
-            v 1.0 · Skin Tech
+            v 1.0 · Tecnologia para a pele
           </span>
         </div>
       </footer>

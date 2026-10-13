@@ -95,7 +95,7 @@ export default function PromptConfigPage() {
                 : "border-transparent text-pierre hover:text-carbone"
             }`}
           >
-            {tab === "prompt" && "Prompt e Regras"}
+            {tab === "prompt" && "Instruções e regras"}
             {tab === "scoring" && "Scoring e Recomendacao"}
             {tab === "projection" && "Projecao de Imagem"}
             {tab === "kb" && `Base de Conhecimento (${(preview.data?.conditionsCount ?? 0) + (preview.data?.ingredientsCount ?? 0)})`}
@@ -104,7 +104,7 @@ export default function PromptConfigPage() {
         ))}
       </div>
 
-      {/* ─── Tab: Prompt e Regras ─────────────────────────────────────────── */}
+      {/* ─── Tab: Instruções e regras ─────────────────────────────────────────── */}
       {activeTab === "prompt" && (
         <div className="space-y-8">
           {/* Base prompt (read-only) */}
@@ -236,7 +236,7 @@ INGREDIENTES ATIVOS CONHECIDOS:
                 </thead>
                 <tbody className="divide-y divide-sable/10">
                   {[
-                    ["{intensityLabel}", "Nivel de melhoria: \"moderate but clearly visible\" (8sem) ou \"significant and dramatic\" (12sem)"],
+                    ["{intensityLabel}", "Nivel de melhoria: \"moderate but clearly visible\" (8sem) ou \"significant and dramatic\" (12sem) — instruções internas enviadas à IA de imagem"],
                     ["{weeks}", "Numero de semanas: 8 ou 12"],
                     ["{objective}", "Objetivo principal do paciente (ex: anti-aging, anti-acne)"],
                     ["{conditionsList}", "Lista de condicoes detectadas com severidade (ex: acne severity 2/3)"],
@@ -263,7 +263,7 @@ INGREDIENTES ATIVOS CONHECIDOS:
                   Template do prompt de projecao
                 </p>
                 <p className="text-xs text-pierre font-light mt-1">
-                  Deixe vazio para usar o template padrao. Use as variaveis acima para personalizar.
+                  Deixe vazio para usar o modelo padrão. Use as variaveis acima para personalizar.
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -283,7 +283,7 @@ INGREDIENTES ATIVOS CONHECIDOS:
               value={projectionValue}
               onChange={(e) => setProjectionPrompt(e.target.value)}
               rows={20}
-              placeholder="Deixe vazio para usar o template padrao. O template padrao instrui o Gemini a editar a foto facial mostrando melhorias fotorrealistas baseadas nas condicoes e produtos recomendados."
+              placeholder="Deixe vazio para usar o modelo padrão. O modelo padrão instrui o Gemini a editar a foto facial mostrando melhorias fotorrealistas baseadas nas condicoes e produtos recomendados."
               className="w-full px-5 py-4 border border-sable/20 bg-blanc-casse text-xs font-light text-carbone focus:outline-none focus:border-terre leading-relaxed font-mono"
             />
           </div>
@@ -351,7 +351,7 @@ Return only the edited image.`}</pre>
                 </thead>
                 <tbody className="divide-y divide-sable/10">
                   <tr>
-                    <td className="px-5 py-4 text-sm text-carbone">Concern match</td>
+                    <td className="px-5 py-4 text-sm text-carbone">Correspondência de condições</td>
                     <td className="px-5 py-4 text-center">
                       <span className="text-sm text-carbone font-serif">35%</span>
                     </td>
@@ -364,7 +364,7 @@ Return only the edited image.`}</pre>
                     </td>
                   </tr>
                   <tr>
-                    <td className="px-5 py-4 text-sm text-carbone">Skin type match</td>
+                    <td className="px-5 py-4 text-sm text-carbone">Correspondência de tipo de pele</td>
                     <td className="px-5 py-4 text-center">
                       <span className="text-sm text-carbone font-serif">20%</span>
                     </td>
@@ -390,7 +390,7 @@ Return only the edited image.`}</pre>
                     </td>
                   </tr>
                   <tr>
-                    <td className="px-5 py-4 text-sm text-carbone">Objective match</td>
+                    <td className="px-5 py-4 text-sm text-carbone">Correspondência de objetivo</td>
                     <td className="px-5 py-4 text-center">
                       <span className="text-sm text-carbone font-serif">15%</span>
                     </td>
@@ -403,7 +403,7 @@ Return only the edited image.`}</pre>
                     </td>
                   </tr>
                   <tr>
-                    <td className="px-5 py-4 text-sm text-carbone">Severity match</td>
+                    <td className="px-5 py-4 text-sm text-carbone">Correspondência de intensidade</td>
                     <td className="px-5 py-4 text-center">
                       <span className="text-sm text-carbone font-serif">10%</span>
                     </td>

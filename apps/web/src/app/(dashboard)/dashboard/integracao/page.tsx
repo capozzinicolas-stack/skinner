@@ -15,7 +15,7 @@ const ctaModeOptions: { value: CtaMode; label: string; description: string }[] =
   {
     value: "external",
     label: "Link externo",
-    description: "Usa o link de ecommerce cadastrado em cada produto. Comportamento atual.",
+    description: "Usa o link da loja virtual cadastrado em cada produto. Comportamento atual.",
   },
   {
     value: "whatsapp",
@@ -37,7 +37,7 @@ const ctaModeOptions: { value: CtaMode; label: string; description: string }[] =
 const otherIntegrations = [
   {
     name: "VTEX",
-    description: "Integracao enterprise com plataforma VTEX.",
+    description: "Integração corporativa com a plataforma VTEX.",
     badge: "Em breve",
   },
   {
@@ -194,7 +194,7 @@ function NuvemshopCard() {
                       </span>
                     </>
                   ) : (
-                    <>Match SKU ainda nao verificado.</>
+                    <>Correspondência de SKU ainda não verificada.</>
                   )}
                 </div>
                 <button
@@ -203,7 +203,7 @@ function NuvemshopCard() {
                   disabled={matchMutation.isPending}
                   className="px-3 py-1.5 border border-sable text-pierre text-xs font-light tracking-wide hover:bg-blanc-casse disabled:opacity-50 transition-colors flex-shrink-0"
                 >
-                  {matchMutation.isPending ? "Verificando..." : "Atualizar match"}
+                  {matchMutation.isPending ? "Verificando..." : "Atualizar correspondência"}
                 </button>
               </div>
             );

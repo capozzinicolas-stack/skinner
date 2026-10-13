@@ -151,7 +151,7 @@ export default function AdminPlanosPage() {
                     ) : (
                       <button
                         onClick={() => {
-                          if (confirm(`Arquivar "${p.name}"? Tenants existentes nao sao afetados.`)) {
+                          if (confirm(`Arquivar "${p.name}"? Clientes existentes não são afetados.`)) {
                             archive.mutate({ id: p.id });
                           }
                         }}

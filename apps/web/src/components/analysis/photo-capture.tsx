@@ -356,7 +356,7 @@ export function PhotoCapture({
           <div className="overflow-hidden">
             <img
               src={preview}
-              alt="Preview"
+              alt="Pré-visualização da foto"
               className="w-full aspect-[3/4] object-cover"
             />
           </div>

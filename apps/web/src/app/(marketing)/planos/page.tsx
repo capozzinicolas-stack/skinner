@@ -42,7 +42,7 @@ const COPY: Record<Locale, Copy> = {
     loading: "Carregando planos...",
     popularBadge: "Mais escolhido",
     perMonth: "/mês",
-    setupLabel: "Setup",
+    setupLabel: "Implantação",
     commissionLabel: "Comissão",
     customConsult: "Sob consulta",
     defaultCustomCta: "Falar com vendas",
@@ -54,7 +54,7 @@ const COPY: Record<Locale, Copy> = {
     faqTitleHighlight: "recorrentes",
     faqTitleEnd: ".",
     faq: [
-      ["Como funciona a comissão?", "Cobrada apenas sobre vendas confirmadas geradas pela recomendação Skinner. Rastreamento via pixel ou API. Você só paga quando a Skinner gera venda."],
+      ["Como funciona a comissão?", "Cobrada apenas sobre vendas confirmadas geradas pela recomendação Skinner. Rastreamento via pixel ou integração por API. Você só paga quando a Skinner gera venda."],
       ["Tem fidelidade?", "Não. Cancela quando quiser. Histórico exportável e dados ficam disponíveis por 30 dias após o cancelamento."],
       ["LGPD?", "Foto descartada após análise por padrão. DPO dedicado. Conforme ANPD. Termo de tratamento de dados disponível para análise jurídica."],
       ["Quanto tempo leva pra implementar?", "14 dias do contrato ao primeiro relatório em produção. CSM acompanha as 50 primeiras análises."],

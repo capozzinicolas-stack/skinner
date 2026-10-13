@@ -1,16 +1,17 @@
 import { notFound } from "next/navigation";
 import { db } from "@skinner/db";
+import { stripDescriptionMeta } from "@/lib/catalog/description";
 
 const stepLabels: Record<string, string> = {
   cleanser: "Limpeza",
-  toner: "Tonico",
-  serum: "Serum",
+  toner: "Tônico",
+  serum: "Sérum",
   moisturizer: "Hidratante",
-  SPF: "Protetor Solar",
+  SPF: "Protetor solar",
   treatment: "Tratamento",
-  mask: "Mascara",
+  mask: "Máscara",
   exfoliant: "Esfoliante",
-  "eye-cream": "Creme para olhos",
+  "eye-cream": "Área dos olhos",
 };
 
 const sessionFrequencyLabels: Record<string, string> = {
@@ -205,9 +206,9 @@ export default async function ManualKitPage({
                             </span>
                           )}
                         </div>
-                        {item.product.description && (
+                        {stripDescriptionMeta(item.product.description) && (
                           <p className="text-xs text-pierre font-light mt-1">
-                            {item.product.description}
+                            {stripDescriptionMeta(item.product.description)}
                           </p>
                         )}
                         {item.note && (
@@ -346,9 +347,9 @@ export default async function ManualKitPage({
                             </span>
                           )}
                         </div>
-                        {item.product.description && (
+                        {stripDescriptionMeta(item.product.description) && (
                           <p className="text-xs text-pierre font-light mt-1">
-                            {item.product.description}
+                            {stripDescriptionMeta(item.product.description)}
                           </p>
                         )}
                         {item.note && (
@@ -456,7 +457,7 @@ export default async function ManualKitPage({
         )}
 
         <p className="text-[10px] text-sable text-center uppercase tracking-wider font-light">
-          Powered by Skinner
+          Desenvolvido por Skinner
         </p>
       </div>
     </main>

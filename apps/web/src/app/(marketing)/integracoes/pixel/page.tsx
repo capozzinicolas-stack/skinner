@@ -13,7 +13,7 @@ export const metadata = {
     "Documentação técnica do pixel de conversão Skinner para rastrear vendas geradas via recomendações da análise de pele.",
 };
 
-const trackPurchaseSnippet = `<!-- Cole no thank-you page do seu e-commerce.
+const trackPurchaseSnippet = `<!-- Cole na página de agradecimento (compra confirmada) do seu e-commerce.
      Substitua RECOMMENDATION_ID e SALE_VALUE pelos valores reais. -->
 <script>
   fetch("https://app.skinner.lat/api/pixel", {
@@ -52,16 +52,16 @@ const COPY: Record<Locale, Copy> = {
   "pt-BR": {
     eyebrow: "Documentação técnica",
     title: "Pixel de Conversão",
-    intro: "Rastreie vendas geradas a partir das recomendações da análise de pele Skinner. Os dados aparecem automaticamente no dashboard do seu portal B2B.",
+    intro: "Rastreie vendas geradas a partir das recomendações da análise de pele Skinner. Os dados aparecem automaticamente no painel da sua empresa.",
     howItWorksH: "Como funciona",
     howItWorksBody1: "Quando um paciente conclui uma análise, cada produto recomendado recebe um identificador único (",
     howItWorksBody2: "). Quando esse paciente compra um produto recomendado, você envia esse identificador junto com o valor da venda para o pixel Skinner. O sistema registra a conversão, calcula a comissão e atualiza o relatório do período.",
     s1H: "1. Compra confirmada (POST)",
-    s1Body: "Cole o snippet abaixo no thank-you page (página de \"compra confirmada\") do seu e-commerce. Substitua os placeholders pelos valores que você já tem no carrinho.",
-    s2H: "2. Click tracking (GET)",
-    s2Body: "Para rastrear cliques (sem valor de venda), use a imagem pixel transparente. Funciona em emails marketing, landing pages e qualquer contexto onde JavaScript não está disponível.",
+    s1Body: "Cole o código abaixo na página de agradecimento (página de \"compra confirmada\") do seu e-commerce. Substitua os campos de exemplo pelos valores que você já tem no carrinho.",
+    s2H: "2. Rastreamento de cliques (GET)",
+    s2Body: "Para rastrear cliques (sem valor de venda), use a imagem pixel transparente. Funciona em e-mails de marketing, páginas de campanha e qualquer contexto onde JavaScript não está disponível.",
     s3H: "Onde encontrar o recommendationId",
-    s3Body: " está disponível no link de cada produto recomendado no resultado da análise. Se você usa integração com Nuvemshop ou Shopify, o identificador é propagado automaticamente via UTM. Para integrações manuais, contate o suporte e ajustamos o pipeline.",
+    s3Body: " está disponível no link de cada produto recomendado no resultado da análise. Se você usa integração com Nuvemshop ou Shopify, o identificador é propagado automaticamente nos parâmetros do link. Para integrações manuais, contate o suporte e ajustamos o pipeline.",
     s4H: "Privacidade e LGPD",
     s4Body: "O pixel registra apenas o identificador da recomendação e o valor da venda. Não coleta IP, cookies de terceiros, nem dados pessoais do cliente final. É compatível com LGPD sem necessidade de consentimento explícito do usuário.",
     contactBody: "Dúvidas técnicas? Contate o time Skinner em ",

@@ -18,10 +18,10 @@ const statusConfig: Record<string, { label: string; classes: string }> = {
 };
 
 const roleLabels: Record<string, string> = {
-  b2b_admin: "Admin",
+  b2b_admin: "Administrador",
   b2b_analyst: "Analista",
   b2b_viewer: "Visualizador",
-  skinner_admin: "Skinner Admin",
+  skinner_admin: "Administrador Skinner",
 };
 
 function formatDate(d: Date | string | null | undefined) {
@@ -86,7 +86,7 @@ const TOGGLE_FIELDS: Array<{ field: string; label: string; critical?: boolean }>
   { field: "resultsShowTimeline", label: "Secao: linha do tempo" },
   { field: "resultsShowProducts", label: "Secao: produtos recomendados" },
   { field: "resultsShowServices", label: "Secao: servicos recomendados" },
-  { field: "resultsShowMatchScore", label: "Secao: score de compatibilidade" },
+  { field: "resultsShowMatchScore", label: "Seção: índice de compatibilidade" },
   { field: "resultsShowPdfButton", label: "Secao: botao de PDF" },
   { field: "resultsShowPrices", label: "Secao: precos" },
 ];
@@ -110,6 +110,11 @@ export default function TenantDetailPage() {
     onSuccess: () => {
       utils.admin.tenantDetail.invalidate({ id });
       utils.tenant.list.invalidate();
+    },
+  });
+  const changeSegment = trpc.admin.changeTenantSegment.useMutation({
+    onSuccess: () => {
+      utils.admin.tenantDetail.invalidate({ id });
     },
   });
   const resetUsage = trpc.admin.resetTenantUsage.useMutation({
@@ -340,7 +345,7 @@ export default function TenantDetailPage() {
                   onClick={async () => {
                     if (
                       !confirm(
-                        `Acessar o painel de "${d.tenant.name}" como admin do tenant?\n\nVoce sera registrado em UsageEvent e podera fazer mudancas em nome do cliente. Use somente para suporte.`
+                        `Acessar o painel de "${d.tenant.name}" como administrador da clínica?\n\nVoce sera registrado em UsageEvent e podera fazer mudancas em nome do cliente. Use somente para suporte.`
                       )
                     ) {
                       return;
@@ -366,7 +371,7 @@ export default function TenantDetailPage() {
                   }}
                   className="w-full px-4 py-2 bg-carbone text-blanc-casse text-sm font-light tracking-wide hover:bg-terre transition-colors text-left"
                 >
-                  Acessar como admin do tenant
+                  Acessar como administrador da clínica
                 </button>
 
                 <button
@@ -379,10 +384,32 @@ export default function TenantDetailPage() {
                   Alterar plano
                 </button>
 
+                {/* Business segment — drives questionnaire, matcher mode,
+                    results order and projection model of the patient flow. */}
+                <div className="border border-sable/30 px-4 py-3">
+                  <p className="text-[10px] text-pierre uppercase tracking-wider font-light mb-2">
+                    Segmento
+                  </p>
+                  <select
+                    value={(d.tenant as { segment?: string }).segment ?? "dermocosmetics"}
+                    onChange={(e) => {
+                      const segment = e.target.value as "dermocosmetics" | "aesthetic_clinic";
+                      if (confirm(`Alterar o segmento de "${d.tenant.name}"? O questionário e as recomendações do paciente mudam imediatamente.`)) {
+                        changeSegment.mutate({ tenantId: id, segment });
+                      }
+                    }}
+                    disabled={changeSegment.isPending}
+                    className="w-full px-2 py-1.5 border border-sable/40 bg-white text-sm text-carbone font-light focus:outline-none focus:border-carbone disabled:opacity-50"
+                  >
+                    <option value="dermocosmetics">Dermocosméticos</option>
+                    <option value="aesthetic_clinic">Clínica de procedimentos estéticos</option>
+                  </select>
+                </div>
+
                 {d.tenant.status === "active" && (
                   <button
                     onClick={() => {
-                      if (confirm(`Pausar o tenant "${d.tenant.name}"?`)) {
+                      if (confirm(`Pausar a clínica "${d.tenant.name}"?`)) {
                         changeStatus.mutate({ tenantId: id, status: "paused" });
                       }
                     }}
@@ -396,7 +423,7 @@ export default function TenantDetailPage() {
                 {d.tenant.status === "paused" && (
                   <button
                     onClick={() => {
-                      if (confirm(`Reativar o tenant "${d.tenant.name}"?`)) {
+                      if (confirm(`Reativar a clínica "${d.tenant.name}"?`)) {
                         changeStatus.mutate({ tenantId: id, status: "active" });
                       }
                     }}
@@ -596,7 +623,7 @@ export default function TenantDetailPage() {
                   <textarea
                     value={adminNotes || notesFromDb}
                     onChange={(e) => setAdminNotes(e.target.value)}
-                    placeholder="Observacoes internas sobre as configuracoes deste tenant..."
+                    placeholder="Observações internas sobre as configurações desta clínica..."
                     rows={3}
                     className="w-full px-3 py-2 border border-sable/40 bg-blanc-casse text-sm text-carbone font-light focus:outline-none focus:border-carbone resize-none"
                   />

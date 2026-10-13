@@ -8,6 +8,7 @@ import {
   Font,
   Image,
 } from "@react-pdf/renderer";
+import { conditionLabelsLocalized, tr } from "@/lib/sae/labels";
 
 // Register Skinner brand fonts.
 // We use full TTF files from the @fontsource jsdelivr CDN (not woff2 subsets) because:
@@ -285,33 +286,34 @@ const PDF_STRINGS: Record<
 > = {
   "pt-BR": {
     severity: ["", "Leve", "Moderado", "Severo"],
-    skinType: { oily: "Oleosa", dry: "Seca", combination: "Mista", normal: "Normal", sensitive: "Sensivel" },
+    skinType: { oily: "Oleosa", dry: "Seca", combination: "Mista", normal: "Normal", sensitive: "Sensível" },
     condition: {
-      acne: "Acne", hyperpigmentation: "Hiperpigmentacao", aging: "Envelhecimento",
-      dehydration: "Desidratacao", sensitivity: "Sensibilidade", rosacea: "Rosacea",
+      acne: "Acne", hyperpigmentation: "Manchas", aging: "Envelhecimento",
+      dehydration: "Desidratação", sensitivity: "Sensibilidade", rosacea: "Rosácea",
       pores: "Poros dilatados", dullness: "Opacidade", dark_circles: "Olheiras", oiliness: "Oleosidade",
     },
     step: {
-      cleanser: "Limpeza", toner: "Tonico", serum: "Serum",
-      moisturizer: "Hidratante", SPF: "Protetor Solar", treatment: "Tratamento",
+      cleanser: "Limpeza", toner: "Tônico", serum: "Sérum",
+      moisturizer: "Hidratante", SPF: "Protetor solar", treatment: "Tratamento",
+      mask: "Máscara", exfoliant: "Esfoliante", "eye-cream": "Área dos olhos",
     },
-    barrier: { healthy: "Saudavel", compromised: "Comprometida", needs_attention: "Atencao necessaria" },
-    coverTitle: "Analise de Pele",
-    coverSubtitle: "Skinner — Skin Tech",
-    sectionDiagnosis: "Diagnostico",
-    sectionDiagnosisTitle: (s) => `Sua pele e ${s}`,
-    barrierLabel: "Barreira cutanea",
+    barrier: { healthy: "Saudável", compromised: "Enfraquecida", needs_attention: "Precisa de atenção" },
+    coverTitle: "Análise de Pele",
+    coverSubtitle: "Skinner — Tecnologia para a pele",
+    sectionDiagnosis: "Diagnóstico",
+    sectionDiagnosisTitle: (s) => `Sua pele é ${s}`,
+    barrierLabel: "Estado da sua pele",
     skinTypeLabel: "Tipo de pele",
-    conditionsLabel: "Condicoes identificadas",
-    actionPlanLabel: "Plano de acao",
-    actionPlanTitle: "Tratamento personalizado",
-    phasePeriod: { p1: "Semanas 1-2", p2: "Semanas 3-8", p3: "Mes 3+" },
-    phaseName: { p1: "Fase 1", p2: "Fase 2", p3: "Fase 3" },
-    expectations: "Expectativas",
+    conditionsLabel: "O que observamos na sua pele",
+    actionPlanLabel: "Plano de ação",
+    actionPlanTitle: "Seu cuidado em 3 fases",
+    phasePeriod: { p1: "Semanas 1-2", p2: "Semanas 3-8", p3: "Mês 3+" },
+    phaseName: { p1: "Começando", p2: "Avançando", p3: "Mantendo" },
+    expectations: "O que esperar",
     weeks: { w4: "4 semanas", w8: "8 semanas", w12: "12 semanas" },
-    alertSigns: "Sinais de Alerta",
-    recommendations: "Recomendacoes",
-    productsTitle: "Produtos selecionados",
+    alertSigns: "Quando consultar um dermatologista",
+    recommendations: "Recomendações",
+    productsTitle: "Sua seleção personalizada",
     confidential: "Confidencial",
   },
   es: {
@@ -328,7 +330,7 @@ const PDF_STRINGS: Record<
     },
     barrier: { healthy: "Saludable", compromised: "Comprometida", needs_attention: "Necesita atencion" },
     coverTitle: "Analisis de Piel",
-    coverSubtitle: "Skinner — Skin Tech",
+    coverSubtitle: "Skinner — Tecnología para la piel",
     sectionDiagnosis: "Diagnostico",
     sectionDiagnosisTitle: (s) => `Tu piel es ${s}`,
     barrierLabel: "Barrera cutanea",
@@ -397,6 +399,9 @@ type ReportData = {
     alert_signs: string[];
     timeline: { weeks4: string; weeks8: string; weeks12: string };
   };
+  // Tenant.segment — "aesthetic_clinic" labels the plan phases as a
+  // procedure protocol.
+  segment?: string;
   recommendations: {
     name: string;
     sku: string;
@@ -408,6 +413,17 @@ type ReportData = {
   }[];
 };
 
+function capitalize(v: string): string {
+  return v ? v.charAt(0).toUpperCase() + v.slice(1) : v;
+}
+
+// Procedure clinics: the plan is a protocol of sessions, not skincare weeks.
+const CLINIC_PHASE_PERIOD: Record<Locale, { p1: string; p2: string; p3: string }> = {
+  "pt-BR": { p1: "Avaliação e primeiras sessões", p2: "Sessões complementares", p3: "Manutenção" },
+  es: { p1: "Evaluación y primeras sesiones", p2: "Sesiones complementarias", p3: "Mantenimiento" },
+  en: { p1: "Assessment and first sessions", p2: "Complementary sessions", p3: "Maintenance" },
+};
+
 export function SkinReport({
   data,
   locale = "pt-BR",
@@ -417,6 +433,12 @@ export function SkinReport({
 }) {
   const { analysis, recommendations } = data;
   const L = pdfStr(locale);
+  const phasePeriod = data.segment === "aesthetic_clinic" ? CLINIC_PHASE_PERIOD[locale] ?? L.phasePeriod : L.phasePeriod;
+  // Condition names come from the central label map (covers clinic and KB
+  // conditions such as flacidez / cicatrizes de acne), falling back to the
+  // legacy local map, never to a raw ID when a label exists.
+  const conditionName = (name: string) =>
+    capitalize(tr(conditionLabelsLocalized, name, locale) || L.condition[name] || name);
   const skinTypeText = L.skinType[analysis.skin_type] ?? analysis.skin_type;
   const barrierText = L.barrier[analysis.barrier_status] ?? analysis.barrier_status;
 
@@ -461,7 +483,7 @@ export function SkinReport({
         {analysis.conditions.map((c) => (
           <View key={c.name} style={s.card}>
             <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-              <Text style={s.cardTitle}>{L.condition[c.name] ?? c.name}</Text>
+              <Text style={s.cardTitle}>{conditionName(c.name)}</Text>
               <Text style={{ fontSize: 7, color: colors.pierre }}>{L.severity[c.severity]}</Text>
             </View>
             <Text style={s.cardText}>{c.description}</Text>
@@ -480,7 +502,7 @@ export function SkinReport({
         ))}
 
         <View style={s.footer}>
-          <Text style={s.footerText}>Skinner — Skin Tech</Text>
+          <Text style={s.footerText}>Skinner</Text>
           <Text style={s.footerText}>{L.confidential}</Text>
         </View>
       </Page>
@@ -491,9 +513,9 @@ export function SkinReport({
         <Text style={s.sectionTitle}>{L.actionPlanTitle}</Text>
 
         {[
-          { phase: L.phaseName.p1, period: L.phasePeriod.p1, text: analysis.action_plan.phase1 },
-          { phase: L.phaseName.p2, period: L.phasePeriod.p2, text: analysis.action_plan.phase2 },
-          { phase: L.phaseName.p3, period: L.phasePeriod.p3, text: analysis.action_plan.phase3 },
+          { phase: L.phaseName.p1, period: phasePeriod.p1, text: analysis.action_plan.phase1 },
+          { phase: L.phaseName.p2, period: phasePeriod.p2, text: analysis.action_plan.phase2 },
+          { phase: L.phaseName.p3, period: phasePeriod.p3, text: analysis.action_plan.phase3 },
         ].map(({ phase, period, text }) => (
           <View key={phase} style={s.phaseCard}>
             <Text style={s.phaseLabel}>{phase}</Text>
@@ -528,7 +550,7 @@ export function SkinReport({
         )}
 
         <View style={s.footer}>
-          <Text style={s.footerText}>Skinner — Skin Tech</Text>
+          <Text style={s.footerText}>Skinner</Text>
           <Text style={s.footerText}>{L.confidential}</Text>
         </View>
       </Page>
@@ -546,10 +568,9 @@ export function SkinReport({
               </View>
               <View style={s.productInfo}>
                 <Text style={s.productName}>{rec.name}</Text>
-                <Text style={s.productMeta}>
-                  {rec.stepRoutine ? L.step[rec.stepRoutine] ?? rec.stepRoutine : ""}{" "}
-                  {rec.sku}
-                </Text>
+                {rec.stepRoutine && L.step[rec.stepRoutine] ? (
+                  <Text style={s.productMeta}>{L.step[rec.stepRoutine]}</Text>
+                ) : null}
                 <Text style={s.productReason}>{rec.reason}</Text>
                 <Text
                   style={{
@@ -563,7 +584,11 @@ export function SkinReport({
                   {rec.howToUse}
                 </Text>
               </View>
-              {rec.price && <Text style={s.productPrice}>R$ {rec.price.toFixed(2)}</Text>}
+              {rec.price && (
+                <Text style={s.productPrice}>
+                  R$ {rec.price.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </Text>
+              )}
             </View>
           ))}
 
@@ -585,8 +610,8 @@ export function SkinReport({
           )}
 
           <View style={s.footer}>
-            <Text style={s.footerText}>Skinner — Skin Tech</Text>
-            <Text style={s.footerText}>Confidencial</Text>
+            <Text style={s.footerText}>Skinner</Text>
+            <Text style={s.footerText}>{L.confidential}</Text>
           </View>
         </Page>
       )}

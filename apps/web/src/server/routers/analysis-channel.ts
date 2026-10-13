@@ -126,14 +126,14 @@ export const analysisChannelRouter = router({
       if (current >= cap) {
         throw new TRPCError({
           code: "FORBIDDEN",
-          message: `Limite de ${cap} canal(is) atingido para o plano ${plan?.name ?? tenant.plan}. Faca upgrade para criar mais.`,
+          message: `Limite de ${cap} canal(is) atingido para o plano ${plan?.name ?? tenant.plan}. Mude de plano para criar mais.`,
         });
       }
       const slug = slugify(input.slug);
       if (!slug) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Slug invalido apos normalizacao.",
+          message: "Identificador inválido após a normalização.",
         });
       }
       const taken = await ctx.db.analysisChannel.findUnique({
@@ -143,7 +143,7 @@ export const analysisChannelRouter = router({
       if (taken) {
         throw new TRPCError({
           code: "CONFLICT",
-          message: "Este slug ja esta em uso. Escolha outro.",
+          message: "Este identificador já está em uso. Escolha outro.",
         });
       }
       // Seed channel.overrides with { locale } if the caller picked one.
@@ -192,7 +192,7 @@ export const analysisChannelRouter = router({
         select: { id: true, tenantId: true, isDefault: true },
       });
       if (!channel || channel.tenantId !== ctx.tenantId) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND", message: "Item não encontrado." });
       }
       const data: {
         label?: string;
@@ -263,7 +263,7 @@ export const analysisChannelRouter = router({
           throw new TRPCError({
             code: "FORBIDDEN",
             message:
-              "Limite por identidade nao esta disponivel no seu plano. Faca upgrade para Pro ou superior.",
+              "Limite por identidade nao esta disponivel no seu plano. Mude para o plano Pro ou superior.",
           });
         }
         if (input.identityLimit !== undefined) {
@@ -291,7 +291,7 @@ export const analysisChannelRouter = router({
         select: { id: true, tenantId: true, isDefault: true },
       });
       if (!channel || channel.tenantId !== ctx.tenantId) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND", message: "Item não encontrado." });
       }
       if (channel.isDefault) {
         throw new TRPCError({

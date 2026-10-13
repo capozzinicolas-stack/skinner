@@ -302,7 +302,7 @@ export default function BrandConfigPage() {
 
       {/* Preview */}
       <div className="mt-12">
-        <h2 className="font-serif text-xl text-carbone mb-4">Preview</h2>
+        <h2 className="font-serif text-xl text-carbone mb-4">Pré-visualização</h2>
         <div
           className="p-8 border-2 text-center space-y-3"
           style={{ borderColor: form.primaryColor }}

@@ -146,8 +146,8 @@ export default function UsuariosPage() {
               >
                 <option value="b2b_viewer">Visualizador</option>
                 <option value="b2b_analyst">Analista</option>
-                <option value="b2b_admin">Admin B2B</option>
-                <option value="skinner_admin">Skinner Admin</option>
+                <option value="b2b_admin">Administrador da clínica</option>
+                <option value="skinner_admin">Administrador Skinner</option>
               </select>
             </div>
             <div>
@@ -159,7 +159,7 @@ export default function UsuariosPage() {
                 onChange={(e) => setForm((f) => ({ ...f, tenantId: e.target.value }))}
                 className="w-full px-3 py-2 border border-sable/30 bg-blanc-casse text-sm text-carbone font-light focus:outline-none focus:border-pierre"
               >
-                <option value="">Sem tenant (admin global)</option>
+                <option value="">Sem clínica (administrador global)</option>
                 {tenants.data?.map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.name}
@@ -191,7 +191,7 @@ export default function UsuariosPage() {
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar por nome, e-mail ou tenant..."
+          placeholder="Buscar por nome, e-mail ou clínica..."
           className="w-full max-w-md px-3 py-2 border border-sable/30 bg-white text-sm text-carbone font-light focus:outline-none focus:border-pierre"
         />
       </div>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc/client";
-import { DEFAULT_QUESTIONS, CORE_QUESTION_IDS, type DynamicQuestion } from "@/components/analysis/questionnaire";
+import { DEFAULT_QUESTIONS, CLINIC_DEFAULT_QUESTIONS, CORE_QUESTION_IDS, type DynamicQuestion } from "@/components/analysis/questionnaire";
 import { useI18n } from "@/lib/i18n/client";
 
 const typeLabels: Record<string, string> = {
@@ -14,7 +14,10 @@ const typeLabels: Record<string, string> = {
 export default function FormularioPage() {
   const { t } = useI18n();
   const utils = trpc.useUtils();
-  const configQuery = trpc.admin.getQuestionnaireConfig.useQuery();
+  // Which questionnaire is being edited: "dermo" (dermocosmetics tenants) or
+  // "clinic" (aesthetic procedure clinics, Tenant.segment = aesthetic_clinic).
+  const [variant, setVariant] = useState<"dermo" | "clinic">("dermo");
+  const configQuery = trpc.admin.getQuestionnaireConfig.useQuery({ variant });
   const updateMutation = trpc.admin.updateQuestionnaireConfig.useMutation({
     onSuccess: () => {
       utils.admin.getQuestionnaireConfig.invalidate();
@@ -43,13 +46,13 @@ export default function FormularioPage() {
     if (configQuery.data) {
       setQuestions(configQuery.data);
     } else if (configQuery.isSuccess && !configQuery.data) {
-      setQuestions(DEFAULT_QUESTIONS);
+      setQuestions(variant === "clinic" ? CLINIC_DEFAULT_QUESTIONS : DEFAULT_QUESTIONS);
     }
-  }, [configQuery.data, configQuery.isSuccess]);
+  }, [configQuery.data, configQuery.isSuccess, variant]);
 
   function handleSave() {
     setSaveStatus("salvando...");
-    updateMutation.mutate({ questions });
+    updateMutation.mutate({ variant, questions });
   }
 
   function moveQuestion(idx: number, direction: "up" | "down") {
@@ -176,6 +179,42 @@ export default function FormularioPage() {
             Salvar alteracoes
           </button>
         </div>
+      </div>
+
+      {/* Questionnaire variant — one per business segment */}
+      <div className="mb-6">
+        <p className="text-[10px] text-pierre uppercase tracking-wider font-light mb-2">
+          Questionário
+        </p>
+        <div className="flex gap-0 border border-sable/40 w-fit">
+          {([
+            { value: "dermo", label: "Dermocosméticos" },
+            { value: "clinic", label: "Clínicas de procedimentos" },
+          ] as const).map((v, i) => (
+            <button
+              key={v.value}
+              type="button"
+              onClick={() => {
+                setEditingId(null);
+                setVariant(v.value);
+              }}
+              className={`px-5 py-2 text-sm font-light tracking-wide transition-colors ${
+                i > 0 ? "border-l border-sable/40" : ""
+              } ${
+                variant === v.value
+                  ? "bg-carbone text-blanc-casse"
+                  : "bg-blanc-casse text-pierre hover:bg-ivoire"
+              }`}
+            >
+              {v.label}
+            </button>
+          ))}
+        </div>
+        <p className="text-xs text-pierre font-light mt-2">
+          {variant === "clinic"
+            ? "Usado pelos clientes do segmento Clínica de procedimentos estéticos."
+            : "Usado pelos clientes do segmento Dermocosméticos (padrão)."}
+        </p>
       </div>
 
       {configQuery.isLoading && (

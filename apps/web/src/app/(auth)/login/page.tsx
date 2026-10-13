@@ -72,7 +72,7 @@ const COPY: Record<Locale, Copy> = {
     errorNoTenant: "Usuário sem empresa vinculada.",
     errorWrongPortalAdmin: "Esta conta não é administrativa. Acesse pelo portal app.skinner.lat.",
     errorWrongPortalClient: "Administradores devem acessar pelo portal admin.skinner.lat.",
-    errorGeneric: "Erro ao fazer login.",
+    errorGeneric: "Não foi possível entrar. Tente novamente.",
   },
   es: {
     adminEyebrow: "Administración",
@@ -296,7 +296,7 @@ function LoginForm() {
           </div>
 
           <p className="text-center text-[10px] text-sable/60 font-mono tracking-[0.1em] uppercase mt-6">
-            Skinner · Skin Tech · 2026
+            Skinner · 2026
           </p>
         </div>
       </div>

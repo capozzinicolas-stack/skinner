@@ -10,16 +10,22 @@ import { resolveProductChannel } from "@/lib/cart/resolve-channel";
 import {
   skinTypeLabelsLocalized,
   conditionLabelsLocalized,
+  serviceCategoryLabelsLocalized,
   barrierLabel,
   tr,
 } from "@/lib/sae/labels";
 import { useI18n } from "@/lib/i18n/client";
+import { stripDescriptionMeta } from "@/lib/catalog/description";
 
 const sessionFrequencyLabels: Record<string, string> = {
   semanal: "Semanal",
   quinzenal: "Quinzenal",
   mensal: "Mensal",
 };
+
+function formatPriceBRL(value: number): string {
+  return `R$ ${value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
 
 const DEFAULT_WHATSAPP_MESSAGE =
   "Ola, gostaria de adquirir o produto {produto} (R$ {preco}) recomendado pela analise Skinner.";
@@ -54,6 +60,9 @@ export type ResultsConfig = {
   mercadoPagoEmail?: string | null;
   // Skin projection feature
   projectionEnabled?: boolean;
+  // Tenant.segment — "aesthetic_clinic" puts procedures first, shows
+  // add-ons/categories and switches the projection to per-procedure timing.
+  segment?: string | null;
 };
 
 // Extended MatchedProduct to include optional service fields
@@ -208,7 +217,9 @@ function ProductCard({
                       ? "bg-carbone text-blanc-casse"
                       : "bg-ivoire text-terre border border-sable/30"
                   }`}>
-                    {rec.recommendationTag}
+                    {rec.recommendationTag === "recomendado"
+                      ? t.patient.results_recommended_badge
+                      : t.patient.results_alternative_badge}
                   </span>
                 )}
               </div>
@@ -220,7 +231,7 @@ function ProductCard({
             </div>
             {showPrice && rec.price && (
               <span className="text-sm text-carbone flex-shrink-0">
-                R$ {rec.price.toFixed(2)}
+                {formatPriceBRL(rec.price)}
               </span>
             )}
           </div>
@@ -258,8 +269,12 @@ function ProductCard({
                   };
                   const result = cartCtx.addItem(item);
                   if (!result.ok && result.reason === "channel-mismatch") {
+                    const channelName = (c: string | undefined) =>
+                      (c && t.patient[`results_channel_${c}`]) || t.patient.results_channel_external;
                     const ok = window.confirm(
-                      `Você já tem itens de ${result.existingChannel}. Adicionar este item de ${cartChannel} vai substituir o carrinho. Confirmar?`
+                      t.patient.results_cart_replace_confirm
+                        .replace("{from}", channelName(result.existingChannel))
+                        .replace("{to}", channelName(cartChannel))
                     );
                     if (ok) cartCtx.replaceCart(item);
                   }
@@ -345,7 +360,11 @@ function ServiceCard({
   mercadoPagoEnabled: boolean;
   mercadoPagoEmail?: string | null;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  const categoryLabel = rec.serviceCategory
+    ? tr(serviceCategoryLabelsLocalized, rec.serviceCategory, locale)
+    : null;
+  const addOns = rec.addOns ?? [];
   const showWhatsApp =
     storefrontEnabled &&
     (storefrontCtaMode === "whatsapp" || storefrontCtaMode === "both") &&
@@ -374,12 +393,17 @@ function ServiceCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between">
             <div>
+              {categoryLabel && (
+                <span className="text-[10px] text-pierre uppercase tracking-wider font-light">
+                  {categoryLabel}
+                </span>
+              )}
               <h4 className="text-sm text-carbone">{rec.name}</h4>
               {/* Session info row */}
               <div className="flex flex-wrap gap-2 mt-1">
                 {rec.sessionCount && (
                   <span className="text-[10px] text-pierre uppercase tracking-wider font-light">
-                    {rec.sessionCount} {rec.sessionCount === 1 ? "sessao" : "sessoes"}
+                    {rec.sessionCount} {rec.sessionCount === 1 ? t.patient.results_session_one : t.patient.results_session_many}
                   </span>
                 )}
                 {rec.sessionCount && (rec.sessionFrequency || rec.durationMinutes) && (
@@ -402,12 +426,31 @@ function ServiceCard({
             </div>
             {showPrice && rec.price && (
               <span className="text-sm text-carbone flex-shrink-0">
-                R$ {rec.price.toFixed(2)}
+                {formatPriceBRL(rec.price)}
               </span>
             )}
           </div>
+          {stripDescriptionMeta(rec.description) && (
+            <p className="text-xs text-terre font-light mt-1 leading-relaxed">{stripDescriptionMeta(rec.description)}</p>
+          )}
           <p className="text-xs text-pierre font-light mt-1">{rec.reason}</p>
           <p className="text-xs text-pierre/60 font-light mt-1 italic">{rec.howToUse}</p>
+          {addOns.length > 0 && (
+            <div className="mt-2">
+              <p className="text-[10px] text-pierre uppercase tracking-wider font-light">
+                {t.patient.results_addons_title}
+              </p>
+              <ul className="mt-1 space-y-0.5">
+                {addOns.map((a) => (
+                  <li key={a.name} className="text-xs text-pierre font-light">
+                    {a.name}
+                    {a.description ? ` · ${a.description}` : ""}
+                    {showPrice && a.price ? ` · ${formatPriceBRL(a.price)}` : ""}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           {showMatchScore && (
             <div className="flex items-center gap-2 mt-2">
               <div className="flex-1 h-px bg-sable/30">
@@ -535,8 +578,9 @@ export function ResultsScreen({
   const showAnnotatedPhoto = config?.resultsShowAnnotatedPhoto ?? true;
   const topMessage = config?.resultsTopMessage ?? null;
   const footerText = config?.resultsFooterText ?? null;
-  const productCtaText = config?.productCtaText || "Comprar";
-  const serviceCtaText = config?.serviceCtaText || "Agendar";
+  const productCtaText = config?.productCtaText || t.patient.results_buy_default;
+  const serviceCtaText = config?.serviceCtaText || t.patient.results_book_service;
+  const isClinic = config?.segment === "aesthetic_clinic";
   const maxProducts = config?.maxProductRecs ?? null;
   const maxServices = config?.maxServiceRecs ?? null;
   // Projection feature — defaults to true so existing tenants see it once schema is migrated
@@ -575,6 +619,94 @@ export function ResultsScreen({
     !!photoBase64 &&
     Array.isArray(analysis.zone_annotations) &&
     analysis.zone_annotations.length > 0;
+
+  // Recommendation sections. Treatments are always rendered before products.
+  const productsBlock = (
+    <>
+      {/* Recommended products */}
+      {showProducts && productRecs.length > 0 && (
+        <div className="mb-8">
+          <h3 className="font-serif text-lg text-carbone mb-4">
+            {isClinic ? t.patient.results_section_homecare : t.patient.results_section_products}
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {productRecs.map((rec, idx) => {
+              // Resolve the channel only when the parent passed integrations
+              // info AND there's a cart provider in scope. Otherwise the card
+              // falls back to its legacy CTA stack.
+              const channel = tenantIntegrations
+                ? resolveProductChannel({
+                    product: {
+                      type: rec.type,
+                      ecommerceLink: rec.ecommerceLink,
+                      bookingLink: rec.bookingLink,
+                      sku: rec.sku,
+                    },
+                    tenantConfig: {
+                      storefrontEnabled,
+                      storefrontCtaMode,
+                      whatsappNumber,
+                      mercadoPagoEnabled,
+                      mercadoPagoEmail,
+                    },
+                    integrations: tenantIntegrations,
+                  })
+                : undefined;
+              return (
+                <ProductCard
+                  key={rec.productId}
+                  rec={rec}
+                  idx={idx}
+                  showMatchScore={showMatchScore}
+                  showPrice={showPrices}
+                  ctaText={productCtaText}
+                  storefrontCtaMode={storefrontCtaMode}
+                  storefrontEnabled={storefrontEnabled}
+                  whatsappNumber={whatsappNumber}
+                  whatsappMessage={whatsappMessage}
+                  mercadoPagoEnabled={mercadoPagoEnabled}
+                  mercadoPagoEmail={mercadoPagoEmail}
+                  cartChannel={channel}
+                  primaryColor={primaryColor}
+                  secondaryColor={secondaryColor}
+                />
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </>
+  );
+  const servicesBlock = (
+    <>
+      {/* Recommended services/treatments */}
+      {showServices && serviceRecs.length > 0 && (
+        <div className="mb-8">
+          <h3 className="font-serif text-lg text-carbone mb-4">
+            {isClinic ? t.patient.results_section_procedures : t.patient.results_section_services}
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {serviceRecs.map((rec, idx) => (
+              <ServiceCard
+                key={rec.productId}
+                rec={rec}
+                idx={idx}
+                showMatchScore={showMatchScore}
+                showPrice={showPrices}
+                ctaText={serviceCtaText}
+                storefrontCtaMode={storefrontCtaMode}
+                storefrontEnabled={storefrontEnabled}
+                whatsappNumber={whatsappNumber}
+                whatsappMessage={whatsappMessage}
+                mercadoPagoEnabled={mercadoPagoEnabled}
+                mercadoPagoEmail={mercadoPagoEmail}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </>
+  );
 
   return (
     <div className="w-full max-w-lg md:max-w-2xl lg:max-w-3xl xl:max-w-4xl mx-auto px-4 pb-12">
@@ -675,6 +807,18 @@ export function ResultsScreen({
               activeIngredients: r.activeIngredients ?? [],
               stepRoutine: r.stepRoutine,
             }))}
+          mode={isClinic ? "clinic" : "dermo"}
+          procedures={
+            isClinic
+              ? serviceRecs.map((r) => ({
+                  name: r.name,
+                  concernTags: r.concernTags ?? [],
+                  onsetWeeks: r.projectionOnsetWeeks ?? null,
+                  peakWeeks: r.projectionPeakWeeks ?? null,
+                  improvementPct: r.projectionImprovementPct ?? null,
+                }))
+              : undefined
+          }
         />
       )}
 
@@ -741,14 +885,14 @@ export function ResultsScreen({
             className="w-full flex items-center justify-between p-5 bg-white border border-sable/20 hover:bg-ivoire transition-colors"
           >
             <span className="font-serif text-lg text-carbone">{t.patient.results_phases_title}</span>
-            <span className="text-pierre text-xs">{showPlan ? t.patient.results_close : "abrir"}</span>
+            <span className="text-pierre text-xs">{showPlan ? t.patient.results_close : t.patient.results_open}</span>
           </button>
           {showPlan && (
             <div className="mt-px space-y-px">
               {[
-                { phase: t.patient.results_phase_starting, period: t.patient.results_phase_weeks_1_2, text: analysis.action_plan.phase1 },
-                { phase: t.patient.results_phase_progressing, period: t.patient.results_phase_weeks_3_8, text: analysis.action_plan.phase2 },
-                { phase: t.patient.results_phase_maintaining, period: t.patient.results_phase_month_3, text: analysis.action_plan.phase3 },
+                { phase: t.patient.results_phase_starting, period: isClinic ? t.patient.results_phase_clinic_1 : t.patient.results_phase_weeks_1_2, text: analysis.action_plan.phase1 },
+                { phase: t.patient.results_phase_progressing, period: isClinic ? t.patient.results_phase_clinic_2 : t.patient.results_phase_weeks_3_8, text: analysis.action_plan.phase2 },
+                { phase: t.patient.results_phase_maintaining, period: isClinic ? t.patient.results_phase_clinic_3 : t.patient.results_phase_month_3, text: analysis.action_plan.phase3 },
               ].map(({ phase, period, text }) => (
                 <div key={phase} className="p-5 bg-white border border-sable/20">
                   <div className="flex items-center gap-3 mb-2">
@@ -763,85 +907,9 @@ export function ResultsScreen({
         </div>
       )}
 
-      {/* Recommended products */}
-      {showProducts && productRecs.length > 0 && (
-        <div className="mb-8">
-          <h3 className="font-serif text-lg text-carbone mb-4">
-            {t.patient.results_section_products}
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {productRecs.map((rec, idx) => {
-              // Resolve the channel only when the parent passed integrations
-              // info AND there's a cart provider in scope. Otherwise the card
-              // falls back to its legacy CTA stack.
-              const channel = tenantIntegrations
-                ? resolveProductChannel({
-                    product: {
-                      type: rec.type,
-                      ecommerceLink: rec.ecommerceLink,
-                      bookingLink: rec.bookingLink,
-                      sku: rec.sku,
-                    },
-                    tenantConfig: {
-                      storefrontEnabled,
-                      storefrontCtaMode,
-                      whatsappNumber,
-                      mercadoPagoEnabled,
-                      mercadoPagoEmail,
-                    },
-                    integrations: tenantIntegrations,
-                  })
-                : undefined;
-              return (
-                <ProductCard
-                  key={rec.productId}
-                  rec={rec}
-                  idx={idx}
-                  showMatchScore={showMatchScore}
-                  showPrice={showPrices}
-                  ctaText={productCtaText}
-                  storefrontCtaMode={storefrontCtaMode}
-                  storefrontEnabled={storefrontEnabled}
-                  whatsappNumber={whatsappNumber}
-                  whatsappMessage={whatsappMessage}
-                  mercadoPagoEnabled={mercadoPagoEnabled}
-                  mercadoPagoEmail={mercadoPagoEmail}
-                  cartChannel={channel}
-                  primaryColor={primaryColor}
-                  secondaryColor={secondaryColor}
-                />
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Recommended services/treatments */}
-      {showServices && serviceRecs.length > 0 && (
-        <div className="mb-8">
-          <h3 className="font-serif text-lg text-carbone mb-4">
-            {t.patient.results_section_services}
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {serviceRecs.map((rec, idx) => (
-              <ServiceCard
-                key={rec.productId}
-                rec={rec}
-                idx={idx}
-                showMatchScore={showMatchScore}
-                showPrice={showPrices}
-                ctaText={serviceCtaText}
-                storefrontCtaMode={storefrontCtaMode}
-                storefrontEnabled={storefrontEnabled}
-                whatsappNumber={whatsappNumber}
-                whatsappMessage={whatsappMessage}
-                mercadoPagoEnabled={mercadoPagoEnabled}
-                mercadoPagoEmail={mercadoPagoEmail}
-              />
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Treatments always come first, products after (all segments). */}
+      {servicesBlock}
+      {productsBlock}
 
       {/* Kit CTA */}
       {result.kitLink && (
@@ -947,7 +1015,7 @@ export function ResultsScreen({
         <p className="text-xs text-pierre text-center font-light italic">{disclaimer}</p>
       )}
       <p className="text-[10px] text-sable text-center mt-3 uppercase tracking-skinners font-light">
-        Powered by Skinner
+        {t.patient.results_powered_by}
       </p>
     </div>
   );

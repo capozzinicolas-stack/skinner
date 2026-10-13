@@ -42,6 +42,8 @@ const conditionPtBR: Record<string, string> = {
   dark_circles: "olheiras",
   oiliness: "oleosidade",
   sagging: "flacidez",
+  acne_scars: "cicatrizes de acne",
+  texture: "textura irregular",
   acne_vulgaris: "acne",
   melasma: "melasma",
   hiperpigmentacao_pos_inflamatoria: "marcas escuras pós-acne",
@@ -71,7 +73,11 @@ const objectivePtBR: Record<string, string> = {
   sensitivity: "acalmar a pele",
   "even-tone": "uniformizar o tom",
   firming: "firmeza",
-  sagging: "firmeza e lifting",
+  firmness: "firmeza",
+  "pore-control": "controle de poros",
+  sagging: "firmeza e sustentação",
+  texture: "textura e marcas",
+  prevention: "prevenção do envelhecimento",
 };
 
 const stepRoutinePtBR: Record<string, string> = {
@@ -81,6 +87,9 @@ const stepRoutinePtBR: Record<string, string> = {
   moisturizer: "hidratante",
   SPF: "protetor solar",
   treatment: "tratamento",
+  mask: "máscara",
+  exfoliant: "esfoliante",
+  "eye-cream": "área dos olhos",
 };
 
 const useTimePtBR: Record<string, string> = {
@@ -130,6 +139,8 @@ const conditionEs: Record<string, string> = {
   dark_circles: "ojeras",
   oiliness: "oleosidad",
   sagging: "flacidez",
+  acne_scars: "cicatrices de acné",
+  texture: "textura irregular",
   acne_vulgaris: "acné",
   melasma: "melasma",
   hiperpigmentacao_pos_inflamatoria: "marcas oscuras post-acné",
@@ -159,7 +170,11 @@ const objectiveEs: Record<string, string> = {
   sensitivity: "calmar la piel",
   "even-tone": "uniformar el tono",
   firming: "firmeza",
-  sagging: "firmeza y lifting",
+  firmness: "firmeza",
+  "pore-control": "control de poros",
+  sagging: "firmeza y sustentación",
+  texture: "textura y marcas",
+  prevention: "prevención del envejecimiento",
 };
 
 const stepRoutineEs: Record<string, string> = {
@@ -169,6 +184,9 @@ const stepRoutineEs: Record<string, string> = {
   moisturizer: "hidratante",
   SPF: "protector solar",
   treatment: "tratamiento",
+  mask: "mascarilla",
+  exfoliant: "exfoliante",
+  "eye-cream": "contorno de ojos",
 };
 
 const useTimeEs: Record<string, string> = {
@@ -218,6 +236,8 @@ const conditionEn: Record<string, string> = {
   dark_circles: "dark circles",
   oiliness: "oiliness",
   sagging: "sagging",
+  acne_scars: "acne scars",
+  texture: "uneven texture",
   acne_vulgaris: "acne",
   melasma: "melasma",
   hiperpigmentacao_pos_inflamatoria: "post-acne dark marks",
@@ -247,7 +267,11 @@ const objectiveEn: Record<string, string> = {
   sensitivity: "calm skin",
   "even-tone": "even tone",
   firming: "firmness",
+  firmness: "firmness",
+  "pore-control": "pore control",
   sagging: "firmness and lifting",
+  texture: "texture and marks",
+  prevention: "aging prevention",
 };
 
 const stepRoutineEn: Record<string, string> = {
@@ -257,6 +281,9 @@ const stepRoutineEn: Record<string, string> = {
   moisturizer: "moisturizer",
   SPF: "sunscreen",
   treatment: "treatment",
+  mask: "mask",
+  exfoliant: "exfoliant",
+  "eye-cream": "eye cream",
 };
 
 const useTimeEn: Record<string, string> = {
@@ -285,6 +312,23 @@ const barrierStatusEn: Record<
   },
 };
 
+// ── Service categories (procedure clinics, Oct-2026) ────────────────
+const serviceCategoryPtBR: Record<string, string> = {
+  injectables: "injetáveis",
+  technologies: "tecnologias",
+  skin: "tratamentos de pele",
+};
+const serviceCategoryEs: Record<string, string> = {
+  injectables: "inyectables",
+  technologies: "tecnologías",
+  skin: "tratamientos de piel",
+};
+const serviceCategoryEn: Record<string, string> = {
+  injectables: "injectables",
+  technologies: "technologies",
+  skin: "skin treatments",
+};
+
 // ── Backwards-compatible flat exports (pt-BR) ───────────────────────
 // All ~10 callers that did `skinTypeLabels[key]` keep working unchanged.
 // New code that needs locale-aware lookup uses the *Localized variants
@@ -295,6 +339,7 @@ export const objectiveLabels = objectivePtBR;
 export const stepRoutineLabels = stepRoutinePtBR;
 export const useTimeLabels = useTimePtBR;
 export const barrierStatusLabels = barrierStatusPtBR;
+export const serviceCategoryLabels = serviceCategoryPtBR;
 
 // ── Locale-aware exports ────────────────────────────────────────────
 export const skinTypeLabelsLocalized: LocalizedMap = {
@@ -325,6 +370,12 @@ export const useTimeLabelsLocalized: LocalizedMap = {
   "pt-BR": useTimePtBR,
   es: useTimeEs,
   en: useTimeEn,
+};
+
+export const serviceCategoryLabelsLocalized: LocalizedMap = {
+  "pt-BR": serviceCategoryPtBR,
+  es: serviceCategoryEs,
+  en: serviceCategoryEn,
 };
 
 export const barrierStatusLabelsLocalized: Record<

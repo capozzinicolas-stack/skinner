@@ -1,10 +1,70 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
+import { z } from "zod";
 import type { AnalysisInput, AnalysisOutput } from "./types";
 import { db } from "@skinner/db";
 
+// Timeout below the 60s Vercel function limit (api/trpc maxDuration) so a
+// slow call fails inside the handler (→ fallback) instead of surfacing as an
+// infrastructure 504. One retry covers transient 429/5xx.
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
+  timeout: 50_000,
+  maxRetries: 1,
 });
+
+// Structured output schema (mirrors AnalysisOutput). The API guarantees the
+// response matches it, so a stray quote or missing comma in Portuguese text
+// can no longer break JSON.parse and silently drop the patient to the mock.
+// Condition names are restricted to the knowledge-base IDs (built per request
+// from the KB) so Claude can never invent one (e.g. a face-zone name).
+// For procedure clinics, `recommended_procedures` is restricted to the clinic's
+// own active procedure names: Claude (who sees the photo and writes the plan)
+// picks them in priority order, so plan and recommendation cards agree.
+function buildAnalysisSchema(
+  conditionNames: [string, ...string[]],
+  procedureNames: string[] | null
+) {
+  const base = z.object({
+  skin_type: z.enum(["oily", "dry", "combination", "normal", "sensitive"]),
+  skin_type_self_reported: z.string().nullable(),
+  skin_type_discrepancy: z.string().nullable(),
+  conditions: z.array(
+    z.object({
+      name: z.enum(conditionNames),
+      severity: z.number().int(),
+      description: z.string(),
+    })
+  ),
+  barrier_status: z.enum(["healthy", "compromised", "needs_attention"]),
+  fitzpatrick: z.string(),
+  primary_objective: z.string(),
+  summary: z.string(),
+  action_plan: z.object({ phase1: z.string(), phase2: z.string(), phase3: z.string() }),
+  alert_signs: z.array(z.string()),
+  timeline: z.object({ weeks4: z.string(), weeks8: z.string(), weeks12: z.string() }),
+  zone_annotations: z.array(
+    z.object({
+      zone: z.enum(["forehead", "left_cheek", "right_cheek", "nose", "chin", "under_eyes", "jawline"]),
+      status: z.enum(["good", "attention", "concern"]),
+      title: z.string(),
+      observation: z.string(),
+      related_conditions: z.array(z.enum(conditionNames)),
+    })
+  ),
+  });
+  if (procedureNames && procedureNames.length > 0) {
+    return base.extend({
+      recommended_procedures: z.array(z.enum(procedureNames as [string, ...string[]])),
+    });
+  }
+  return base;
+}
+
+// Model is configurable so a retirement never silently breaks analyses again
+// (Oct-2026: claude-sonnet-4-20250514 started returning 404 and every
+// analysis fell back to the mock). Default = current Sonnet generation.
+const ANALYSIS_MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-5";
 
 /**
  * Real Claude API analyzer that processes facial photos + questionnaire
@@ -106,6 +166,52 @@ TOM TECNICO/CLINICO:
 - Mantenha o tom profissional mas acolhedor — preciso, nao alarmista.
 `;
 
+  // Procedure clinics (Tenant.segment = "aesthetic_clinic"): the plan is a
+  // protocol of in-clinic procedures, home care is only a complement. The
+  // clinic's own active procedures are listed so Claude references real
+  // offerings by name instead of generic skincare steps.
+  // What the clinic recommends (/dashboard/analise). The written plan must
+  // not promise what the patient will not receive.
+  const recommendsServices = tenantConfig?.resultsShowServices ?? true;
+  const recommendsProducts = tenantConfig?.resultsShowProducts ?? true;
+  const scopeBlock = !recommendsProducts
+    ? `
+ESCOPO DA RECOMENDACAO: esta clinica recomenda APENAS tratamentos e procedimentos. No plano de acao e na timeline, nao indique produtos para comprar; cuidados em casa so como orientacoes gerais (por exemplo protetor solar diario e hidratacao).
+`
+    : !recommendsServices
+      ? `
+ESCOPO DA RECOMENDACAO: esta clinica recomenda APENAS produtos de uso em casa. No plano de acao e na timeline, nao indique procedimentos ou tratamentos de clinica.
+`
+      : "";
+
+  let clinicBlock = "";
+  let clinicProcedureNames: string[] | null = null;
+  const maxProcedures = Math.min(Math.max(tenantConfig?.maxServiceRecs ?? 2, 1), 10);
+  if (input.segment === "aesthetic_clinic" && recommendsServices) {
+    const procedures = await db.product.findMany({
+      where: { tenantId: input.tenantId, isActive: true, type: "service" },
+      select: { name: true },
+      orderBy: { priorityRank: "desc" },
+      take: 60,
+    });
+    const procedureList = procedures.map((p) => p.name).join("; ");
+    clinicProcedureNames = procedures.length > 0 ? Array.from(new Set(procedures.map((p) => p.name))) : null;
+    clinicBlock = `
+CONTEXTO: CLINICA DE PROCEDIMENTOS ESTETICOS (CRITICO):
+- Este paciente esta sendo avaliado por uma clinica de procedimentos esteticos. O plano deve ser orientado a PROCEDIMENTOS realizados na clinica. Cuidados em casa entram apenas como complemento que potencializa e mantem o resultado.
+- "action_plan.phase1": avaliacao presencial e os primeiros procedimentos indicados para a queixa principal.
+- "action_plan.phase2": sessoes seguintes e procedimentos complementares que potencializam o resultado.
+- "action_plan.phase3": manutencao (frequencia de retorno a clinica) e cuidados em casa.
+- "timeline.weeks4/weeks8/weeks12": descreva o que o paciente vai notar de acordo com o tempo de resposta tipico de cada tipo de procedimento (injetaveis mostram resultado em dias ou poucas semanas; bioestimuladores, ultrassom microfocado, radiofrequencia e lasers evoluem ao longo de meses).
+${procedureList ? `- Procedimentos que esta clinica oferece: ${procedureList}. Cite-os pelo nome quando fizer sentido. NUNCA cite procedimentos fora desta lista.
+- "recommended_procedures": escolha de 1 a ${maxProcedures} procedimentos desta lista, em ordem de prioridade para este paciente, usando o nome exato. Devem ser os mesmos que voce indica no plano de acao (comece pela queixa principal). Respeite contraindicacoes como gravidez e amamentacao.` : ""}
+- Nao prometa resultados, nao cite precos e nao recomende marcas de produtos.
+- As condicoes "acne_scars" (cicatrizes de acne) e "texture" (textura irregular) existem na base: use-as quando observar cicatrizes de acne ou textura irregular e poros aparentes.
+- Para "conditions[].name" prefira os IDs simples, os mesmos do questionario: aging (rugas e linhas), sagging (flacidez), hyperpigmentation (manchas, inclusive manchas solares), dark_circles (olheiras), texture, acne, acne_scars, dullness, dehydration, sensitivity, rosacea, pores, oiliness. Use um ID clinico apenas quando ele for mais preciso: "melasma" so para melasma, "hiperpigmentacao_pos_inflamatoria" so para marcas deixadas por espinhas ou inflamacoes, nunca para manchas de sol.
+- "primary_objective": devolva exatamente o valor informado no questionario.
+`;
+  }
+
   const systemPrompt = `Voce e um dermatologista especialista em analise facial e dermocosmeticos. Voce trabalha para a plataforma Skinner, que fornece analise de pele baseada em IA para clinicas, laboratorios e farmacias no Brasil.
 
 Sua tarefa e analisar a foto facial do paciente junto com as respostas do questionario para fornecer um diagnostico dermatologico preciso e um plano de tratamento personalizado.
@@ -117,7 +223,7 @@ ${conditionsKB}
 
 INGREDIENTES ATIVOS CONHECIDOS:
 ${ingredientsKB}
-${toneBlock}
+${toneBlock}${clinicBlock}${scopeBlock}
 REGRAS:
 1. Analise a foto com atencao: textura, poros, manchas, vermelhidao, oleosidade, linhas, firmeza, tom de pele
 2. Cruze o que voce ve na foto com as respostas do questionario
@@ -142,7 +248,8 @@ IDIOMA DA RESPOSTA (CRITICO):
 - Campos a traduzir: "summary", "conditions[].description", "skin_type_discrepancy", "action_plan.phase1/phase2/phase3", "timeline.weeks4/weeks8/weeks12", "alert_signs[]", "zone_annotations[].observation", "zone_annotations[].title".
 - NAO traduza NUNCA os identificadores tecnicos: "conditions[].name" (usado pelo motor de recomendacao para casar produtos — deve manter o ID exato da base de conhecimento, ex: "acne", "hyperpigmentation", "envelhecimento_cronologico"), "skin_type" (ex: "oily", "combination"), "barrier_status" (ex: "healthy", "compromised"), "fitzpatrick", "primary_objective", "zone_annotations[].zone" e "zone_annotations[].status".
 - Mantenha exatamente a mesma estrutura JSON. Apenas o conteudo textual dos campos visiveis muda de idioma.
-- Esta diretiva tem prioridade sobre quaisquer instrucoes de tom ou marca anteriores.`;
+- Esta diretiva tem prioridade sobre quaisquer instrucoes de tom ou marca anteriores.${locale === "pt-BR" ? `
+- PORTUGUES SEM ESTRANGEIRISMOS: nos campos visiveis ao paciente NAO use palavras em ingles. Use sempre o equivalente em portugues: "skincare" → "cuidados com a pele"; "glow" → "vico" ou "luminosidade"; "lifting" → "efeito tensor" ou "elevacao"; "anti-aging" → "antienvelhecimento"; "drug delivery" → "entrega de ativos"; "skinbooster" → "hidratacao injetavel"; "home care" → "cuidados em casa"; "oil-free" → "livre de oleos"; "self-care" → "autocuidado"; "peeling" pode ser mantido (termo consagrado no Brasil). Nomes comerciais de procedimentos e marcas (Ultraformer, Morpheus8, Radiesse, Sculptra, Profhilo) podem ser citados.` : ""}`;
 
   const userPrompt = `QUESTIONARIO DO PACIENTE:
 - Tipo de pele auto-relatado: ${q.skin_type ?? "nao informado"}
@@ -209,9 +316,21 @@ Analise a foto facial acima junto com o questionario e retorne um JSON com EXATA
     imageData = input.photoBase64;
   }
 
-  const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-20250514",
-    max_tokens: 4096,
+  const response = await anthropic.messages.parse({
+    model: ANALYSIS_MODEL,
+    // Single structured answer: thinking off keeps latency well inside the
+    // 60s function limit (adaptive thinking measured ~50-57s end to end).
+    max_tokens: 16000,
+    thinking: { type: "disabled" },
+    output_config: {
+      effort: "low",
+      format: zodOutputFormat(
+        buildAnalysisSchema(
+          (conditions.length > 0 ? conditions.map((c) => c.name) : ["aging"]) as [string, ...string[]],
+          clinicProcedureNames
+        )
+      ),
+    },
     messages: [
       {
         role: "user",
@@ -234,19 +353,22 @@ Analise a foto facial acima junto com o questionario e retorne um JSON com EXATA
     system: systemPrompt,
   });
 
-  // Extract text content from response
-  const textBlock = response.content.find((block) => block.type === "text");
-  if (!textBlock || textBlock.type !== "text") {
-    throw new Error("Claude did not return text response");
+  if (response.stop_reason === "refusal") {
+    throw new Error("Claude refused the analysis request");
+  }
+  if (response.stop_reason === "max_tokens") {
+    throw new Error("Claude response truncated (max_tokens)");
   }
 
-  // Parse JSON from response (handle potential markdown wrapping)
-  let jsonStr = textBlock.text.trim();
-  if (jsonStr.startsWith("```")) {
-    jsonStr = jsonStr.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
+  const parsed = response.parsed_output as AnalysisOutput | null;
+  if (!parsed) {
+    throw new Error("Claude returned no parseable structured output");
   }
-
-  const parsed = JSON.parse(jsonStr) as AnalysisOutput;
+  // Severity outside 1-3 would break the UI bars and matcher math.
+  parsed.conditions = parsed.conditions.map((c) => ({
+    ...c,
+    severity: Math.min(Math.max(Math.round(c.severity), 1), 3),
+  }));
 
   // Validate required fields
   if (!parsed.skin_type || !parsed.conditions || !parsed.summary) {

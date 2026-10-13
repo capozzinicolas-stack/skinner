@@ -182,7 +182,7 @@ export function buildCartCheckoutUrl(
       return {
         url: `mailto:${ctx.mercadoPagoEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`,
         warning:
-          "Voce sera levado a enviar um e-mail para a clinica solicitar o pagamento. Em breve teremos checkout MercadoPago integrado.",
+          "Voce sera levado a enviar um e-mail para a clinica solicitar o pagamento. Em breve teremos pagamento integrado pelo MercadoPago integrado.",
       };
     }
   }

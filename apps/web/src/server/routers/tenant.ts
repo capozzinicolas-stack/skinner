@@ -2,6 +2,7 @@ import { z } from "zod/v4";
 import { TRPCError } from "@trpc/server";
 import { router, adminProcedure, publicProcedure, tenantProcedure } from "../trpc";
 import { getPlan } from "@/lib/billing/plans";
+import { CLINIC_DEFAULT_QUESTIONS } from "@/lib/questionnaire/defaults";
 
 export const tenantRouter = router({
   list: adminProcedure.query(async ({ ctx }) => {
@@ -76,6 +77,7 @@ export const tenantRouter = router({
           brandVoice: true,
           disclaimer: true,
           defaultLocale: true,
+          segment: true,
           tenantConfig: {
             select: {
               questionAllergiesEnabled: true,
@@ -209,11 +211,11 @@ export const tenantRouter = router({
       const [tenant, platformConfig] = await Promise.all([
         ctx.db.tenant.findUnique({
           where: channel ? { id: channel.tenantId } : { slug: input.slug },
-          select: { tenantConfig: true },
+          select: { tenantConfig: true, segment: true },
         }),
         ctx.db.platformConfig.findUnique({
           where: { id: "default" },
-          select: { questionnaireConfig: true },
+          select: { questionnaireConfig: true, questionnaireConfigClinic: true },
         }),
       ]);
 
@@ -230,8 +232,19 @@ export const tenantRouter = router({
         } catch { /* ignore malformed overrides */ }
       }
 
+      // Segment decides which questionnaire the patient sees. Procedure
+      // clinics get their own version (admin-editable, code default as
+      // fallback); everyone else keeps the original dermocosmetics one.
+      const segment = tenant?.segment ?? "dermocosmetics";
       let questions = null;
-      if (platformConfig?.questionnaireConfig) {
+      if (segment === "aesthetic_clinic") {
+        if (platformConfig?.questionnaireConfigClinic) {
+          try {
+            questions = JSON.parse(platformConfig.questionnaireConfigClinic);
+          } catch { /* ignore */ }
+        }
+        if (!questions) questions = CLINIC_DEFAULT_QUESTIONS;
+      } else if (platformConfig?.questionnaireConfig) {
         try {
           questions = JSON.parse(platformConfig.questionnaireConfig);
         } catch { /* ignore */ }
@@ -240,6 +253,7 @@ export const tenantRouter = router({
       return {
         ...tenantConfig,
         questions,
+        segment,
       };
     }),
 

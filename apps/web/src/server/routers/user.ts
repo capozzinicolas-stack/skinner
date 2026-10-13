@@ -278,7 +278,7 @@ export const userRouter = router({
       // Ensure user belongs to same tenant
       const target = await ctx.db.user.findUniqueOrThrow({ where: { id: input.id } });
       if (target.tenantId !== ctx.tenantId) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND", message: "Item não encontrado." });
       }
 
       const { id, ...data } = input;
@@ -294,7 +294,7 @@ export const userRouter = router({
     .mutation(async ({ ctx, input }) => {
       const target = await ctx.db.user.findUniqueOrThrow({ where: { id: input.id } });
       if (target.tenantId !== ctx.tenantId) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({ code: "NOT_FOUND", message: "Item não encontrado." });
       }
       if (target.id === ctx.userId) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Você não pode remover a si mesmo." });

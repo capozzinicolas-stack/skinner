@@ -128,7 +128,7 @@ export function ImageUpload({
       <div
         role="button"
         tabIndex={disabled ? -1 : 0}
-        aria-label="Área de upload de imagem"
+        aria-label="Área de envio de imagem"
         onClick={() => !disabled && inputRef.current?.click()}
         onKeyDown={(e) => {
           if (!disabled && (e.key === "Enter" || e.key === " ")) {

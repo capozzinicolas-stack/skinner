@@ -8,6 +8,9 @@ export type AnalysisInput = {
   // The KB IDs (conditions[].name) are NEVER translated — they're identifiers
   // used by the matcher.
   locale?: "pt-BR" | "es" | "en";
+  // Tenant.segment. "aesthetic_clinic" makes Claude frame the action plan
+  // and timeline around in-clinic procedures (see claude-analyzer.ts).
+  segment?: string;
 };
 
 export type FaceZone =
@@ -50,6 +53,9 @@ export type AnalysisOutput = {
     weeks12: string;
   };
   zone_annotations: ZoneAnnotation[];
+  // Procedure clinics: procedure names Claude chose (clinic catalog only), in
+  // priority order. The matcher recommends these first.
+  recommended_procedures?: string[];
 };
 
 export type MatchedProduct = {
@@ -72,6 +78,14 @@ export type MatchedProduct = {
   durationMinutes: number | null;
   recommendationTag: "recomendado" | "alternativa";
   activeIngredients: string[];
+  // Procedure-clinic fields (Oct-2026). Optional: absent for products and for
+  // analyses persisted before the segment feature.
+  serviceCategory?: string | null;
+  concernTags?: string[];
+  addOns?: { name: string; description?: string; price?: number }[];
+  projectionOnsetWeeks?: number | null;
+  projectionPeakWeeks?: number | null;
+  projectionImprovementPct?: number | null;
 };
 
 export type FullAnalysisResult = {

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import type { ZoneAnnotation, FaceZone, ZoneStatus } from "@/lib/sae/types";
 import { detectFaceZones, type FaceZonePositions } from "@/lib/face-detection";
 import { useI18n } from "@/lib/i18n/client";
+import { conditionLabelsLocalized, tr } from "@/lib/sae/labels";
 
 // Fixed fallback positions calibrated for a centered selfie.
 // Used when face detection is unavailable or returns no result.
@@ -49,7 +50,7 @@ export function AnnotatedPhoto({
   photoBase64: string;
   annotations: ZoneAnnotation[];
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const ZONE_LABELS: Record<FaceZone, string> = {
     forehead: t.patient.results_zone_forehead,
     under_eyes: t.patient.results_zone_under_eyes,
@@ -280,7 +281,7 @@ export function AnnotatedPhoto({
                       className="text-[10px] uppercase tracking-wider font-light px-2 py-0.5 border border-sable/20"
                       style={{ color: "#7C7269" }}
                     >
-                      {cond}
+                      {tr(conditionLabelsLocalized, cond, locale)}
                     </span>
                   ))}
                 </div>

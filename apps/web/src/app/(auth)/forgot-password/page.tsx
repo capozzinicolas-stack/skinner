@@ -22,7 +22,7 @@ const COPY: Record<Locale, Copy> = {
     title: "Esqueceu sua senha",
     successText: "Se o e-mail informado estiver cadastrado, você receberá um link para redefinir sua senha em alguns instantes.",
     successExpiry: "O link expira em 60 minutos e só pode ser usado uma vez.",
-    back: "← Voltar ao login",
+    back: "← Voltar para a entrada",
     formIntro: "Informe o e-mail da sua conta. Enviaremos um link para você escolher uma nova senha.",
     emailLabel: "E-mail",
     submit: "Enviar link de recuperação",
@@ -135,7 +135,7 @@ export default function ForgotPasswordPage() {
             )}
           </div>
           <p className="text-center text-[10px] text-sable/60 font-mono tracking-[0.1em] uppercase mt-6">
-            Skinner · Skin Tech · 2026
+            Skinner · 2026
           </p>
         </div>
       </div>

@@ -29,7 +29,7 @@ function ImpersonationRedeem() {
 
   useEffect(() => {
     if (!token) {
-      setError("Token nao fornecido na URL.");
+      setError("Código de acesso ausente no endereço.");
       return;
     }
     // signIn returns a promise that resolves with { ok, error } when
@@ -42,7 +42,7 @@ function ImpersonationRedeem() {
       callbackUrl: "/dashboard",
     }).catch((err) => {
       console.error("[impersonate] signIn failed:", err);
-      setError("Falha ao redimir token. Pode estar expirado ou ja usado.");
+      setError("Não foi possível validar o acesso. O código pode ter expirado ou já ter sido usado.");
     });
   }, [token]);
 
@@ -50,7 +50,7 @@ function ImpersonationRedeem() {
     <main className="min-h-screen flex items-center justify-center bg-blanc-casse p-8">
       <div className="max-w-md text-center space-y-4">
         <h1 className="font-serif text-xl text-carbone">
-          {error ? "Falha na impersonacao" : "Acessando como tenant..."}
+          {error ? "Falha na impersonacao" : "Acessando como a clínica..."}
         </h1>
         <p className="text-sm text-pierre font-light">
           {error ?? "Aguarde enquanto preparamos sua sessao de suporte."}

@@ -341,6 +341,23 @@ export const adminRouter = router({
       });
     }),
 
+  // Admin: change tenant business segment (Oct-2026). Controls the
+  // questionnaire, matcher mode, results order and projection model of the
+  // patient flow. See Tenant.segment in schema.prisma.
+  changeTenantSegment: adminProcedure
+    .input(
+      z.object({
+        tenantId: z.string(),
+        segment: z.enum(["dermocosmetics", "aesthetic_clinic"]),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      return ctx.db.tenant.update({
+        where: { id: input.tenantId },
+        data: { segment: input.segment },
+      });
+    }),
+
   // Admin: reset usage counter for a tenant
   resetTenantUsage: adminProcedure
     .input(z.object({ tenantId: z.string() }))
@@ -432,23 +449,33 @@ export const adminRouter = router({
 
   // ─── Questionnaire configuration ───────────────────────────────────────────
 
-  getQuestionnaireConfig: adminProcedure.query(async ({ ctx }) => {
-    const config = await ctx.db.platformConfig.findUnique({
-      where: { id: "default" },
-    });
-    if (config?.questionnaireConfig) {
-      try {
-        return JSON.parse(config.questionnaireConfig);
-      } catch {
-        return null;
+  // variant "dermo" (default) = PlatformConfig.questionnaireConfig, used by
+  // segment "dermocosmetics". variant "clinic" = questionnaireConfigClinic,
+  // used by segment "aesthetic_clinic". Null → the page falls back to the
+  // matching code default.
+  getQuestionnaireConfig: adminProcedure
+    .input(z.object({ variant: z.enum(["dermo", "clinic"]).default("dermo") }).optional())
+    .query(async ({ ctx, input }) => {
+      const variant = input?.variant ?? "dermo";
+      const config = await ctx.db.platformConfig.findUnique({
+        where: { id: "default" },
+      });
+      const raw =
+        variant === "clinic" ? config?.questionnaireConfigClinic : config?.questionnaireConfig;
+      if (raw) {
+        try {
+          return JSON.parse(raw);
+        } catch {
+          return null;
+        }
       }
-    }
-    return null;
-  }),
+      return null;
+    }),
 
   updateQuestionnaireConfig: adminProcedure
     .input(
       z.object({
+        variant: z.enum(["dermo", "clinic"]).default("dermo"),
         questions: z.array(
           z.object({
             id: z.string().min(1),
@@ -494,16 +521,77 @@ export const adminRouter = router({
         });
       }
 
+      const field =
+        input.variant === "clinic" ? "questionnaireConfigClinic" : "questionnaireConfig";
       return ctx.db.platformConfig.upsert({
         where: { id: "default" },
         create: {
           id: "default",
-          questionnaireConfig: JSON.stringify(input.questions),
+          [field]: JSON.stringify(input.questions),
         },
         update: {
-          questionnaireConfig: JSON.stringify(input.questions),
+          [field]: JSON.stringify(input.questions),
         },
       });
+    }),
+
+  // ─── Procedure library (Oct-2026) ──────────────────────────────────────────
+  // Global catalog clinics import from (/dashboard/catalogo/biblioteca).
+  // Edits here do NOT touch copies already imported by clinics.
+
+  libraryList: adminProcedure.query(async ({ ctx }) => {
+    return ctx.db.procedureLibraryItem.findMany({
+      orderBy: [{ category: "asc" }, { displayOrder: "asc" }, { name: "asc" }],
+    });
+  }),
+
+  libraryUpsert: adminProcedure
+    .input(
+      z.object({
+        id: z.string().optional(),
+        slug: z.string().min(2).max(80).regex(/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/),
+        name: z.string().min(2).max(160),
+        description: z.string().min(2).max(2000),
+        category: z.enum(["injectables", "technologies", "skin"]),
+        concernTags: z.array(z.string()).max(20),
+        skinTypeTags: z.array(z.string()).max(10),
+        objectiveTags: z.array(z.string()).max(20),
+        severityLevel: z.number().int().min(1).max(3),
+        activeIngredients: z.array(z.string()).max(20),
+        contraindications: z.array(z.string()).max(20),
+        sessionCount: z.number().int().min(1).max(50).nullable(),
+        sessionFrequency: z.string().max(60).nullable(),
+        durationMinutes: z.number().int().min(1).max(600).nullable(),
+        suggestedPrice: z.number().min(0).nullable(),
+        projectionOnsetWeeks: z.number().int().min(0).max(104).nullable(),
+        projectionPeakWeeks: z.number().int().min(0).max(104).nullable(),
+        projectionImprovementPct: z.number().int().min(0).max(100).nullable(),
+        addOns: z
+          .array(z.object({ name: z.string().min(1), description: z.string().optional(), price: z.number().optional() }))
+          .max(10),
+        displayOrder: z.number().int().default(0),
+        isActive: z.boolean().default(true),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { id, concernTags, skinTypeTags, objectiveTags, activeIngredients, contraindications, addOns, ...rest } = input;
+      const data = {
+        ...rest,
+        concernTags: JSON.stringify(concernTags),
+        skinTypeTags: JSON.stringify(skinTypeTags),
+        objectiveTags: JSON.stringify(objectiveTags),
+        activeIngredients: JSON.stringify(activeIngredients),
+        contraindications: JSON.stringify(contraindications),
+        addOns: JSON.stringify(addOns),
+      };
+      const clash = await ctx.db.procedureLibraryItem.findUnique({ where: { slug: input.slug } });
+      if (clash && clash.id !== id) {
+        throw new TRPCError({ code: "CONFLICT", message: "Já existe um procedimento com este identificador." });
+      }
+      if (id) {
+        return ctx.db.procedureLibraryItem.update({ where: { id }, data });
+      }
+      return ctx.db.procedureLibraryItem.create({ data });
     }),
 
   // ─── Prompt configuration ──────────────────────────────────────────────────
