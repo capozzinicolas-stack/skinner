@@ -155,14 +155,16 @@ async function generateProjection(
     model: "gemini-2.5-flash-image",
   });
 
-  // Strip data URL prefix if present
-  const base64Data = photoBase64.replace(/^data:image\/\w+;base64,/, "");
+  // Strip data URL prefix if present. Keep its mime type: the clinic flow
+  // feeds a Gemini output (often PNG) back in as the next input.
+  const mimeType = photoBase64.match(/^data:(image\/[\w+.-]+);base64,/)?.[1] ?? "image/jpeg";
+  const base64Data = photoBase64.replace(/^data:image\/[\w+.-]+;base64,/, "");
 
   const result = await model.generateContent([
     prompt,
     {
       inlineData: {
-        mimeType: "image/jpeg",
+        mimeType,
         data: base64Data,
       },
     },
@@ -215,33 +217,108 @@ export async function generateProjections(
 }
 
 // ── Procedure-clinic projection (segment "aesthetic_clinic") ────────────
+//
+// Oct-2026 rework after clinical feedback (image 1 looked better than image
+// 2; forehead lines, nasolabial folds and jowls barely changed):
+//   - Gemini does not follow percentages, so each procedure is translated
+//     into a zone-specific visual instruction (PROCEDURE_VISUALS) with a
+//     qualitative strength word derived from its result curve.
+//   - Image 2 is edited FROM image 1 (chained), so the progression always
+//     moves forward instead of two independent random draws.
+//   - Reducing sagging (jowls, lower-face laxity) is explicitly allowed; the
+//     old "keep contour changes subtle" wording made Gemini skip it.
+//   - Structural reshaping (chin, jaw, cheekbones, nose) stays forbidden:
+//     Skinner does not simulate anatomical changes yet.
 
-// Procedures change soft-tissue support (lifting, volume), so unlike the
-// dermocosmetic template this one allows contour changes typical of the
-// listed procedures while still forbidding identity/bone changes.
-const CLINIC_PROMPT_TEMPLATE = `Edit this facial photo to show a photorealistic result {weeksLabel} after starting the following in-clinic aesthetic procedures, performed by a qualified professional:
+const CLINIC_ALLOWED_AND_IDENTITY = `WHAT IS ALLOWED:
+- Skin quality, texture, pores, spots, redness, fine lines and wrinkles.
+- Soft-tissue changes produced by the procedures listed: smoothing expression lines, softening folds, reducing sagging jowls, lower-face laxity and submental fullness, and restoring lost volume. These bring back the person's own firmer, more rested contour and are expected when listed above.
+
+CRITICAL IDENTITY PRESERVATION RULES:
+- This is the SAME person and must be instantly recognizable.
+- Do NOT change bone structure, nose shape, eye shape or color, cheekbone, chin or jaw shape, age group, gender or ethnicity.
+- Do NOT change lip shape unless a lip filler is listed above.
+- Preserve hair, expression, pose, head angle, background, framing, lighting direction and color temperature EXACTLY.
+- Do NOT add makeup, filters or cosmetic effects. Keep natural skin texture (no plastic or airbrushed look).
+
+Return only the edited image.`;
+
+const CLINIC_STAGE1_TEMPLATE = `Edit this facial photo to show a photorealistic result {weeksLabel} after starting the following in-clinic aesthetic procedures, performed by a qualified professional:
 {proceduresList}
 
 TREATMENT CONTEXT:
 - Primary objective: {objective}
 - Conditions being treated: {conditionsList}
 
-SPECIFIC IMPROVEMENTS TO APPLY VISIBLY (percentages are the expected visible improvement at this point in time):
-{conditionEdits}
+CHANGES TO APPLY AT THIS POINT IN TIME (zone, what changes, and how strong the change is):
+{zoneEdits}
 
-WHAT MAY CHANGE (only when the listed procedures do this):
-- Skin quality, texture, pores, spots, redness, fine lines and wrinkles.
-- Soft-tissue support typical of the procedures above: smoother expression lines (botulinum toxin), restored volume in cheeks, under-eyes or lips (hyaluronic acid fillers), firmer skin and a subtly lifted, more defined jawline and jowls (collagen biostimulators, microfocused ultrasound, radiofrequency, threads).
-- Keep any contour change subtle and natural, proportional to the improvement percentage.
+Every change listed must be clearly visible when this photo and the result are compared side by side. Zones not listed must stay as they are.
 
-CRITICAL IDENTITY PRESERVATION RULES:
-- This is the SAME person and must be instantly recognizable.
-- Do NOT change bone structure, nose shape, eye shape or color, face proportions, age group, gender or ethnicity.
-- Do NOT change lip shape unless a lip filler is listed above.
-- Preserve hair, expression, pose, head angle, background, lighting direction and color temperature EXACTLY.
-- Do NOT add makeup, filters or cosmetic effects. Keep natural skin texture (no plastic or airbrushed look).
+${CLINIC_ALLOWED_AND_IDENTITY}`;
 
-Return only the edited image.`;
+const CLINIC_STAGE2_TEMPLATE = `This photo shows a patient {prevWeeksLabel} after starting the in-clinic aesthetic procedures below. Edit it to show the SAME patient {weeksLabel} after starting, at the end of the protocol:
+{proceduresList}
+
+TREATMENT CONTEXT:
+- Primary objective: {objective}
+- Conditions being treated: {conditionsList}
+
+KEEP every improvement already visible in this photo. The result must never look worse, older or more tired than this photo.
+
+FURTHER CHANGES SINCE THE PREVIOUS STAGE (zone, what changes, and the overall strength reached now):
+{zoneEdits}
+
+The progression must be clearly noticeable compared with this photo, especially in the zones listed above.
+
+${CLINIC_ALLOWED_AND_IDENTITY}`;
+
+/**
+ * Visual effect of each procedure family, matched on the procedure name
+ * (accent-insensitive). First match wins, so specific entries come first.
+ * Names follow the procedure library; clinics that rename a service keep the
+ * match as long as the key term (e.g. "toxina", "ultraformer") stays.
+ * Procedures without a match fall back to the condition-level edits.
+ */
+const PROCEDURE_VISUALS: { match: RegExp; effect: string }[] = [
+  { match: /toxina.*pescoco|nefertiti/, effect: "Neck and jawline: soften the vertical neck bands and make the jawline edge slightly crisper" },
+  { match: /toxina|botox|botulin|dysport|xeomin/, effect: "Forehead horizontal lines, frown lines between the eyebrows and crow's feet: smooth these expression wrinkles, reducing their depth and visibility while keeping a natural, non-frozen look" },
+  { match: /labial|labio/, effect: "Lips: better hydrated, smoother and slightly fuller, keeping the person's own lip shape" },
+  { match: /sulco|bigode|marionete|nasogenian|nasolabial/, effect: "Nasolabial folds (from the nose to the mouth corners) and marionette lines: reduce the depth of the folds and the shadow they cast" },
+  { match: /olheira|lagrima|tear trough/, effect: "Under-eye area: fill the tear-trough hollow and lighten the shadow under the eyes" },
+  { match: /malar|mandibula|mento|queixo/, effect: "Midface: restore lost volume in the cheeks so the midface looks less hollow and less tired (do not reshape cheekbones, chin or jaw)" },
+  { match: /enzima|papada|lipo de papada/, effect: "Submental area: reduce the fullness under the chin (double chin)" },
+  { match: /ultrassom microfocado|ultraformer|ultherapy|hifu|mfu/, effect: "Lower face and neck lift: reduce the sagging jowl bulge in front of the jaw angle, redefine the jawline contour, reduce submental fullness and slightly lift the brows and midface" },
+  { match: /fios de sustentacao|\bcog\b|fios.*(pcl|plla)/, effect: "Mechanical lift: lift the midface and the jowls, reposition sagging tissue and soften the nasolabial folds" },
+  { match: /radiesse|hidroxiapatita|sculptra|poli-?l|ellanse|policaprolactona|bioestimulador/, effect: "Firmness of the lower and middle face: denser, firmer skin; reduce the sagging jowls along the jawline and soften the nasolabial folds" },
+  { match: /morpheus|microagulhamento com radio/, effect: "Skin texture and firmness: smoother surface, smaller pores, softer acne scars and slightly tighter skin along the jawline" },
+  { match: /thermage|radiofrequencia/, effect: "Skin tightening: firmer skin, mild tightening of the jowls and jawline and softer fine lines" },
+  { match: /fios/, effect: "Skin quality and firmness: firmer, denser skin with softer fine lines" },
+  { match: /profhilo|hidratacao injetavel|skinbooster|pdrn|polinucleot|biorremodel/, effect: "Skin quality: better hydrated, plumper and more radiant skin, with softer fine lines and a more even texture" },
+  { match: /vasinho|vermelhid|vascular/, effect: "Redness: reduce diffuse redness and visible small vessels" },
+  { match: /co2|fracionado|resurfacing|erbium/, effect: "Skin surface: soften fine lines and wrinkles, refine texture and pores and soften acne scars" },
+  { match: /lavieen|picosseg|nd:?yag|luz intensa|\blip\b|ipl|laser/, effect: "Skin tone: lighten dark spots and melasma, more even tone and refined texture" },
+  { match: /plasma|palpebra/, effect: "Upper eyelids: reduce the excess, hooded eyelid skin so the eyes look more open" },
+  { match: /microagulhamento/, effect: "Skin texture: smoother surface, smaller pores and softer acne scars" },
+  { match: /peeling|hydrafacial|hidrodermo|limpeza/, effect: "Skin surface: fresher, more radiant skin with fewer clogged pores and lighter superficial spots" },
+];
+
+function normalizeName(name: string): string {
+  return name.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+}
+
+function procedureVisual(p: ProjectionProcedure): string | null {
+  const n = normalizeName(p.name);
+  return PROCEDURE_VISUALS.find((v) => v.match.test(n))?.effect ?? null;
+}
+
+/** Qualitative strength for Gemini (it does not follow percentages). */
+function strengthWord(pct: number): string {
+  if (pct < 25) return "subtle but visible";
+  if (pct < 45) return "moderate, clearly visible";
+  if (pct < 65) return "marked";
+  return "strong";
+}
 
 /**
  * Visible improvement of one procedure at `weeks` after starting, following
@@ -333,32 +410,77 @@ export function computeClinicStages(
   return { stages, perCondition };
 }
 
-function buildClinicPrompt(
+/**
+ * Zone instructions for one stage. Procedures with a visual profile become
+ * "zone: change. Strength: X" lines; the rest fall back to condition-level
+ * edits (KB visualEditPrompt) for the conditions they treat.
+ *
+ * Stage 2 (`previousWeeks` set) lists only procedures still progressing
+ * since stage 1, because the input image already carries the earlier gains.
+ */
+export function buildClinicZoneEdits(
   weeks: number,
   conditions: { name: string; severity: number }[],
-  intensities: Map<string, number>,
+  procedures: ProjectionProcedure[],
+  conditionsKB: Map<string, { visualEditPrompt: string | null; displayName: string; description: string }>,
+  previousWeeks?: number
+): string {
+  const lines: string[] = [];
+  const unprofiled: ProjectionProcedure[] = [];
+
+  for (const p of procedures) {
+    const effect = procedureVisual(p);
+    if (!effect) {
+      unprofiled.push(p);
+      continue;
+    }
+    const now = procedureCurve(p, weeks);
+    if (now <= 0) continue;
+    if (previousWeeks !== undefined && now - procedureCurve(p, previousWeeks) < 5) continue;
+    lines.push(`- ${effect}. Strength of this change: ${strengthWord(now)} (${p.name}).`);
+  }
+
+  // Unprofiled procedures keep the original condition-level behavior.
+  if (unprofiled.length > 0) {
+    for (const c of conditions) {
+      const ids = concernEquivalents(c.name);
+      const treating = unprofiled.filter((p) => ids.some((id) => p.concernTags.includes(id)));
+      const now = combine(treating.map((p) => procedureCurve(p, weeks)));
+      const before = previousWeeks !== undefined
+        ? combine(treating.map((p) => procedureCurve(p, previousWeeks)))
+        : 0;
+      if (now <= 0 || (previousWeeks !== undefined && now - before < 5)) continue;
+      lines.push(`- ${buildConditionEdits([c], roundTo5(now), conditionsKB)}.`);
+    }
+  }
+
+  if (lines.length > 0) return lines.join("\n");
+  return previousWeeks !== undefined
+    ? "- The result is consolidated: keep every improvement and refine overall skin quality only very slightly (firmer, more even, more rested)."
+    : "- Subtle overall improvement in skin quality.";
+}
+
+function buildClinicPrompt(
+  stageIndex: 0 | 1,
+  stages: [ProjectionStage, ProjectionStage],
+  conditions: { name: string; severity: number }[],
   objective: string,
   conditionsKB: Map<string, { visualEditPrompt: string | null; displayName: string; description: string }>,
   procedures: ProjectionProcedure[]
 ): string {
-  // Conditions no recommended procedure treats get no edit (stay as-is).
-  const conditionEdits = conditions
-    .map((c) => {
-      const pct = intensities.get(c.name) ?? 0;
-      if (pct <= 0) return null;
-      return buildConditionEdits([c], pct, conditionsKB);
-    })
-    .filter(Boolean)
-    .join(".\n") || "Subtle overall improvement in skin quality.";
+  const weeks = stages[stageIndex].weeks;
+  const previousWeeks = stageIndex === 1 ? stages[0].weeks : undefined;
+  const zoneEdits = buildClinicZoneEdits(weeks, conditions, procedures, conditionsKB, previousWeeks);
   const conditionsList = conditions.map((c) => `${c.name} (severity ${c.severity}/3)`).join(", ");
   const proceduresList = procedures.map((p) => `  - ${p.name}`).join("\n");
 
-  return CLINIC_PROMPT_TEMPLATE
+  return (stageIndex === 0 ? CLINIC_STAGE1_TEMPLATE : CLINIC_STAGE2_TEMPLATE)
     .replace("{weeksLabel}", `${weeks} weeks`)
+    .replace("{prevWeeksLabel}", `${previousWeeks ?? 0} weeks`)
     .replace("{proceduresList}", proceduresList)
     .replace("{objective}", objective)
     .replace("{conditionsList}", conditionsList)
-    .replace("{conditionEdits}", conditionEdits);
+    .replace("{zoneEdits}", zoneEdits);
 }
 
 export async function generateClinicProjections(
@@ -378,15 +500,19 @@ export async function generateClinicProjections(
     kbRows.map((r) => [r.name, { visualEditPrompt: r.visualEditPrompt, displayName: r.displayName, description: r.description }])
   );
 
-  const { stages, perCondition } = computeClinicStages(input.conditions, procedures);
+  const { stages } = computeClinicStages(input.conditions, procedures);
 
-  const [first, second] = await Promise.all(
-    stages.map((stage, i) =>
-      generateProjection(
-        input.photoBase64,
-        buildClinicPrompt(stage.weeks, input.conditions, perCondition[i], input.primaryObjective, conditionsKB, procedures)
-      )
-    )
+  // Chained on purpose: image 2 is edited from image 1 so the end of the
+  // protocol always builds on the first result. Two independent edits of
+  // the original photo varied more than the intended difference between
+  // stages (image 1 sometimes looked better than image 2).
+  const first = await generateProjection(
+    input.photoBase64,
+    buildClinicPrompt(0, stages, input.conditions, input.primaryObjective, conditionsKB, procedures)
+  );
+  const second = await generateProjection(
+    first,
+    buildClinicPrompt(1, stages, input.conditions, input.primaryObjective, conditionsKB, procedures)
   );
 
   return { week8: first, week12: second, stages };

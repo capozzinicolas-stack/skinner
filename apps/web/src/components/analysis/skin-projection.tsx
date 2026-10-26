@@ -115,13 +115,16 @@ export function SkinProjection({
           {
             title: state.stages[0].label,
             phase: state.stages[0].phase,
-            badge: state.stages[0].improvementPct > 0 ? `até ${state.stages[0].improvementPct}%` : null,
+            // No percentage for procedures: published indices are mostly
+            // responder rates, not % of improvement, and a number on the
+            // image reads as a promised result (CFM / CONAR / CDC).
+            badge: null,
             text: "Primeiros resultados dos procedimentos indicados. Os injetáveis já mostram efeito nesta fase; as tecnologias e os bioestimuladores começam a agir.",
           },
           {
             title: state.stages[1].label,
             phase: state.stages[1].phase,
-            badge: state.stages[1].improvementPct > 0 ? `até ${state.stages[1].improvementPct}%` : null,
+            badge: null,
             text: "Resultado consolidado ao final do protocolo, com o colágeno formado e a pele mais firme, uniforme e descansada.",
           },
         ]
@@ -295,7 +298,7 @@ export function SkinProjection({
             </p>
             <p className="text-xs text-terre font-light leading-relaxed">
               {isClinic
-                ? "Estas imagens são simulações ilustrativas geradas por inteligência artificial com base nas condições identificadas e no tempo de resposta típico dos procedimentos recomendados. Não representam garantia de resultado. Resultados reais variam conforme avaliação profissional, número de sessões, genética, estilo de vida e outros fatores individuais."
+                ? "Estas imagens são simulações ilustrativas geradas por inteligência artificial com base nas condições identificadas e no tempo de resposta descrito na literatura para os procedimentos recomendados. Não representam garantia nem promessa de resultado. Resultados reais variam conforme avaliação profissional, número de sessões, genética, estilo de vida e outros fatores individuais."
                 : "Estas imagens são simulações geradas por inteligência artificial com base nas condições identificadas e nos produtos recomendados. Não representam garantia de resultado. Resultados reais variam conforme adesão ao tratamento, genética, estilo de vida e outros fatores individuais. Consulte um dermatologista para orientação clínica personalizada."}
             </p>
           </div>

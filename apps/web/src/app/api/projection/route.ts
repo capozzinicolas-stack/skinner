@@ -3,6 +3,10 @@ import { generateProjections, generateClinicProjections } from "@/lib/sae/gemini
 import { projectionLimiter, getClientIp } from "@/lib/rate-limit";
 import { z } from "zod/v4";
 
+// Clinic mode chains two Gemini edits (image 2 is built from image 1), so
+// the request takes roughly twice as long as the parallel dermo mode.
+export const maxDuration = 120;
+
 const RequestSchema = z.object({
   photoBase64: z.string().min(100),
   conditions: z.array(
