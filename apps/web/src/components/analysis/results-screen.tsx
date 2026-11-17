@@ -524,6 +524,7 @@ export function ResultsScreen({
   // secondary so we never get a flash of an unrelated color on hover.
   const brandHover = secondaryColor || primaryColor;
   const { analysis, recommendations } = result;
+  const cartCtx = useCartSafe();
 
   // Localized skin type with capitalization (results-screen uses Title Case
   // headings; labels.ts stores lowercase for inline reuse).
@@ -559,6 +560,7 @@ export function ResultsScreen({
     t.patient.results_severity_severe,
   ];
   const [showPlan, setShowPlan] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
   const [email, setEmail] = useState("");
   const [emailSent, setEmailSent] = useState(false);
   const [kitCopied, setKitCopied] = useState(false);
@@ -708,28 +710,13 @@ export function ResultsScreen({
     </>
   );
 
-  return (
-    <div className="w-full max-w-lg md:max-w-2xl lg:max-w-3xl xl:max-w-4xl mx-auto px-4 pb-12">
-      {/* Custom top message */}
-      {topMessage && (
-        <div className="mb-6 p-4 bg-ivoire border border-sable/20">
-          <p className="text-sm text-terre font-light leading-relaxed">{topMessage}</p>
-        </div>
-      )}
 
-      {/* Header */}
-      <div className="text-center mb-10">
-        <p className="text-[10px] text-pierre uppercase tracking-skinners font-light mb-4">
-          {t.patient.results_header_eyebrow}
-        </p>
-        <h2 className="font-serif text-2xl text-carbone italic">
-          {t.patient.results_your_skin_is}{" "}
-          {skinTypeDisplay(analysis.skin_type)}
-        </h2>
-        <div className="w-12 h-px bg-sable mx-auto mt-4 mb-4" />
-        <p className="text-sm text-pierre font-light leading-relaxed">{analysis.summary}</p>
-      </div>
-
+  // Result sections as fragments so each segment can order them. Clinics
+  // (Nov-2026 patient feedback: "too much text before the procedures") get
+  // procedures right after the summary, then the projection, and the
+  // analysis details folded below. Dermocosmetics keep the original order.
+  const discrepancyBlock = (
+    <>
       {/* Skin type discrepancy notice */}
       {analysis.skin_type_discrepancy && analysis.skin_type_self_reported && (
         <div className="mb-6 p-5 bg-ivoire border border-sable/20">
@@ -768,7 +755,10 @@ export function ResultsScreen({
           </p>
         </div>
       )}
-
+    </>
+  );
+  const mapBlock = (
+    <>
       {/* Mapa Facial + Radar — side by side on desktop, stacked on mobile */}
       {(hasAnnotations || (analysis.zone_annotations && analysis.zone_annotations.length > 0)) && (
         <div className="mb-8 grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
@@ -790,7 +780,10 @@ export function ResultsScreen({
           )}
         </div>
       )}
-
+    </>
+  );
+  const projectionBlock = (
+    <>
       {/* Skin projection — on-demand, only when photo is available and feature is enabled */}
       {projectionEnabled && !!photoBase64 && analysis.conditions.length > 0 && (
         <SkinProjection
@@ -819,9 +812,14 @@ export function ResultsScreen({
                 }))
               : undefined
           }
+          signs={isClinic ? analysis.visible_signs : undefined}
+          photoHasGlasses={isClinic && !!analysis.photo_has_glasses}
         />
       )}
-
+    </>
+  );
+  const barrierBlock = (
+    <>
       {/* Barrier status */}
       {showBarrier && (
         <div className="mb-6 p-5 bg-white border border-sable/20">
@@ -838,7 +836,10 @@ export function ResultsScreen({
           )}
         </div>
       )}
-
+    </>
+  );
+  const conditionsBlock = (
+    <>
       {/* Conditions */}
       {showConditions && (
         <div className="mb-8">
@@ -876,7 +877,10 @@ export function ResultsScreen({
           </div>
         </div>
       )}
-
+    </>
+  );
+  const planBlock = (
+    <>
       {/* Action plan */}
       {showActionPlan && (
         <div className="mb-8">
@@ -906,10 +910,79 @@ export function ResultsScreen({
           )}
         </div>
       )}
+    </>
+  );
+  // Sticky "Agendar avaliação" for clinics, only when a recommended
+  // procedure has a booking link, and hidden while the product cart (also
+  // pinned to the bottom) has items.
+  const bookingLink = isClinic ? serviceRecs.find((r) => r.bookingLink)?.bookingLink ?? null : null;
+  const showBookingBar = !!bookingLink && !(cartCtx && cartCtx.cart.items.length > 0);
 
-      {/* Treatments always come first, products after (all segments). */}
-      {servicesBlock}
-      {productsBlock}
+  return (
+    <div className="w-full max-w-lg md:max-w-2xl lg:max-w-3xl xl:max-w-4xl mx-auto px-4 pb-12">
+      {/* Custom top message */}
+      {topMessage && (
+        <div className="mb-6 p-4 bg-ivoire border border-sable/20">
+          <p className="text-sm text-terre font-light leading-relaxed">{topMessage}</p>
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="text-center mb-10">
+        <p className="text-[10px] text-pierre uppercase tracking-skinners font-light mb-4">
+          {t.patient.results_header_eyebrow}
+        </p>
+        <h2 className="font-serif text-2xl text-carbone italic">
+          {t.patient.results_your_skin_is}{" "}
+          {skinTypeDisplay(analysis.skin_type)}
+        </h2>
+        <div className="w-12 h-px bg-sable mx-auto mt-4 mb-4" />
+        <p className="text-sm text-pierre font-light leading-relaxed">{analysis.summary}</p>
+      </div>
+
+      {isClinic ? (
+        <>
+          {servicesBlock}
+          {projectionBlock}
+          {productsBlock}
+
+          {/* Analysis details, folded */}
+          <div className="mb-8">
+            <button
+              onClick={() => setShowDetails(!showDetails)}
+              className="w-full flex items-center justify-between p-5 bg-white border border-sable/20 hover:bg-ivoire transition-colors text-left"
+            >
+              <span>
+                <span className="block font-serif text-lg text-carbone">{t.patient.results_details_title}</span>
+                <span className="block text-xs text-pierre font-light mt-1">{t.patient.results_details_subtitle}</span>
+              </span>
+              <span className="text-pierre text-xs shrink-0 ml-4">{showDetails ? t.patient.results_close : t.patient.results_open}</span>
+            </button>
+            {showDetails && (
+              <div className="mt-6">
+                {discrepancyBlock}
+                {mapBlock}
+                {barrierBlock}
+                {conditionsBlock}
+                {planBlock}
+              </div>
+            )}
+          </div>
+        </>
+      ) : (
+        <>
+          {discrepancyBlock}
+          {mapBlock}
+          {projectionBlock}
+          {barrierBlock}
+          {conditionsBlock}
+          {planBlock}
+
+          {/* Treatments always come first, products after (all segments). */}
+          {servicesBlock}
+          {productsBlock}
+        </>
+      )}
 
       {/* Kit CTA */}
       {result.kitLink && (
@@ -1017,6 +1090,28 @@ export function ResultsScreen({
       <p className="text-[10px] text-sable text-center mt-3 uppercase tracking-skinners font-light">
         {t.patient.results_powered_by}
       </p>
+
+      {showBookingBar && (
+        <>
+          {/* Spacer so the fixed bar never covers the last section. */}
+          <div className="h-20" />
+          <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-sable/40">
+            <div className="max-w-lg md:max-w-2xl lg:max-w-3xl xl:max-w-4xl mx-auto px-4 py-3">
+              <a
+                href={bookingLink!}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ backgroundColor: primaryColor }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = brandHover)}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = primaryColor)}
+                className="block w-full text-center px-6 py-3 min-h-[44px] text-blanc-casse text-sm font-light tracking-wide transition-colors"
+              >
+                {t.patient.results_book_evaluation}
+              </a>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

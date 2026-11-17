@@ -3,6 +3,7 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
 import type { AnalysisInput, AnalysisOutput } from "./types";
 import { db } from "@skinner/db";
+import { SIGN_IDS } from "./visible-signs";
 
 // Timeout below the 60s Vercel function limit (api/trpc maxDuration) so a
 // slow call fails inside the handler (→ fallback) instead of surfacing as an
@@ -56,6 +57,16 @@ function buildAnalysisSchema(
   if (procedureNames && procedureNames.length > 0) {
     return base.extend({
       recommended_procedures: z.array(z.enum(procedureNames as [string, ...string[]])),
+      // Localized signs for the skin projection (see visible-signs.ts).
+      visible_signs: z.array(
+        z.object({
+          sign: z.enum(SIGN_IDS),
+          side: z.enum(["image_left", "image_right", "both", "center"]),
+          grade: z.number().int(),
+          description: z.string(),
+        })
+      ),
+      photo_has_glasses: z.boolean(),
     });
   }
   return base;
@@ -209,6 +220,9 @@ ${procedureList ? `- Procedimentos que esta clinica oferece: ${procedureList}. C
 - As condicoes "acne_scars" (cicatrizes de acne) e "texture" (textura irregular) existem na base: use-as quando observar cicatrizes de acne ou textura irregular e poros aparentes.
 - Para "conditions[].name" prefira os IDs simples, os mesmos do questionario: aging (rugas e linhas), sagging (flacidez), hyperpigmentation (manchas, inclusive manchas solares), dark_circles (olheiras), texture, acne, acne_scars, dullness, dehydration, sensitivity, rosacea, pores, oiliness. Use um ID clinico apenas quando ele for mais preciso: "melasma" so para melasma, "hiperpigmentacao_pos_inflamatoria" so para marcas deixadas por espinhas ou inflamacoes, nunca para manchas de sol.
 - "primary_objective": devolva exatamente o valor informado no questionario.
+- "summary": no maximo 2 frases curtas. O paciente quer chegar rapido aos procedimentos indicados.
+- "visible_signs" (campo TECNICO interno, nunca exibido ao paciente; escreva "description" em INGLES): liste cada sinal localizado que voce realmente ve na foto, um item por sinal e por lado quando o lado importar. "side" e o lado DA IMAGEM como o observador ve (image_left = lado esquerdo da foto), "both" quando os dois lados estao parecidos, "center" para sinais na linha media (testa, glabela, papada, pescoco). "grade" de 0 a 4: 0 ausente, 1 discreto, 2 leve, 3 marcado, 4 severo; seja fiel a foto e nao suavize. "description": 1 frase objetiva para um editor de imagem, por exemplo "two deep vertical frown lines between the eyebrows, the right one longer" ou "pronounced jowl bulge below the mouth corner extending to the jawline". Inclua so sinais com grau 1 ou mais.
+- "photo_has_glasses": true se o paciente esta de oculos na foto.
 `;
   }
 
@@ -369,6 +383,13 @@ Analise a foto facial acima junto com o questionario e retorne um JSON com EXATA
     ...c,
     severity: Math.min(Math.max(Math.round(c.severity), 1), 3),
   }));
+
+  if (parsed.visible_signs) {
+    parsed.visible_signs = parsed.visible_signs
+      .map((s) => ({ ...s, grade: Math.min(Math.max(Math.round(s.grade), 0), 4) }))
+      .filter((s) => s.grade > 0)
+      .slice(0, 20);
+  }
 
   // Validate required fields
   if (!parsed.skin_type || !parsed.conditions || !parsed.summary) {

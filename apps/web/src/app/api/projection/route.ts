@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateProjections, generateClinicProjections } from "@/lib/sae/gemini-projection";
 import { projectionLimiter, getClientIp } from "@/lib/rate-limit";
 import { z } from "zod/v4";
+import { SIGN_IDS } from "@/lib/sae/visible-signs";
 
-// Clinic mode chains two Gemini edits (image 2 is built from image 1), so
-// the request takes roughly twice as long as the parallel dermo mode.
-export const maxDuration = 120;
+// Clinic mode chains two Gemini edits (image 2 is built from image 1) and,
+// with PROJECTION_QA=1, may add a Claude check plus one regeneration per
+// stage, so it needs far more time than the parallel dermo mode.
+export const maxDuration = 180;
 
 const RequestSchema = z.object({
   photoBase64: z.string().min(100),
@@ -34,6 +36,17 @@ const RequestSchema = z.object({
       improvementPct: z.number().int().min(0).max(100).nullable(),
     })
   ).max(10).optional(),
+  // Clinic mode (Nov-2026): localized signs from the analysis + optional
+  // guide image (photo with the target areas outlined).
+  signs: z.array(
+    z.object({
+      sign: z.enum(SIGN_IDS),
+      side: z.enum(["image_left", "image_right", "both", "center"]),
+      grade: z.number().int().min(0).max(4),
+      description: z.string().max(300),
+    })
+  ).max(20).optional(),
+  guideImageBase64: z.string().min(100).max(3_000_000).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -61,7 +74,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { photoBase64, conditions, primaryObjective, products, mode, procedures } = parsed.data;
+    const { photoBase64, conditions, primaryObjective, products, mode, procedures, signs, guideImageBase64 } = parsed.data;
 
     // Photo is only held in memory during this request — never persisted to disk or DB
     const result =
@@ -73,6 +86,8 @@ export async function POST(req: NextRequest) {
             products,
             mode,
             procedures,
+            signs,
+            guideImageBase64,
           })
         : await generateProjections({
             photoBase64,

@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useI18n } from "@/lib/i18n/client";
 import { conditionLabelsLocalized, tr } from "@/lib/sae/labels";
+import type { VisibleSign } from "@/lib/sae/visible-signs";
+import { buildProjectionGuide } from "@/lib/projection-guide";
 
 type ProjectionStage = {
   weeks: number;
@@ -45,6 +47,8 @@ export function SkinProjection({
   products,
   mode = "dermo",
   procedures,
+  signs,
+  photoHasGlasses = false,
 }: {
   photoBase64: string;
   conditions: SkinCondition[];
@@ -54,6 +58,10 @@ export function SkinProjection({
   // curve of each recommended procedure instead of the fixed 8/12 weeks.
   mode?: "dermo" | "clinic";
   procedures?: ProjectionProcedure[];
+  // Clinic mode (Nov-2026): localized signs from the analysis. When present,
+  // the browser also sends a guide image with the target areas outlined.
+  signs?: VisibleSign[];
+  photoHasGlasses?: boolean;
 }) {
   const { locale } = useI18n();
   const [state, setState] = useState<ProjectionState>({ status: "idle" });
@@ -67,6 +75,9 @@ export function SkinProjection({
   async function handleGenerate() {
     setState({ status: "loading" });
     try {
+      const clinicSigns = isClinic ? (signs ?? []).slice(0, 20) : [];
+      const guideImageBase64 =
+        clinicSigns.length > 0 ? await buildProjectionGuide(photoBase64, clinicSigns) : null;
       const res = await fetch("/api/projection", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -75,7 +86,14 @@ export function SkinProjection({
           conditions,
           primaryObjective,
           products,
-          ...(isClinic ? { mode: "clinic", procedures: (procedures ?? []).slice(0, 10) } : {}),
+          ...(isClinic
+            ? {
+                mode: "clinic",
+                procedures: (procedures ?? []).slice(0, 10),
+                ...(clinicSigns.length > 0 ? { signs: clinicSigns } : {}),
+                ...(guideImageBase64 ? { guideImageBase64 } : {}),
+              }
+            : {}),
         }),
       });
 
@@ -163,6 +181,11 @@ export function SkinProjection({
               ? "Veja como sua pele pode responder aos procedimentos indicados, no tempo de resposta de cada um. A simulação é gerada por inteligência artificial com base nas condições identificadas e nos procedimentos recomendados."
               : "Veja como sua pele poderia responder ao tratamento recomendado ao longo de 8 e 12 semanas. A simulação é gerada por inteligência artificial com base nas condições identificadas e nos produtos recomendados."}
           </p>
+          {isClinic && photoHasGlasses && (
+            <p className="text-xs text-terre font-light mb-3 p-3 bg-ivoire border border-sable/30 leading-relaxed">
+              Sua foto foi feita de óculos. Eles cobrem a região entre as sobrancelhas e ao redor dos olhos, então a simulação dessas áreas fica menos precisa. Para um resultado melhor, refaça a análise sem óculos.
+            </p>
+          )}
           {conditions.length > 0 && (
             <p className="text-xs text-pierre/70 font-light mb-5">
               Condições consideradas: {conditionNames.join(", ")}
@@ -197,7 +220,9 @@ export function SkinProjection({
             Gerando projeção...
           </p>
           <p className="text-xs text-pierre/60 font-light mt-1">
-            Isso pode levar alguns instantes
+            {isClinic
+              ? "As duas imagens são geradas em sequência. Isso pode levar até 1 minuto."
+              : "Isso pode levar alguns instantes"}
           </p>
           <style>{`
             @keyframes pulse {

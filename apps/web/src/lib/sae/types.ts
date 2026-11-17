@@ -1,3 +1,5 @@
+import type { VisibleSign } from "./visible-signs";
+
 export type AnalysisInput = {
   tenantId: string;
   photoBase64: string;
@@ -56,6 +58,13 @@ export type AnalysisOutput = {
   // Procedure clinics: procedure names Claude chose (clinic catalog only), in
   // priority order. The matcher recommends these first.
   recommended_procedures?: string[];
+  // Procedure clinics (Nov-2026): concrete localized signs seen in the photo,
+  // graded 0–4. Internal (English descriptions), never rendered — the skin
+  // projection uses them as per-sign targets. See lib/sae/visible-signs.ts.
+  visible_signs?: VisibleSign[];
+  // Procedure clinics: glasses hide the glabella and eye area, so the
+  // projection asks the patient to retake the photo without them.
+  photo_has_glasses?: boolean;
 };
 
 export type MatchedProduct = {

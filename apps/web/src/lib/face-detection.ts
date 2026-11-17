@@ -143,3 +143,24 @@ export async function detectFaceZones(
     return null;
   }
 }
+
+/**
+ * Raw 68-point landmarks in natural image pixels, or null when no face is
+ * found. Used by the clinic projection guide (lib/projection-guide.ts).
+ */
+export async function detectLandmarks(
+  imageElement: HTMLImageElement
+): Promise<{ x: number; y: number }[] | null> {
+  try {
+    await loadModels();
+    for (const inputSize of [512, 416, 320]) {
+      const detection = await faceapi
+        .detectSingleFace(imageElement, new faceapi.TinyFaceDetectorOptions({ inputSize, scoreThreshold: 0.2 }))
+        .withFaceLandmarks();
+      if (detection) return detection.landmarks.positions.map((p) => ({ x: p.x, y: p.y }));
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}

@@ -1,6 +1,20 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { db } from "@skinner/db";
+import Anthropic from "@anthropic-ai/sdk";
 import { concernEquivalents } from "./condition-aliases";
+import {
+  SIGN_ANATOMY,
+  combineReductions,
+  gradeWord,
+  normalizeProcedureName,
+  procedureSignEffects,
+  sideWord,
+  SIGN_EDIT,
+  targetGrade,
+  type SignId,
+  type SignSide,
+  type VisibleSign,
+} from "./visible-signs";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
@@ -28,6 +42,11 @@ export type ProjectionInput = {
   // original fixed 8/12-week, 50/80% dermocosmetic projection.
   mode?: "dermo" | "clinic";
   procedures?: ProjectionProcedure[];
+  // Clinic mode (Nov-2026): localized signs from the analysis, and an
+  // optional copy of the photo with the target areas outlined (built in the
+  // browser from face landmarks) to tell the model where to edit.
+  signs?: VisibleSign[];
+  guideImageBase64?: string;
 };
 
 export type ProjectionStage = {
@@ -147,28 +166,35 @@ function buildPrompt(
     .replace("{conditionEdits}", conditionEdits);
 }
 
+// Image model is configurable so a retirement or an upgrade never needs a
+// deploy (same lesson as ANTHROPIC_MODEL). Clinics can run a stronger model
+// than the dermocosmetic flow: procedure projections need local anatomical
+// edits (frown lines, jowls), which older models tend to skip.
+const DERMO_IMAGE_MODEL = process.env.GEMINI_IMAGE_MODEL || "gemini-2.5-flash-image";
+const CLINIC_IMAGE_MODEL =
+  process.env.GEMINI_CLINIC_IMAGE_MODEL || process.env.GEMINI_IMAGE_MODEL || "gemini-2.5-flash-image";
+
+function toInlineImage(dataUrl: string) {
+  // Keep the mime type: the clinic flow feeds a Gemini output (often PNG)
+  // back in as the next input.
+  const mimeType = dataUrl.match(/^data:(image\/[\w+.-]+);base64,/)?.[1] ?? "image/jpeg";
+  const data = dataUrl.replace(/^data:image\/[\w+.-]+;base64,/, "");
+  return { inlineData: { mimeType, data } };
+}
+
+/**
+ * One image edit. `images[0]` is the photo to edit; any further images are
+ * references described in the prompt (e.g. the zone guide in clinic mode).
+ */
 async function generateProjection(
-  photoBase64: string,
-  prompt: string
+  images: string | string[],
+  prompt: string,
+  modelName: string = DERMO_IMAGE_MODEL
 ): Promise<string> {
-  const model = genAI.getGenerativeModel({
-    model: "gemini-2.5-flash-image",
-  });
+  const model = genAI.getGenerativeModel({ model: modelName });
+  const list = Array.isArray(images) ? images : [images];
 
-  // Strip data URL prefix if present. Keep its mime type: the clinic flow
-  // feeds a Gemini output (often PNG) back in as the next input.
-  const mimeType = photoBase64.match(/^data:(image\/[\w+.-]+);base64,/)?.[1] ?? "image/jpeg";
-  const base64Data = photoBase64.replace(/^data:image\/[\w+.-]+;base64,/, "");
-
-  const result = await model.generateContent([
-    prompt,
-    {
-      inlineData: {
-        mimeType,
-        data: base64Data,
-      },
-    },
-  ]);
+  const result = await model.generateContent([prompt, ...list.map(toInlineImage)]);
 
   const response = result.response;
   const candidates = response.candidates ?? [];
@@ -230,16 +256,18 @@ export async function generateProjections(
 //   - Structural reshaping (chin, jaw, cheekbones, nose) stays forbidden:
 //     Skinner does not simulate anatomical changes yet.
 
+// Shared closing block. Nov-2026: the old "preserve expression EXACTLY" and
+// "do not change age group" lines contradicted relaxing frown lines and
+// lifting jowls, and the image model resolved the conflict by not editing.
 const CLINIC_ALLOWED_AND_IDENTITY = `WHAT IS ALLOWED:
 - Skin quality, texture, pores, spots, redness, fine lines and wrinkles.
-- Soft-tissue changes produced by the procedures listed: smoothing expression lines, softening folds, reducing sagging jowls, lower-face laxity and submental fullness, and restoring lost volume. These bring back the person's own firmer, more rested contour and are expected when listed above.
+- Soft-tissue changes produced by the procedures listed: relaxed expression lines, softer folds, lifted jowls and lower-face laxity, less submental fullness, restored volume. They bring back the person's own firmer, more rested look.
+- A relaxed area between the eyebrows or on the forehead is allowed with the same neutral expression.
 
-CRITICAL IDENTITY PRESERVATION RULES:
-- This is the SAME person and must be instantly recognizable.
-- Do NOT change bone structure, nose shape, eye shape or color, cheekbone, chin or jaw shape, age group, gender or ethnicity.
-- Do NOT change lip shape unless a lip filler is listed above.
-- Preserve hair, expression, pose, head angle, background, framing, lighting direction and color temperature EXACTLY.
-- Do NOT add makeup, filters or cosmetic effects. Keep natural skin texture (no plastic or airbrushed look).
+KEEP (identity):
+- The SAME person, instantly recognizable. Same skeleton (jaw bone, chin bone, cheekbones), nose, eyes, lip shape (unless a lip filler is listed), hair, glasses if present, pose, head angle, framing, background and lighting.
+- Sagging soft tissue over the bone (jowls, folds, cheek fat) is NOT identity: change it wherever a target or a listed procedure asks for it.
+- Natural skin texture: no makeup, no filters, no plastic or airbrushed look.
 
 Return only the edited image.`;
 
@@ -303,12 +331,8 @@ const PROCEDURE_VISUALS: { match: RegExp; effect: string }[] = [
   { match: /peeling|hydrafacial|hidrodermo|limpeza/, effect: "Skin surface: fresher, more radiant skin with fewer clogged pores and lighter superficial spots" },
 ];
 
-function normalizeName(name: string): string {
-  return name.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-}
-
 function procedureVisual(p: ProjectionProcedure): string | null {
-  const n = normalizeName(p.name);
+  const n = normalizeProcedureName(p.name);
   return PROCEDURE_VISUALS.find((v) => v.match.test(n))?.effect ?? null;
 }
 
@@ -483,6 +507,181 @@ function buildClinicPrompt(
     .replace("{zoneEdits}", zoneEdits);
 }
 
+// ── Sign-target path (Nov-2026) ─────────────────────────────────────────
+// When the analysis carries `visible_signs`, each stage asks the image model
+// to take every treated sign from its current grade to a target grade. This
+// replaced zone-level wording that the model applied as a global retouch.
+
+export type SignTarget = {
+  sign: SignId;
+  side: SignSide;
+  description: string;
+  from: number; // grade in the input image of this stage
+  to: number;   // grade to reach
+};
+
+/** Fraction (0–1) of a procedure's full effect reached at `weeks`. */
+function procedureProgress(p: ProjectionProcedure, weeks: number): number {
+  const full = p.improvementPct ?? 0;
+  return full > 0 ? procedureCurve(p, weeks) / full : 0;
+}
+
+function gradeAt(sign: VisibleSign, procedures: ProjectionProcedure[], weeks: number): number {
+  const reductions = procedures.map(
+    (p) => (procedureSignEffects(p.name)[sign.sign] ?? 0) * procedureProgress(p, weeks)
+  );
+  return targetGrade(sign.grade, combineReductions(reductions));
+}
+
+/**
+ * Targets for one stage. Stage 2 starts from the stage-1 grade (its input is
+ * the stage-1 image) and lists only signs that keep improving.
+ */
+export function buildSignTargets(
+  signs: VisibleSign[],
+  procedures: ProjectionProcedure[],
+  weeks: number,
+  previousWeeks?: number
+): { targets: SignTarget[]; done: SignTarget[] } {
+  const targets: SignTarget[] = [];
+  const done: SignTarget[] = [];
+  for (const s of signs) {
+    const from = previousWeeks !== undefined ? gradeAt(s, procedures, previousWeeks) : s.grade;
+    const to = gradeAt(s, procedures, weeks);
+    const t = { sign: s.sign, side: s.side, description: s.description, from, to };
+    if (to < from) targets.push(t);
+    else if (previousWeeks !== undefined && to < s.grade) done.push(t);
+  }
+  // Biggest visible change first: the model weighs the top of the list most.
+  targets.sort((a, b) => b.from - b.to - (a.from - a.to));
+  return { targets, done };
+}
+
+function targetLine(t: SignTarget, i: number): string {
+  return `${i + 1}. ${SIGN_ANATOMY[t.sign]}${sideWord(t.sign, t.side)}. Seen now: ${t.description}. Current grade ${t.from}/4 (${gradeWord(t.from)}) → target grade ${t.to}/4 (${gradeWord(t.to)}). How: ${SIGN_EDIT[t.sign]}.`;
+}
+
+const GUIDE_NOTE = `The SECOND image is the same original photo with magenta outlines drawn around the target areas. Use it only to locate them. The result must NOT contain any outline or mark.`;
+
+function buildSignPrompt(
+  stageIndex: 0 | 1,
+  stages: [ProjectionStage, ProjectionStage],
+  signs: VisibleSign[],
+  procedures: ProjectionProcedure[],
+  conditions: { name: string; severity: number }[],
+  conditionsKB: Map<string, { visualEditPrompt: string | null; displayName: string; description: string }>,
+  hasGuide: boolean,
+  emphasis?: string
+): { prompt: string; targets: SignTarget[] } {
+  const weeks = stages[stageIndex].weeks;
+  const previousWeeks = stageIndex === 1 ? stages[0].weeks : undefined;
+  const { targets, done } = buildSignTargets(signs, procedures, weeks, previousWeeks);
+
+  // Procedures that produce no sign target in this stage (lasers, peels,
+  // skin boosters…) keep their skin-quality instruction.
+  const signProcs = new Set(
+    procedures
+      .filter((p) => targets.some((t) => (procedureSignEffects(p.name)[t.sign] ?? 0) > 0))
+      .map((p) => p.name)
+  );
+  const skinLines = buildClinicZoneEdits(
+    weeks,
+    conditions,
+    procedures.filter((p) => !signProcs.has(p.name)),
+    conditionsKB,
+    previousWeeks
+  );
+
+  const procs = procedures.map((p) => p.name).join(", ");
+  const intro =
+    stageIndex === 0
+      ? `Edit this photo of a real patient to simulate the photorealistic result ${weeks} weeks after starting these in-clinic aesthetic procedures: ${procs}.`
+      : `This photo already shows the patient ${previousWeeks} weeks after starting these in-clinic aesthetic procedures: ${procs}. Edit it to show the SAME patient ${weeks} weeks after starting, at the end of the protocol. Keep every improvement already visible; the result must never look worse or older than this photo.`;
+
+  const targetBlock =
+    targets.length > 0
+      ? `TARGETS — the purpose of this edit. Change exactly these:\n${targets.map(targetLine).join("\n")}\nEach target must reach its target grade and look obviously different from the input when compared side by side. Areas and signs not listed stay as they are.`
+      : `No sign changes further at this stage: keep the result and refine overall skin quality only very slightly.`;
+  const doneBlock =
+    done.length > 0
+      ? `\nALREADY IMPROVED (keep exactly as in this photo): ${done.map((t) => SIGN_ANATOMY[t.sign]).join("; ")}.`
+      : "";
+
+  const prompt = `${intro}
+
+${targetBlock}${doneBlock}
+${hasGuide ? `\n${GUIDE_NOTE}\n` : ""}
+SKIN QUALITY (secondary):
+${skinLines}
+${emphasis ? `\nCORRECTION: ${emphasis}\n` : ""}
+${CLINIC_ALLOWED_AND_IDENTITY}`;
+  return { prompt, targets };
+}
+
+// ── Optional quality check (PROJECTION_QA=1) ────────────────────────────
+// Claude compares input and output on each target and lists the ones that
+// did not visibly change; the stage is regenerated once with a correction.
+// Off by default: adds ~10s per stage plus a possible regeneration.
+
+const QA_ENABLED = process.env.PROJECTION_QA === "1";
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 30_000, maxRetries: 0 });
+
+function toClaudeImage(dataUrl: string) {
+  const m = dataUrl.match(/^data:(image\/(?:jpeg|png|webp|gif));base64,(.+)$/);
+  if (!m) return null;
+  return {
+    type: "image" as const,
+    source: { type: "base64" as const, media_type: m[1] as "image/jpeg" | "image/png" | "image/webp" | "image/gif", data: m[2] },
+  };
+}
+
+async function missedTargets(before: string, after: string, targets: SignTarget[]): Promise<SignTarget[]> {
+  const a = toClaudeImage(before);
+  const b = toClaudeImage(after);
+  if (!a || !b || targets.length === 0) return [];
+  const res = await anthropic.messages.create({
+    model: process.env.ANTHROPIC_MODEL || "claude-sonnet-5",
+    max_tokens: 300,
+    messages: [
+      {
+        role: "user",
+        content: [
+          a,
+          b,
+          {
+            type: "text",
+            text: `Image 1 is the input, image 2 the edited result. For each target below, answer whether image 2 shows the requested reduction clearly enough to notice side by side. Reply only with the numbers of the targets that did NOT change enough, comma-separated, or "none".\n${targets.map(targetLine).join("\n")}`,
+          },
+        ],
+      },
+    ],
+  });
+  const text = res.content.map((c) => (c.type === "text" ? c.text : "")).join(" ").toLowerCase();
+  if (text.includes("none")) return [];
+  const nums = new Set((text.match(/\d+/g) ?? []).map(Number));
+  return targets.filter((_, i) => nums.has(i + 1));
+}
+
+async function generateStage(
+  images: string[],
+  build: (emphasis?: string) => { prompt: string; targets: SignTarget[] }
+): Promise<string> {
+  const { prompt, targets } = build();
+  const result = await generateProjection(images, prompt, CLINIC_IMAGE_MODEL);
+  if (!QA_ENABLED || targets.length === 0) return result;
+  try {
+    const missed = await missedTargets(images[0], result, targets);
+    if (missed.length === 0) return result;
+    const emphasis = `A previous attempt left these almost unchanged: ${missed
+      .map((t) => SIGN_ANATOMY[t.sign])
+      .join("; ")}. Make each reach its target grade, clearly visible side by side.`;
+    return await generateProjection(images, build(emphasis).prompt, CLINIC_IMAGE_MODEL);
+  } catch (err) {
+    console.error("[projection] QA skipped:", err instanceof Error ? err.message : err);
+    return result;
+  }
+}
+
 export async function generateClinicProjections(
   input: ProjectionInput
 ): Promise<ProjectionResult> {
@@ -501,18 +700,32 @@ export async function generateClinicProjections(
   );
 
   const { stages } = computeClinicStages(input.conditions, procedures);
+  const signs = (input.signs ?? []).filter((s) => s.grade > 0);
+  const guide = input.guideImageBase64 ? [input.guideImageBase64] : [];
 
   // Chained on purpose: image 2 is edited from image 1 so the end of the
   // protocol always builds on the first result. Two independent edits of
   // the original photo varied more than the intended difference between
   // stages (image 1 sometimes looked better than image 2).
+  if (signs.length > 0) {
+    const build = (i: 0 | 1) => (emphasis?: string) =>
+      buildSignPrompt(i, stages, signs, procedures, input.conditions, conditionsKB, guide.length > 0, emphasis);
+    const first = await generateStage([input.photoBase64, ...guide], build(0));
+    const second = await generateStage([first, ...guide], build(1));
+    return { week8: first, week12: second, stages };
+  }
+
+  // Analyses without visible_signs (dermo tenants, older analyses, mock
+  // fallback): zone-level instructions per procedure.
   const first = await generateProjection(
     input.photoBase64,
-    buildClinicPrompt(0, stages, input.conditions, input.primaryObjective, conditionsKB, procedures)
+    buildClinicPrompt(0, stages, input.conditions, input.primaryObjective, conditionsKB, procedures),
+    CLINIC_IMAGE_MODEL
   );
   const second = await generateProjection(
     first,
-    buildClinicPrompt(1, stages, input.conditions, input.primaryObjective, conditionsKB, procedures)
+    buildClinicPrompt(1, stages, input.conditions, input.primaryObjective, conditionsKB, procedures),
+    CLINIC_IMAGE_MODEL
   );
 
   return { week8: first, week12: second, stages };
