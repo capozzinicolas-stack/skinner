@@ -98,8 +98,10 @@ export const GRADE_WORDS = [
 ] as const;
 
 export function gradeWord(grade: number): string {
-  const g = Math.min(Math.max(Math.round(grade), 0), 4);
-  return GRADE_WORDS[g];
+  const g = Math.min(Math.max(grade, 0), 4);
+  if (Number.isInteger(g)) return GRADE_WORDS[g];
+  // Half grades: "marked" for both 3 and 2.5 hid the requested change.
+  return `between ${GRADE_WORDS[Math.floor(g)]} and ${GRADE_WORDS[Math.ceil(g)]}`;
 }
 
 export function sideWord(sign: SignId, side: SignSide): string {
@@ -110,58 +112,21 @@ export function sideWord(sign: SignId, side: SignSide): string {
 }
 
 /**
- * Grade points each procedure family removes from each sign at its full
- * effect (peak of its curve). Conservative, aligned with the evidence
- * spreadsheets reviewed with the clinical advisor (Oct-2026): scale-based
- * endpoints move roughly 1–2 points; neurotoxin on dynamic upper-face lines
- * is the strongest; biostimulators / microfocused ultrasound soften
- * nasolabial folds only mildly (no filler = no deep fold correction).
- * Matched on the accent-stripped procedure name; first match wins.
- */
-export const PROCEDURE_SIGN_EFFECTS: { match: RegExp; effects: Partial<Record<SignId, number>> }[] = [
-  { match: /toxina.*pescoco|nefertiti/, effects: { neck_bands: 1.5, jowls: 0.5 } },
-  { match: /toxina|botox|botulin|dysport|xeomin/, effects: { glabellar_lines: 2.5, forehead_lines: 2.5, crows_feet: 2 } },
-  { match: /labial|labio/, effects: { perioral_lines: 1 } },
-  { match: /sulco|bigode|marionete|nasogenian|nasolabial/, effects: { nasolabial_fold: 2, marionette_lines: 1.5 } },
-  { match: /olheira|lagrima|tear trough/, effects: { tear_trough: 2 } },
-  { match: /malar|mandibula|mento|queixo/, effects: { midface_volume_loss: 2, nasolabial_fold: 0.5 } },
-  { match: /enzima|papada|lipo de papada/, effects: { submental_fullness: 1.5 } },
-  { match: /ultrassom microfocado|ultraformer|ultherapy|hifu|mfu/, effects: { jowls: 1.5, submental_fullness: 1, upper_eyelid_hooding: 0.5, nasolabial_fold: 0.5, marionette_lines: 0.5 } },
-  { match: /fios de sustentacao|\bcog\b|fios.*(pcl|plla)/, effects: { jowls: 1.5, nasolabial_fold: 1, midface_volume_loss: 0.5, marionette_lines: 0.5 } },
-  { match: /radiesse|hidroxiapatita|sculptra|poli-?l|ellanse|policaprolactona|bioestimulador/, effects: { jowls: 1, nasolabial_fold: 1, midface_volume_loss: 1, marionette_lines: 0.5, perioral_lines: 0.5 } },
-  { match: /morpheus|microagulhamento com radio/, effects: { jowls: 0.5, perioral_lines: 1, crows_feet: 0.5 } },
-  { match: /thermage|radiofrequencia/, effects: { jowls: 0.5, crows_feet: 0.5, perioral_lines: 0.5 } },
-  { match: /fios/, effects: { perioral_lines: 0.5 } },
-  { match: /profhilo|hidratacao injetavel|skinbooster|pdrn|polinucleot|biorremodel/, effects: { perioral_lines: 1, crows_feet: 0.5, tear_trough: 0.5 } },
-  { match: /co2|fracionado|resurfacing|erbium/, effects: { perioral_lines: 1.5, crows_feet: 1, forehead_lines: 0.5 } },
-  { match: /plasma|palpebra/, effects: { upper_eyelid_hooding: 1.5 } },
-];
-
-export function normalizeProcedureName(name: string): string {
-  return name.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-}
-
-export function procedureSignEffects(name: string): Partial<Record<SignId, number>> {
-  const n = normalizeProcedureName(name);
-  return PROCEDURE_SIGN_EFFECTS.find((p) => p.match.test(n))?.effects ?? {};
-}
-
-/**
- * Grade points removed from a sign by several procedures at once. The
- * strongest counts fully, each additional one half (effects overlap, they
- * do not add up — see the evidence review: combined protocols beat
- * monotherapy, but percentages are not additive).
+ * Grade points removed from a sign by several procedures at once: the
+ * strongest wins, they never add up. Clinical review (Nov-2026): MFU,
+ * threads, fillers and biostimulators all act on the same jaw and folds,
+ * so the result needs a ceiling per area, not a sum.
  */
 export function combineReductions(reductions: number[]): number {
-  const sorted = reductions.filter((r) => r > 0).sort((a, b) => b - a);
-  return sorted.reduce((acc, r, i) => acc + (i === 0 ? r : r * 0.5), 0);
+  return Math.max(0, ...reductions);
 }
 
 /**
- * Target grade of a sign after a reduction. Never below 0, and a severe
- * sign (grade 4) never fully disappears in a projection.
+ * Target grade of a sign after a reduction. A visible sign never fully
+ * disappears (floor 0.5), and a severe one (grade 4) never goes below 1.
  */
 export function targetGrade(current: number, reduction: number): number {
-  const floor = current >= 4 ? 1 : 0;
+  // Clinical review (Nov-2026): treated signs soften, they never vanish.
+  const floor = current >= 4 ? 1 : current > 0 ? 0.5 : 0;
   return Math.max(Math.round((current - reduction) * 2) / 2, floor);
 }

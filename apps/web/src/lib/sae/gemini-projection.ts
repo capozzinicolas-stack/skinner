@@ -4,17 +4,16 @@ import Anthropic from "@anthropic-ai/sdk";
 import { concernEquivalents } from "./condition-aliases";
 import {
   SIGN_ANATOMY,
+  SIGN_EDIT,
   combineReductions,
   gradeWord,
-  normalizeProcedureName,
-  procedureSignEffects,
   sideWord,
-  SIGN_EDIT,
   targetGrade,
   type SignId,
   type SignSide,
   type VisibleSign,
 } from "./visible-signs";
+import { procedureProfile, procedureSignEffects, type SkinAxis, type SkinEffect } from "./procedure-profiles";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
@@ -267,7 +266,10 @@ const CLINIC_ALLOWED_AND_IDENTITY = `WHAT IS ALLOWED:
 KEEP (identity):
 - The SAME person, instantly recognizable. Same skeleton (jaw bone, chin bone, cheekbones), nose, eyes, lip shape (unless a lip filler is listed), hair, glasses if present, pose, head angle, framing, background and lighting.
 - Sagging soft tissue over the bone (jowls, folds, cheek fat) is NOT identity: change it wherever a target or a listed procedure asks for it.
-- Natural skin texture: no makeup, no filters, no plastic or airbrushed look.
+- Natural skin texture: no makeup, no filters, no plastic or airbrushed look. The expression stays natural, never frozen.
+- Moles, and any dark spot with irregular borders or mixed colors, stay exactly as they are. Diffuse symmetric brown patches on the cheeks, forehead or upper lip (melasma) stay as they are unless a target asks to lighten melasma.
+- Skin never becomes lighter than the person's own surrounding skin tone.
+- Show the settled result: no swelling, bruising, treatment redness, crusts, peeling or needle marks.
 
 Return only the edited image.`;
 
@@ -302,38 +304,13 @@ The progression must be clearly noticeable compared with this photo, especially 
 ${CLINIC_ALLOWED_AND_IDENTITY}`;
 
 /**
- * Visual effect of each procedure family, matched on the procedure name
- * (accent-insensitive). First match wins, so specific entries come first.
- * Names follow the procedure library; clinics that rename a service keep the
- * match as long as the key term (e.g. "toxina", "ultraformer") stays.
- * Procedures without a match fall back to the condition-level edits.
+ * Visual effect of a procedure for the zone prompts (analyses without
+ * visible signs). Comes from the evidence-based profiles; procedures without
+ * a profile fall back to the condition-level edits.
  */
-const PROCEDURE_VISUALS: { match: RegExp; effect: string }[] = [
-  { match: /toxina.*pescoco|nefertiti/, effect: "Neck and jawline: soften the vertical neck bands and make the jawline edge slightly crisper" },
-  { match: /toxina|botox|botulin|dysport|xeomin/, effect: "Forehead horizontal lines, frown lines between the eyebrows and crow's feet: smooth these expression wrinkles, reducing their depth and visibility while keeping a natural, non-frozen look" },
-  { match: /labial|labio/, effect: "Lips: better hydrated, smoother and slightly fuller, keeping the person's own lip shape" },
-  { match: /sulco|bigode|marionete|nasogenian|nasolabial/, effect: "Nasolabial folds (from the nose to the mouth corners) and marionette lines: reduce the depth of the folds and the shadow they cast" },
-  { match: /olheira|lagrima|tear trough/, effect: "Under-eye area: fill the tear-trough hollow and lighten the shadow under the eyes" },
-  { match: /malar|mandibula|mento|queixo/, effect: "Midface: restore lost volume in the cheeks so the midface looks less hollow and less tired (do not reshape cheekbones, chin or jaw)" },
-  { match: /enzima|papada|lipo de papada/, effect: "Submental area: reduce the fullness under the chin (double chin)" },
-  { match: /ultrassom microfocado|ultraformer|ultherapy|hifu|mfu/, effect: "Lower face and neck lift: reduce the sagging jowl bulge in front of the jaw angle, redefine the jawline contour, reduce submental fullness and slightly lift the brows and midface" },
-  { match: /fios de sustentacao|\bcog\b|fios.*(pcl|plla)/, effect: "Mechanical lift: lift the midface and the jowls, reposition sagging tissue and soften the nasolabial folds" },
-  { match: /radiesse|hidroxiapatita|sculptra|poli-?l|ellanse|policaprolactona|bioestimulador/, effect: "Firmness of the lower and middle face: denser, firmer skin; reduce the sagging jowls along the jawline and soften the nasolabial folds" },
-  { match: /morpheus|microagulhamento com radio/, effect: "Skin texture and firmness: smoother surface, smaller pores, softer acne scars and slightly tighter skin along the jawline" },
-  { match: /thermage|radiofrequencia/, effect: "Skin tightening: firmer skin, mild tightening of the jowls and jawline and softer fine lines" },
-  { match: /fios/, effect: "Skin quality and firmness: firmer, denser skin with softer fine lines" },
-  { match: /profhilo|hidratacao injetavel|skinbooster|pdrn|polinucleot|biorremodel/, effect: "Skin quality: better hydrated, plumper and more radiant skin, with softer fine lines and a more even texture" },
-  { match: /vasinho|vermelhid|vascular/, effect: "Redness: reduce diffuse redness and visible small vessels" },
-  { match: /co2|fracionado|resurfacing|erbium/, effect: "Skin surface: soften fine lines and wrinkles, refine texture and pores and soften acne scars" },
-  { match: /lavieen|picosseg|nd:?yag|luz intensa|\blip\b|ipl|laser/, effect: "Skin tone: lighten dark spots and melasma, more even tone and refined texture" },
-  { match: /plasma|palpebra/, effect: "Upper eyelids: reduce the excess, hooded eyelid skin so the eyes look more open" },
-  { match: /microagulhamento/, effect: "Skin texture: smoother surface, smaller pores and softer acne scars" },
-  { match: /peeling|hydrafacial|hidrodermo|limpeza/, effect: "Skin surface: fresher, more radiant skin with fewer clogged pores and lighter superficial spots" },
-];
-
 function procedureVisual(p: ProjectionProcedure): string | null {
-  const n = normalizeProcedureName(p.name);
-  return PROCEDURE_VISUALS.find((v) => v.match.test(n))?.effect ?? null;
+  const profile = procedureProfile(p.name);
+  return profile ? `${profile.look}. Do not change ${profile.keep}` : null;
 }
 
 /** Qualitative strength for Gemini (it does not follow percentages). */
@@ -453,6 +430,7 @@ export function buildClinicZoneEdits(
   const unprofiled: ProjectionProcedure[] = [];
 
   for (const p of procedures) {
+    if (procedureProfile(p.name)?.noImage) continue;
     const effect = procedureVisual(p);
     if (!effect) {
       unprofiled.push(p);
@@ -557,6 +535,13 @@ export function buildSignTargets(
   return { targets, done };
 }
 
+/** How much of a procedure's effect is visible, in words (Gemini ignores %). */
+function progressWord(fraction: number): string {
+  if (fraction < 0.35) return "only an early, partial part of its effect is visible now";
+  if (fraction < 0.75) return "most of its effect is visible now";
+  return "its full effect is visible now";
+}
+
 function targetLine(t: SignTarget, i: number): string {
   return `${i + 1}. ${SIGN_ANATOMY[t.sign]}${sideWord(t.sign, t.side)}. Seen now: ${t.description}. Current grade ${t.from}/4 (${gradeWord(t.from)}) → target grade ${t.to}/4 (${gradeWord(t.to)}). How: ${SIGN_EDIT[t.sign]}.`;
 }
@@ -577,20 +562,46 @@ function buildSignPrompt(
   const previousWeeks = stageIndex === 1 ? stages[0].weeks : undefined;
   const { targets, done } = buildSignTargets(signs, procedures, weeks, previousWeeks);
 
-  // Procedures that produce no sign target in this stage (lasers, peels,
-  // skin boosters…) keep their skin-quality instruction.
-  const signProcs = new Set(
-    procedures
-      .filter((p) => targets.some((t) => (procedureSignEffects(p.name)[t.sign] ?? 0) > 0))
-      .map((p) => p.name)
+  // How each procedure's real result looks (evidence-based profiles), with
+  // how much of it is reached at this point of its curve. Procedures without
+  // a profile keep the condition-level instruction.
+  const effectLines = procedures.flatMap((p) => {
+    const profile = procedureProfile(p.name);
+    if (!profile) return [];
+    if (profile.noImage) {
+      return [`- ${p.name}: maintenance care; it causes no visible change in this photo.`];
+    }
+    const now = procedureProgress(p, weeks);
+    if (now <= 0) return [];
+    const before = previousWeeks !== undefined ? procedureProgress(p, previousWeeks) : 0;
+    if (previousWeeks !== undefined && now - before < 0.1) {
+      return [`- ${p.name}: already at its full visible effect in this photo; keep it as it is.`];
+    }
+    return [`- ${p.name}: ${progressWord(now)}. Its real result looks like this: ${profile.look}. It does not change ${profile.keep}.`];
+  });
+  // Skin-quality effects (redness, spots, texture) are targets too: listed
+  // only in the procedure block, the model ignored them (redness under a
+  // vascular laser stayed unchanged in the Nov-2026 test). Per skin axis
+  // only the strongest procedure is shown: effects never add up.
+  const bestPerAxis = new Map<SkinAxis, { p: ProjectionProcedure; effect: SkinEffect; now: number }>();
+  for (const p of procedures) {
+    const now = procedureProgress(p, weeks);
+    const before = previousWeeks !== undefined ? procedureProgress(p, previousWeeks) : 0;
+    if (now <= 0 || now - before < 0.1) continue;
+    for (const effect of procedureProfile(p.name)?.skin ?? []) {
+      const best = bestPerAxis.get(effect.axis);
+      if (!best || effect.strength * now > best.effect.strength * best.now) {
+        bestPerAxis.set(effect.axis, { p, effect, now });
+      }
+    }
+  }
+  const skinTargets = [...bestPerAxis.values()].map(
+    ({ p, effect, now }) => `Skin (${p.name}): ${effect.text}; ${progressWord(now)}.`
   );
-  const skinLines = buildClinicZoneEdits(
-    weeks,
-    conditions,
-    procedures.filter((p) => !signProcs.has(p.name)),
-    conditionsKB,
-    previousWeeks
-  );
+  const unprofiled = procedures.filter((p) => !procedureProfile(p.name));
+  const skinLines = unprofiled.length > 0
+    ? buildClinicZoneEdits(weeks, conditions, unprofiled, conditionsKB, previousWeeks)
+    : "";
 
   const procs = procedures.map((p) => p.name).join(", ");
   const intro =
@@ -598,9 +609,13 @@ function buildSignPrompt(
       ? `Edit this photo of a real patient to simulate the photorealistic result ${weeks} weeks after starting these in-clinic aesthetic procedures: ${procs}.`
       : `This photo already shows the patient ${previousWeeks} weeks after starting these in-clinic aesthetic procedures: ${procs}. Edit it to show the SAME patient ${weeks} weeks after starting, at the end of the protocol. Keep every improvement already visible; the result must never look worse or older than this photo.`;
 
+  const targetLines = [
+    ...targets.map(targetLine),
+    ...skinTargets.map((line, i) => `${targets.length + i + 1}. ${line}`),
+  ];
   const targetBlock =
-    targets.length > 0
-      ? `TARGETS — the purpose of this edit. Change exactly these:\n${targets.map(targetLine).join("\n")}\nEach target must reach its target grade and look obviously different from the input when compared side by side. Areas and signs not listed stay as they are.`
+    targetLines.length > 0
+      ? `TARGETS — the purpose of this edit. Change exactly these:\n${targetLines.join("\n")}\nEach target must reach its target grade (or the described change) and look obviously different from the input when compared side by side. Areas and signs not listed stay as they are.`
       : `No sign changes further at this stage: keep the result and refine overall skin quality only very slightly.`;
   const doneBlock =
     done.length > 0
@@ -611,8 +626,9 @@ function buildSignPrompt(
 
 ${targetBlock}${doneBlock}
 ${hasGuide ? `\n${GUIDE_NOTE}\n` : ""}
-SKIN QUALITY (secondary):
-${skinLines}
+WHAT EACH PROCEDURE REALLY DOES (match the result to these clinical descriptions — typical average results, not the best case):
+${effectLines.join("\n") || "- Keep the current result."}
+${skinLines ? `\nOTHER SKIN CHANGES:\n${skinLines}\n` : ""}
 ${emphasis ? `\nCORRECTION: ${emphasis}\n` : ""}
 ${CLINIC_ALLOWED_AND_IDENTITY}`;
   return { prompt, targets };
