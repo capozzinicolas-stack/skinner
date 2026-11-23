@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: ["@skinner/ui", "@skinner/db"],
+  // sharp (clinic projection region edits) ships native binaries: load it
+  // from node_modules at runtime instead of bundling it.
+  experimental: { serverComponentsExternalPackages: ["sharp"] },
   // Headers tuned per route group:
   //   - /embed/*      → must be embeddable in any third-party site (CSP
   //                     frame-ancestors *) and must allow camera/mic

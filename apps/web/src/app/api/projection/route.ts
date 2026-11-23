@@ -7,7 +7,7 @@ import { SIGN_IDS } from "@/lib/sae/visible-signs";
 // Clinic mode chains two Gemini edits (image 2 is built from image 1) and,
 // with PROJECTION_QA=1, may add a Claude check plus one regeneration per
 // stage, so it needs far more time than the parallel dermo mode.
-export const maxDuration = 180;
+export const maxDuration = 300;
 
 const RequestSchema = z.object({
   photoBase64: z.string().min(100),
@@ -47,6 +47,22 @@ const RequestSchema = z.object({
     })
   ).max(20).optional(),
   guideImageBase64: z.string().min(100).max(3_000_000).optional(),
+  // Normalized face zones per sign (from the same landmarks as the guide):
+  // the server edits an enlarged crop of each area and blends it back.
+  zones: z.array(
+    z.object({
+      sign: z.enum(SIGN_IDS),
+      ellipses: z.array(
+        z.object({
+          cx: z.number().min(-1).max(2),
+          cy: z.number().min(-1).max(2),
+          rx: z.number().min(0).max(2),
+          ry: z.number().min(0).max(2),
+          rot: z.number().min(-7).max(7),
+        })
+      ).max(4),
+    })
+  ).max(20).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -74,7 +90,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { photoBase64, conditions, primaryObjective, products, mode, procedures, signs, guideImageBase64 } = parsed.data;
+    const { photoBase64, conditions, primaryObjective, products, mode, procedures, signs, guideImageBase64, zones } =
+      parsed.data;
 
     // Photo is only held in memory during this request — never persisted to disk or DB
     const result =
@@ -88,6 +105,7 @@ export async function POST(req: NextRequest) {
             procedures,
             signs,
             guideImageBase64,
+            zones,
           })
         : await generateProjections({
             photoBase64,

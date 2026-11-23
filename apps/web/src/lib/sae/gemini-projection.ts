@@ -1,18 +1,22 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { db } from "@skinner/db";
 import Anthropic from "@anthropic-ai/sdk";
+import sharp from "sharp";
 import { concernEquivalents } from "./condition-aliases";
 import {
   SIGN_ANATOMY,
   SIGN_EDIT,
+  SIGN_REGION,
   combineReductions,
   gradeWord,
   sideWord,
   targetGrade,
   type SignId,
   type SignSide,
+  type SignZone,
   type VisibleSign,
 } from "./visible-signs";
+import { editRegion } from "./region-edit";
 import { procedureProfile, procedureSignEffects, type SkinAxis, type SkinEffect } from "./procedure-profiles";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
@@ -46,6 +50,9 @@ export type ProjectionInput = {
   // browser from face landmarks) to tell the model where to edit.
   signs?: VisibleSign[];
   guideImageBase64?: string;
+  // Normalized zone of each sign (browser landmarks). When present, the
+  // sign targets are edited on enlarged crops (lib/sae/region-edit.ts).
+  zones?: SignZone[];
 };
 
 export type ProjectionStage = {
@@ -209,6 +216,104 @@ async function generateProjection(
   throw new Error("Gemini did not return an image");
 }
 
+// ── OpenAI image model for the clinic projection (Nov-2026) ─────────────
+// A/B on a real selfie: Gemini Pro barely edited the procedure targets and
+// FLUX replaced the person; gpt-image-2 kept the person and showed the
+// effects clearly. Used when OPENAI_API_KEY is set; any failure falls back
+// to Gemini so the projection never breaks.
+const OPENAI_CLINIC_MODEL = process.env.OPENAI_API_KEY
+  ? process.env.OPENAI_CLINIC_IMAGE_MODEL || "gpt-image-2"
+  : null;
+// "high" took ~90s per image (two chained stages exceeded maxDuration).
+const OPENAI_IMAGE_QUALITY = process.env.OPENAI_IMAGE_QUALITY || "medium";
+// Output sizes the model supports, as width/height.
+const OPENAI_SIZES = [
+  { size: "1024x1024", ratio: 1 },
+  { size: "1536x1024", ratio: 1.5 },
+  { size: "1024x1536", ratio: 2 / 3 },
+] as const;
+
+/**
+ * Pads the photo (mirrored edges) to the nearest supported aspect ratio so
+ * the model never reframes the face to fill a different canvas; the output
+ * is cropped back to the original area. Returns the padded image and how
+ * to undo it.
+ */
+async function padToSupported(dataUrl: string) {
+  const buf = dataUrlToBuffer(dataUrl);
+  const meta = await sharp(buf).metadata();
+  const W = meta.width ?? 1024;
+  const H = meta.height ?? 1024;
+  const target = OPENAI_SIZES.reduce((best, s) =>
+    Math.abs(Math.log(W / H / s.ratio)) < Math.abs(Math.log(W / H / best.ratio)) ? s : best
+  );
+  const PW = Math.max(W, Math.round(H * target.ratio));
+  const PH = Math.max(H, Math.round(W / target.ratio));
+  const left = Math.floor((PW - W) / 2);
+  const top = Math.floor((PH - H) / 2);
+  const padded = await sharp(buf)
+    .extend({ left, right: PW - W - left, top, bottom: PH - H - top, extendWith: "mirror" })
+    .jpeg({ quality: 95 })
+    .toBuffer();
+  return { padded, size: target.size, crop: { left, top, W, H, PW, PH } };
+}
+
+async function generateOpenAIProjection(images: string[], prompt: string, model: string): Promise<string> {
+  const pads = await Promise.all(images.map(padToSupported));
+  const fd = new FormData();
+  fd.append("model", model);
+  fd.append("prompt", prompt);
+  fd.append("size", pads[0].size);
+  fd.append("quality", OPENAI_IMAGE_QUALITY);
+  fd.append("output_format", "jpeg");
+  pads.forEach((p, i) => fd.append("image[]", new Blob([new Uint8Array(p.padded)], { type: "image/jpeg" }), `image${i}.jpg`));
+
+  const res = await fetch("https://api.openai.com/v1/images/edits", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
+    body: fd,
+    signal: AbortSignal.timeout(120_000),
+  });
+  const json = (await res.json()) as { data?: { b64_json?: string }[]; error?: { message?: string } };
+  const b64 = json.data?.[0]?.b64_json;
+  if (!res.ok || !b64) throw new Error(`OpenAI ${res.status}: ${json.error?.message ?? "no image"}`);
+
+  // Back to the original area and size.
+  const { left, top, W, H, PW, PH } = pads[0].crop;
+  const out = Buffer.from(b64, "base64");
+  const meta = await sharp(out).metadata();
+  const sx = (meta.width ?? PW) / PW;
+  const sy = (meta.height ?? PH) / PH;
+  const cropped = await sharp(out)
+    .extract({
+      left: Math.round(left * sx),
+      top: Math.round(top * sy),
+      width: Math.min(Math.round(W * sx), (meta.width ?? PW) - Math.round(left * sx)),
+      height: Math.min(Math.round(H * sy), (meta.height ?? PH) - Math.round(top * sy)),
+    })
+    .resize(W, H, { fit: "fill" })
+    .jpeg({ quality: 92 })
+    .toBuffer();
+  return `data:image/jpeg;base64,${cropped.toString("base64")}`;
+}
+
+function dataUrlToBuffer(dataUrl: string): Buffer {
+  return Buffer.from(dataUrl.replace(/^data:image\/[\w+.-]+;base64,/, ""), "base64");
+}
+
+/** One clinic edit: OpenAI when configured, Gemini otherwise or on failure. */
+async function generateClinicImage(images: string | string[], prompt: string): Promise<string> {
+  const list = Array.isArray(images) ? images : [images];
+  if (OPENAI_CLINIC_MODEL) {
+    try {
+      return await generateOpenAIProjection(list, prompt, OPENAI_CLINIC_MODEL);
+    } catch (err) {
+      console.error("[projection] OpenAI failed, using Gemini:", err instanceof Error ? err.message : err);
+    }
+  }
+  return generateProjection(list, prompt, CLINIC_IMAGE_MODEL);
+}
+
 export async function generateProjections(
   input: ProjectionInput
 ): Promise<ProjectionResult> {
@@ -264,7 +369,9 @@ const CLINIC_ALLOWED_AND_IDENTITY = `WHAT IS ALLOWED:
 - A relaxed area between the eyebrows or on the forehead is allowed with the same neutral expression.
 
 KEEP (identity):
-- The SAME person, instantly recognizable. Same skeleton (jaw bone, chin bone, cheekbones), nose, eyes, lip shape (unless a lip filler is listed), hair, glasses if present, pose, head angle, framing, background and lighting.
+- The SAME person, instantly recognizable. Same skeleton (jaw bone, chin bone, cheekbones), nose, eyes, lip shape (unless a lip filler is listed), glasses if present, pose, head angle, background and lighting.
+- Hair is unchanged: same amount, length, color and hairline; no hair added or removed on the head, beard, moustache or eyebrows. Same ears, clothing and jewelry.
+- EXACTLY the same framing: the head keeps the same size and position in the picture. No zoom in or out, no crop, no shift, no rotation.
 - Sagging soft tissue over the bone (jowls, folds, cheek fat) is NOT identity: change it wherever a target or a listed procedure asks for it.
 - Natural skin texture: no makeup, no filters, no plastic or airbrushed look. The expression stays natural, never frozen.
 - Moles, and any dark spot with irregular borders or mixed colors, stay exactly as they are. Diffuse symmetric brown patches on the cheeks, forehead or upper lip (melasma) stay as they are unless a target asks to lighten melasma.
@@ -557,7 +664,7 @@ function buildSignPrompt(
   conditionsKB: Map<string, { visualEditPrompt: string | null; displayName: string; description: string }>,
   hasGuide: boolean,
   emphasis?: string
-): { prompt: string; targets: SignTarget[] } {
+): { prompt: string; targets: SignTarget[]; hasChanges: boolean } {
   const weeks = stages[stageIndex].weeks;
   const previousWeeks = stageIndex === 1 ? stages[0].weeks : undefined;
   const { targets, done } = buildSignTargets(signs, procedures, weeks, previousWeeks);
@@ -631,7 +738,62 @@ ${effectLines.join("\n") || "- Keep the current result."}
 ${skinLines ? `\nOTHER SKIN CHANGES:\n${skinLines}\n` : ""}
 ${emphasis ? `\nCORRECTION: ${emphasis}\n` : ""}
 ${CLINIC_ALLOWED_AND_IDENTITY}`;
-  return { prompt, targets };
+  return { prompt, targets, hasChanges: targetLines.length > 0 || skinLines !== "" };
+}
+
+// ── Region edits (Nov-2026) ─────────────────────────────────────────────
+// Sign targets are edited on an enlarged crop of their area and blended
+// back (region-edit.ts): on the full photo Gemini barely changed them.
+
+const REGION_WORDS = {
+  upper: "upper face (forehead, eyebrows, eyes and under-eyes)",
+  lower: "lower face (cheeks, nose tip, mouth, chin, jawline and upper neck)",
+} as const;
+
+function buildRegionPrompt(
+  region: "upper" | "lower",
+  weeks: number,
+  targets: SignTarget[],
+  procedures: ProjectionProcedure[]
+): string {
+  // Only the grade targets: they already carry the typical magnitude. The
+  // profile "look" texts ("subtle", "almost imperceptible") on top of them
+  // discounted the change twice and the model left the area as it was.
+  const signs = new Set(targets.map((t) => t.sign));
+  const relevant = procedures.filter((p) => {
+    const effects = procedureSignEffects(p.name);
+    return procedureProgress(p, weeks) > 0 && [...signs].some((s) => (effects[s] ?? 0) > 0);
+  });
+  return `This is an enlarged close-up crop of the ${REGION_WORDS[region]} of a real patient, ${weeks} weeks after starting these in-clinic aesthetic procedures: ${relevant.map((p) => p.name).join(", ")}. Edit it to show the result at this point.
+
+TARGETS — change exactly these. Each one must be obvious at first glance when the crop and the result are compared side by side; a subtle change is a failed edit:
+${targets.map(targetLine).join("\n")}
+
+KEEP: the same person — same bone structure, eyebrows, eyes, glasses if present, nose, lips, facial hair, moles and spots, natural skin texture with pores, skin tone, lighting and color. No airbrushing, no makeup. Natural relaxed expression, settled result (no swelling, bruising or redness). Keep EXACTLY the same framing: no zoom, no shift, no rotation, nothing added at the edges.
+
+Return only the edited image.`;
+}
+
+async function editRegions(
+  photo: string,
+  stageIndex: 0 | 1,
+  stages: [ProjectionStage, ProjectionStage],
+  signs: VisibleSign[],
+  zones: Map<string, SignZone>,
+  procedures: ProjectionProcedure[]
+): Promise<string> {
+  const weeks = stages[stageIndex].weeks;
+  const previousWeeks = stageIndex === 1 ? stages[0].weeks : undefined;
+  const { targets } = buildSignTargets(signs, procedures, weeks, previousWeeks);
+  let result = photo;
+  for (const region of ["upper", "lower"] as const) {
+    const regionTargets = targets.filter((t) => SIGN_REGION[t.sign] === region && zones.has(t.sign));
+    if (regionTargets.length === 0) continue;
+    const ellipses = regionTargets.flatMap((t) => zones.get(t.sign)?.ellipses ?? []);
+    const prompt = buildRegionPrompt(region, weeks, regionTargets, procedures);
+    result = await editRegion(result, ellipses, (crop) => generateProjection(crop, prompt, CLINIC_IMAGE_MODEL));
+  }
+  return result;
 }
 
 // ── Optional quality check (PROJECTION_QA=1) ────────────────────────────
@@ -683,7 +845,7 @@ async function generateStage(
   build: (emphasis?: string) => { prompt: string; targets: SignTarget[] }
 ): Promise<string> {
   const { prompt, targets } = build();
-  const result = await generateProjection(images, prompt, CLINIC_IMAGE_MODEL);
+  const result = await generateClinicImage(images, prompt);
   if (!QA_ENABLED || targets.length === 0) return result;
   try {
     const missed = await missedTargets(images[0], result, targets);
@@ -691,7 +853,7 @@ async function generateStage(
     const emphasis = `A previous attempt left these almost unchanged: ${missed
       .map((t) => SIGN_ANATOMY[t.sign])
       .join("; ")}. Make each reach its target grade, clearly visible side by side.`;
-    return await generateProjection(images, build(emphasis).prompt, CLINIC_IMAGE_MODEL);
+    return await generateClinicImage(images, build(emphasis).prompt);
   } catch (err) {
     console.error("[projection] QA skipped:", err instanceof Error ? err.message : err);
     return result;
@@ -723,6 +885,21 @@ export async function generateClinicProjections(
   // protocol always builds on the first result. Two independent edits of
   // the original photo varied more than the intended difference between
   // stages (image 1 sometimes looked better than image 2).
+  const zones = new Map((input.zones ?? []).filter((z) => z.ellipses.length > 0).map((z) => [z.sign, z]));
+  if (signs.length > 0 && zones.size > 0 && !OPENAI_CLINIC_MODEL) {
+    // Gemini only (the OpenAI model edits the whole photo well). Whole photo first for skin effects and signs without a zone, then
+    // each area on its own enlarged crop.
+    const rest = signs.filter((s) => !zones.has(s.sign));
+    const stage = async (i: 0 | 1, photo: string) => {
+      const whole = buildSignPrompt(i, stages, rest, procedures, input.conditions, conditionsKB, false);
+      const base = whole.hasChanges ? await generateProjection(photo, whole.prompt, CLINIC_IMAGE_MODEL) : photo;
+      return editRegions(base, i, stages, signs, zones, procedures);
+    };
+    const first = await stage(0, input.photoBase64);
+    const second = await stage(1, first);
+    return { week8: first, week12: second, stages };
+  }
+
   if (signs.length > 0) {
     const build = (i: 0 | 1) => (emphasis?: string) =>
       buildSignPrompt(i, stages, signs, procedures, input.conditions, conditionsKB, guide.length > 0, emphasis);
@@ -733,15 +910,13 @@ export async function generateClinicProjections(
 
   // Analyses without visible_signs (dermo tenants, older analyses, mock
   // fallback): zone-level instructions per procedure.
-  const first = await generateProjection(
+  const first = await generateClinicImage(
     input.photoBase64,
-    buildClinicPrompt(0, stages, input.conditions, input.primaryObjective, conditionsKB, procedures),
-    CLINIC_IMAGE_MODEL
+    buildClinicPrompt(0, stages, input.conditions, input.primaryObjective, conditionsKB, procedures)
   );
-  const second = await generateProjection(
+  const second = await generateClinicImage(
     first,
-    buildClinicPrompt(1, stages, input.conditions, input.primaryObjective, conditionsKB, procedures),
-    CLINIC_IMAGE_MODEL
+    buildClinicPrompt(1, stages, input.conditions, input.primaryObjective, conditionsKB, procedures)
   );
 
   return { week8: first, week12: second, stages };

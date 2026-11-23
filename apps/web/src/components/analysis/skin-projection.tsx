@@ -76,7 +76,7 @@ export function SkinProjection({
     setState({ status: "loading" });
     try {
       const clinicSigns = isClinic ? (signs ?? []).slice(0, 20) : [];
-      const guideImageBase64 =
+      const guide =
         clinicSigns.length > 0 ? await buildProjectionGuide(photoBase64, clinicSigns) : null;
       const res = await fetch("/api/projection", {
         method: "POST",
@@ -91,7 +91,7 @@ export function SkinProjection({
                 mode: "clinic",
                 procedures: (procedures ?? []).slice(0, 10),
                 ...(clinicSigns.length > 0 ? { signs: clinicSigns } : {}),
-                ...(guideImageBase64 ? { guideImageBase64 } : {}),
+                ...(guide ? { guideImageBase64: guide.guide, zones: guide.zones } : {}),
               }
             : {}),
         }),

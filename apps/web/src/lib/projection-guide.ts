@@ -6,7 +6,13 @@
 // Any failure returns null and the projection runs without a guide.
 
 import { detectLandmarks } from "@/lib/face-detection";
-import { BILATERAL_SIGNS, type SignId, type SignSide, type VisibleSign } from "@/lib/sae/visible-signs";
+import {
+  BILATERAL_SIGNS,
+  type SignId,
+  type SignSide,
+  type SignZone,
+  type VisibleSign,
+} from "@/lib/sae/visible-signs";
 
 type Pt = { x: number; y: number };
 type Ellipse = { cx: number; cy: number; rx: number; ry: number; rot: number };
@@ -94,10 +100,14 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
+/**
+ * Guide image plus the normalized zone of each sign (the server crops and
+ * blends each area from them). Null when no face is found.
+ */
 export async function buildProjectionGuide(
   photoBase64: string,
   signs: VisibleSign[]
-): Promise<string | null> {
+): Promise<{ guide: string; zones: SignZone[] } | null> {
   if (signs.length === 0 || typeof document === "undefined") return null;
   try {
     const img = await loadImage(photoBase64);
@@ -105,21 +115,29 @@ export async function buildProjectionGuide(
     if (!pts) return null;
 
     const canvas = document.createElement("canvas");
-    canvas.width = img.naturalWidth;
-    canvas.height = img.naturalHeight;
+    const W = img.naturalWidth;
+    const H = img.naturalHeight;
+    canvas.width = W;
+    canvas.height = H;
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
     ctx.drawImage(img, 0, 0);
     ctx.strokeStyle = "#FF00FF";
     ctx.lineWidth = Math.max(3, Math.round(canvas.width / 200));
+    const zones: SignZone[] = [];
     for (const s of signs) {
-      for (const e of regions(pts, s.sign, s.side)) {
+      const ellipses = regions(pts, s.sign, s.side);
+      for (const e of ellipses) {
         ctx.beginPath();
         ctx.ellipse(e.cx, e.cy, Math.max(e.rx, 4), Math.max(e.ry, 4), e.rot, 0, Math.PI * 2);
         ctx.stroke();
       }
+      zones.push({
+        sign: s.sign,
+        ellipses: ellipses.map((e) => ({ cx: e.cx / W, cy: e.cy / H, rx: e.rx / W, ry: e.ry / H, rot: e.rot })),
+      });
     }
-    return canvas.toDataURL("image/jpeg", 0.85);
+    return { guide: canvas.toDataURL("image/jpeg", 0.85), zones };
   } catch {
     return null;
   }

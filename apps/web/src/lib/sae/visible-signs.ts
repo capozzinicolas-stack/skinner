@@ -42,6 +42,34 @@ export type VisibleSign = {
   description: string;
 };
 
+/**
+ * Where a sign is in the photo: ellipses from the browser's face landmarks,
+ * normalized to the image size (cx, rx / width · cy, ry / height). Used by
+ * the region edit (lib/sae/region-edit.ts) to crop and blend each area.
+ */
+export type ZoneEllipse = { cx: number; cy: number; rx: number; ry: number; rot: number };
+export type SignZone = { sign: SignId; ellipses: ZoneEllipse[] };
+
+/**
+ * Signs edited together in one crop. Gemini barely edits a full-face photo
+ * (Nov-2026 test: same targets, almost no visible change); an enlarged crop
+ * of the area gets a much stronger edit.
+ */
+export const SIGN_REGION: Record<SignId, "upper" | "lower"> = {
+  forehead_lines: "upper",
+  glabellar_lines: "upper",
+  crows_feet: "upper",
+  upper_eyelid_hooding: "upper",
+  tear_trough: "upper",
+  midface_volume_loss: "lower",
+  nasolabial_fold: "lower",
+  marionette_lines: "lower",
+  perioral_lines: "lower",
+  jowls: "lower",
+  submental_fullness: "lower",
+  neck_bands: "lower",
+};
+
 /** Anatomical wording sent to the image model. */
 export const SIGN_ANATOMY: Record<SignId, string> = {
   forehead_lines: "horizontal lines across the forehead",
