@@ -6,8 +6,15 @@
       "persistent": true
     },
     "build": {
-      "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**", "generated/**"],
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        ".next/**",
+        "!.next/cache/**",
+        "dist/**",
+        "generated/**"
+      ],
       "env": [
         "DATABASE_URL",
         "DIRECT_URL",
@@ -24,11 +31,25 @@
         "NEXT_PUBLIC_SUPABASE_URL",
         "NEXT_PUBLIC_SUPABASE_ANON_KEY",
         "UPSTASH_REDIS_REST_URL",
-        "UPSTASH_REDIS_REST_TOKEN"
+        "UPSTASH_REDIS_REST_TOKEN",
+        "ANTHROPIC_MODEL",
+        "STRIPE_SECRET_KEY",
+        "STRIPE_WEBHOOK_SECRET",
+        "RESEND_API_KEY",
+        "RESEND_FROM_EMAIL",
+        "CRON_SECRET",
+        "GEMINI_IMAGE_MODEL",
+        "GEMINI_CLINIC_IMAGE_MODEL",
+        "OPENAI_API_KEY",
+        "OPENAI_CLINIC_IMAGE_MODEL",
+        "OPENAI_IMAGE_QUALITY",
+        "PROJECTION_QA"
       ]
     },
     "lint": {
-      "dependsOn": ["^build"]
+      "dependsOn": [
+        "^build"
+      ]
     },
     "db:generate": {
       "cache": false
