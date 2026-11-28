@@ -8,6 +8,7 @@
 import { detectLandmarks } from "@/lib/face-detection";
 import {
   BILATERAL_SIGNS,
+  type FaceMap,
   type SignId,
   type SignSide,
   type SignZone,
@@ -91,6 +92,37 @@ function regions(p: Pt[], sign: SignId, side: SignSide): Ellipse[] {
   }
 }
 
+/** Polygon scaled around its centroid. */
+function grow(pts: Pt[], k: number): Pt[] {
+  const c = { x: pts.reduce((a, q) => a + q.x, 0) / pts.length, y: pts.reduce((a, q) => a + q.y, 0) / pts.length };
+  return pts.map((q) => ({ x: c.x + (q.x - c.x) * k, y: c.y + (q.y - c.y) * k }));
+}
+
+/** A brow line (5 landmarks) as a band of half-height h. */
+function band(pts: Pt[], h: number): Pt[] {
+  return [...pts.map((q) => ({ x: q.x, y: q.y - h })), ...[...pts].reverse().map((q) => ({ x: q.x, y: q.y + h }))];
+}
+
+/**
+ * Face outline (jaw plus an estimated forehead) and the features no
+ * procedure changes: eyes, brows, nose and lips.
+ */
+function faceMap(p: Pt[]): { outline: Pt[]; protect: Pt[][] } {
+  const u = dist(mid(p[36], p[39]), mid(p[42], p[45]));
+  const forehead = p.slice(17, 27).reverse().map((q) => ({ x: q.x, y: q.y - 1.0 * u }));
+  return {
+    outline: [...p.slice(0, 17), ...forehead],
+    protect: [
+      grow(p.slice(36, 42), 1.4),
+      grow(p.slice(42, 48), 1.4),
+      band(p.slice(17, 22), 0.07 * u),
+      band(p.slice(22, 27), 0.07 * u),
+      [{ x: p[27].x - 0.13 * u, y: p[27].y }, ...p.slice(31, 36), { x: p[27].x + 0.13 * u, y: p[27].y }],
+      grow(p.slice(48, 60), 1.08),
+    ],
+  };
+}
+
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -107,7 +139,7 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 export async function buildProjectionGuide(
   photoBase64: string,
   signs: VisibleSign[]
-): Promise<{ guide: string; zones: SignZone[] } | null> {
+): Promise<{ guide: string; zones: SignZone[]; face: FaceMap } | null> {
   if (signs.length === 0 || typeof document === "undefined") return null;
   try {
     const img = await loadImage(photoBase64);
@@ -137,7 +169,10 @@ export async function buildProjectionGuide(
         ellipses: ellipses.map((e) => ({ cx: e.cx / W, cy: e.cy / H, rx: e.rx / W, ry: e.ry / H, rot: e.rot })),
       });
     }
-    return { guide: canvas.toDataURL("image/jpeg", 0.85), zones };
+    const norm = (q: Pt) => ({ x: q.x / W, y: q.y / H });
+    const fm = faceMap(pts);
+    const face = { outline: fm.outline.map(norm), protect: fm.protect.map((poly) => poly.map(norm)) };
+    return { guide: canvas.toDataURL("image/jpeg", 0.85), zones, face };
   } catch {
     return null;
   }

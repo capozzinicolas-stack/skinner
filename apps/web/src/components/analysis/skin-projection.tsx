@@ -91,7 +91,7 @@ export function SkinProjection({
                 mode: "clinic",
                 procedures: (procedures ?? []).slice(0, 10),
                 ...(clinicSigns.length > 0 ? { signs: clinicSigns } : {}),
-                ...(guide ? { guideImageBase64: guide.guide, zones: guide.zones } : {}),
+                ...(guide ? { guideImageBase64: guide.guide, zones: guide.zones, face: guide.face } : {}),
               }
             : {}),
         }),

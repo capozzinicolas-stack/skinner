@@ -51,6 +51,15 @@ export type ZoneEllipse = { cx: number; cy: number; rx: number; ry: number; rot:
 export type SignZone = { sign: SignId; ellipses: ZoneEllipse[] };
 
 /**
+ * Face outline and the features no procedure changes (eyes, brows, nose,
+ * lips), as normalized polygons from the same landmarks. Used by the
+ * identity lock (lib/sae/identity-lock.ts) to keep every pixel outside the
+ * treated areas identical to the input photo.
+ */
+export type FacePoint = { x: number; y: number };
+export type FaceMap = { outline: FacePoint[]; protect: FacePoint[][] };
+
+/**
  * Signs edited together in one crop. Gemini barely edits a full-face photo
  * (Nov-2026 test: same targets, almost no visible change); an enlarged crop
  * of the area gets a much stronger edit.

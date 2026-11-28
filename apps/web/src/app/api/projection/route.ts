@@ -63,6 +63,13 @@ const RequestSchema = z.object({
       ).max(4),
     })
   ).max(20).optional(),
+  // Face outline + features to protect (identity lock, same landmarks).
+  face: z.object({
+    outline: z.array(z.object({ x: z.number().min(-1).max(2), y: z.number().min(-1).max(2) })).max(40),
+    protect: z.array(
+      z.array(z.object({ x: z.number().min(-1).max(2), y: z.number().min(-1).max(2) })).max(20)
+    ).max(8),
+  }).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -90,7 +97,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { photoBase64, conditions, primaryObjective, products, mode, procedures, signs, guideImageBase64, zones } =
+    const { photoBase64, conditions, primaryObjective, products, mode, procedures, signs, guideImageBase64, zones, face } =
       parsed.data;
 
     // Photo is only held in memory during this request — never persisted to disk or DB
@@ -106,6 +113,7 @@ export async function POST(req: NextRequest) {
             signs,
             guideImageBase64,
             zones,
+            face,
           })
         : await generateProjections({
             photoBase64,

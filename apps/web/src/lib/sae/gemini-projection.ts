@@ -13,10 +13,12 @@ import {
   targetGrade,
   type SignId,
   type SignSide,
+  type FaceMap,
   type SignZone,
   type VisibleSign,
 } from "./visible-signs";
 import { editRegion } from "./region-edit";
+import { lockIdentity } from "./identity-lock";
 import { procedureProfile, procedureSignEffects, type SkinAxis, type SkinEffect } from "./procedure-profiles";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
@@ -53,6 +55,8 @@ export type ProjectionInput = {
   // Normalized zone of each sign (browser landmarks). When present, the
   // sign targets are edited on enlarged crops (lib/sae/region-edit.ts).
   zones?: SignZone[];
+  // Face outline + protected features (identity lock, identity-lock.ts).
+  face?: FaceMap;
 };
 
 export type ProjectionStage = {
@@ -664,7 +668,7 @@ function buildSignPrompt(
   conditionsKB: Map<string, { visualEditPrompt: string | null; displayName: string; description: string }>,
   hasGuide: boolean,
   emphasis?: string
-): { prompt: string; targets: SignTarget[]; hasChanges: boolean } {
+): { prompt: string; targets: SignTarget[]; hasChanges: boolean; skinChanges: boolean } {
   const weeks = stages[stageIndex].weeks;
   const previousWeeks = stageIndex === 1 ? stages[0].weeks : undefined;
   const { targets, done } = buildSignTargets(signs, procedures, weeks, previousWeeks);
@@ -738,7 +742,8 @@ ${effectLines.join("\n") || "- Keep the current result."}
 ${skinLines ? `\nOTHER SKIN CHANGES:\n${skinLines}\n` : ""}
 ${emphasis ? `\nCORRECTION: ${emphasis}\n` : ""}
 ${CLINIC_ALLOWED_AND_IDENTITY}`;
-  return { prompt, targets, hasChanges: targetLines.length > 0 || skinLines !== "" };
+  const skinChanges = skinTargets.length > 0 || skinLines !== "";
+  return { prompt, targets, hasChanges: targetLines.length > 0 || skinChanges, skinChanges };
 }
 
 // ── Region edits (Nov-2026) ─────────────────────────────────────────────
@@ -842,10 +847,17 @@ async function missedTargets(before: string, after: string, targets: SignTarget[
 
 async function generateStage(
   images: string[],
-  build: (emphasis?: string) => { prompt: string; targets: SignTarget[] }
+  build: (emphasis?: string) => { prompt: string; targets: SignTarget[]; skinChanges: boolean },
+  lock?: { zones: Map<string, SignZone>; face?: FaceMap }
 ): Promise<string> {
-  const { prompt, targets } = build();
-  const result = await generateClinicImage(images, prompt);
+  const { prompt, targets, skinChanges } = build();
+  // Identity lock: only the treated areas come from the edit.
+  const keep = async (edited: string) => {
+    if (!lock) return edited;
+    const ellipses = targets.flatMap((t) => lock.zones.get(t.sign)?.ellipses ?? []);
+    return lockIdentity(images[0], edited, ellipses, lock.face, skinChanges);
+  };
+  const result = await keep(await generateClinicImage(images, prompt));
   if (!QA_ENABLED || targets.length === 0) return result;
   try {
     const missed = await missedTargets(images[0], result, targets);
@@ -853,7 +865,7 @@ async function generateStage(
     const emphasis = `A previous attempt left these almost unchanged: ${missed
       .map((t) => SIGN_ANATOMY[t.sign])
       .join("; ")}. Make each reach its target grade, clearly visible side by side.`;
-    return await generateClinicImage(images, build(emphasis).prompt);
+    return await keep(await generateClinicImage(images, build(emphasis).prompt));
   } catch (err) {
     console.error("[projection] QA skipped:", err instanceof Error ? err.message : err);
     return result;
@@ -903,8 +915,11 @@ export async function generateClinicProjections(
   if (signs.length > 0) {
     const build = (i: 0 | 1) => (emphasis?: string) =>
       buildSignPrompt(i, stages, signs, procedures, input.conditions, conditionsKB, guide.length > 0, emphasis);
-    const first = await generateStage([input.photoBase64, ...guide], build(0));
-    const second = await generateStage([first, ...guide], build(1));
+    // Lock only with the face map and a zone for every sign: otherwise a
+    // sign or skin effect would be masked out and its edit lost.
+    const lock = input.face && signs.every((s) => zones.has(s.sign)) ? { zones, face: input.face } : undefined;
+    const first = await generateStage([input.photoBase64, ...guide], build(0), lock);
+    const second = await generateStage([first, ...guide], build(1), lock);
     return { week8: first, week12: second, stages };
   }
 
