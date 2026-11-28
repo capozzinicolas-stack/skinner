@@ -847,10 +847,13 @@ async function missedTargets(before: string, after: string, targets: SignTarget[
 
 async function generateStage(
   images: string[],
-  build: (emphasis?: string) => { prompt: string; targets: SignTarget[]; skinChanges: boolean },
+  build: (emphasis?: string) => { prompt: string; targets: SignTarget[]; hasChanges: boolean; skinChanges: boolean },
   lock?: { zones: Map<string, SignZone>; face?: FaceMap }
 ): Promise<string> {
-  const { prompt, targets, skinChanges } = build();
+  const { prompt, targets, hasChanges, skinChanges } = build();
+  // No visible change yet (e.g. a biostimulator before its onset): sending
+  // the photo anyway made the model redraw beard, skin and light.
+  if (!hasChanges) return images[0];
   // Identity lock: only the treated areas come from the edit.
   const keep = async (edited: string) => {
     if (!lock) return edited;

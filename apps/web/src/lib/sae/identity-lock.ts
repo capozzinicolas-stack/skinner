@@ -81,7 +81,8 @@ export async function lockIdentity(
   face: FaceMap | undefined,
   wholeFace: boolean
 ): Promise<string> {
-  if (zones.length === 0 && !(wholeFace && face)) return edited;
+  // Nothing to change at this stage: the input stays as it is.
+  if (zones.length === 0 && !(wholeFace && face)) return base;
   try {
     const baseBuf = dataUrlToBuffer(base);
     const meta = await sharp(baseBuf).metadata();
